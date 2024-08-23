@@ -1,0 +1,14 @@
+package foo.bar;
+
+import java.io.File;
+import java.util.*;
+import static java.util.logging.Level.*;
+
+@DataClass
+public class FooBar {
+
+    private Object ab;
+    private long   cde     = 123L;
+    public  String answer  = "forty two";
+    public  String answer2 = "for\\ty \"two\"";
+}
