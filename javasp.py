@@ -175,9 +175,9 @@ class L0Handler:
 
             self._next_handler.handle_part(part=g, line=line)
 
-def parse(source:str):
+def parse_whole(source:str):
 
-    jph = L0Handler()
+    l0 = L0Handler()
     for line in source.splitlines():
 
-        jph.handle_line(line)
+        l0.handle_line(line)

@@ -8,6 +8,6 @@ def main():
 
         source = f.read()
 
-    javasp.parse(source)
+    javasp.parse_whole(source)
 
 if __name__ == '__main__': main()
