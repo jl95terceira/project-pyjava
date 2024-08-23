@@ -73,8 +73,6 @@ class L1Handler:
 
     def handle_part(self, part:str, line:str): 
         
-        print(part)
-        return
         if part == ';':
 
             if   self._state is L1States.NONE   : pass
