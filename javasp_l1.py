@@ -1,3 +1,5 @@
+DEBUG = 0
+
 import javasp_l1_state as state
 import javasp_l1_exc   as exc
 import javasp_model    as model
@@ -122,13 +124,31 @@ class L1Handler:
 
     def flush_method_impl   (self): pass
 
+    def store_implements           (self):
+
+        self.assert_unreserved()
+        self.class_implements.append(self._part)
+        self.state = state.States.CLASS_IMPLEMENTS_NAMED
+
+    def store_method_arg_type_name (self):
+
+        self.assert_unreserved()
+        self.arg_type_name = self._part
+        self.state         = state.States.METHOD_ARG_TYPED
+
+    def store_method_arg           (self):
+
+        self.args.append(model.Argument(name=self.arg_name, type_name=self.arg_type_name))
+        self.arg_name       = None
+        self.arg_type_name  = None
+
     def handle_part         (self, part:str, line:str): 
         
         def _pad(x:str,v:int): return (lambda s: f'{s}{(v-len(s))*' '}')(x if isinstance(x, str) else str(x))
-        if 1: print(_pad(self.state,                        40), 
-                    _pad("static" if self.static else "",    8), 
-                    _pad(self.access,                       35), 
-                    _pad(self.type_name,                    15), part)
+        if DEBUG: print(_pad(self.state,                        40), 
+                       _pad("static" if self.static else "",    8), 
+                       _pad(self.access,                       35), 
+                       _pad(self.type_name,                    15), part)
         self._part = part
         if   self.state is state.States.BEGIN:
 
@@ -341,22 +361,4 @@ class L1Handler:
             raise exc.MethodException(line)
 
         raise NotImplementedError(line)
-
-    def store_implements           (self):
-
-        self.assert_unreserved()
-        self.class_implements.append(self._part)
-        self.state = state.States.CLASS_IMPLEMENTS_NAMED
-
-    def store_method_arg_type_name (self):
-
-        self.assert_unreserved()
-        self.arg_type_name = self._part
-        self.state         = state.States.METHOD_ARG_TYPED
-
-    def store_method_arg           (self):
-
-        self.args.append(model.Argument(name=self.arg_name, type_name=self.arg_type_name))
-        self.arg_name       = None
-        self.arg_type_name  = None
 
