@@ -1,4 +1,4 @@
-DEBUG = 0
+_DEBUG = 1
 
 import javasp_l1_state as state
 import javasp_l1_exc   as exc
@@ -6,359 +6,453 @@ import javasp_model    as model
 import javasp_words    as words
 from javasp_l2 import L2Handler
 
-ACCESS_MOD_NAMES_SET   = {am.name    for am in model.AccessModifiers.values()}
-ACCESS_MOD_MAP_BY_NAME = {am.name:am for am in model.AccessModifiers.values()}
+ACCESS_MOD_NAMES_SET        = {x.name   for x in model.AccessModifiers.values()}
+ACCESS_MOD_MAP_BY_NAME      = {x.name:x for x in model.AccessModifiers.values()}
+FINALITY_TYPE_NAMES_SET     = {x.name   for x in model.FinalityTypes  .values()}
+FINALITY_TYPE_MAP_BY_NAME   = {x.name:x for x in model.FinalityTypes  .values()}
+CLASS_TYPE_NAMES_SET        = {x.name   for x in model.ClassTypes     .values()}
+CLASS_TYPE_MAP_BY_NAME      = {x.name:x for x in model.ClassTypes     .values()}
 
 class L1Handler:
 
     def __init__         (self):
 
-        self._stmt_handler                              = L2Handler()
-        self._part           :str                       = ''
-        self._scope_depth    :int                       = 0
+        self._stmt_handler                                = L2Handler()
+        self._part             :str                       = ''
+        self._scope_depth      :int                       = 0
+        self._class_name_stack :list[str|None]            = list()
         # resettable state
         # state machine-related
-        self.state                                      = state.States.BEGIN
+        self._state                                       = state.States.BEGIN
         # etc.
-        self.package         :str                 |None = None
-        self.static          :bool                      = False
-        self.imported        :str                 |None = None
-        self.access          :model.AccessModifier|None = None
-        self.class_name      :str                 |None = None
-        self.class_extends   :str                 |None = None
-        self.class_implements:list[str]                 = list()
-        self.type_name       :str                 |None = None
-        self.attr_name       :str                 |None = None
-        self.expr_parts      :list[str]                 = list()
-        self.arg_name        :str                 |None = None
-        self.arg_type_name   :str                 |None = None
-        self.args            :list[model.Argument]      = list()
+        self._package          :str                 |None = None
+        self._static           :bool                      = False
+        self._imported         :str                 |None = None
+        self._access           :model.AccessModifier|None = None
+        self._finality         :model.FinalityType  |None = None
+        self._class_type       :model.ClassType     |None = None
+        self._class_name       :str                 |None = None
+        self._class_extends    :str                 |None = None
+        self._class_implements :list[str]                 = list()
+        self._type_name        :str                 |None = None
+        self._generic_depth    :int                       = 0
+        self._attr_name        :str                 |None = None
+        self._body_parts       :list[str]                 = list()
+        self._arg_name         :str                 |None = None
+        self._arg_type_name    :str                 |None = None
+        self._args             :dict[str,model.Argument]  = dict()
+        self._method_impl_depth:int                       = 0
 
-    def reset_state         (self):
+    def _reset_state                (self):
 
-        self.state            = state.States.BEGIN
-        self.package          = None
-        self.static           = False
-        self.imported         = None
-        self.access           = None
-        self.class_name       = None
-        self.class_extends    = None
-        self.class_implements.clear()
-        self.type_name        = None
-        self.attr_name        = None
-        self.expr_parts      .clear()
-        self.arg_name         = None
-        self.arg_type_name    = None
-        self.args            .clear()
+        self._state             = state.States.BEGIN
+        self._package           = None
+        self._static            = False
+        self._imported          = None
+        self._access            = None
+        self._finality          = None
+        self._class_type        = None
+        self._class_name        = None
+        self._class_extends     = None
+        self._class_implements .clear()
+        self._type_name         = None
+        self._generic_depth     = 0
+        self._attr_name         = None
+        self._body_parts       .clear()
+        self._arg_name          = None
+        self._arg_type_name     = None
+        self._args             .clear()
+        self._method_impl_depth = 0
 
-    def assert_unreserved   (self): 
-
-        if words.is_reserved(self._part): raise exc.ReservedWordException(f'reserved word {repr(self._part)} not allowed while in state {repr(self.state)}')
-
-    def coerce_access       (self, access:model.AccessModifier|None):
+    def _coerce_access              (self, access:model.AccessModifier|None):
 
         return access if access is not None else model.AccessModifiers.PACKAGE_PRIVATE
 
-    def flush_import        (self):
+    def _coerce_finality            (self, finality:model.FinalityType|None):
 
-        self._stmt_handler.handle_import(name  =self.imported,
-                                         static=self.static)
-        self.reset_state()
+        return finality if finality is not None else model.FinalityTypes.DEFAULT
 
-    def flush_package       (self):
+    def _flush_import               (self):
 
-        self._stmt_handler.handle_package(name=self.package)
-        self.reset_state()
+        self._stmt_handler.handle_import(name  =self._imported,
+                                         static=self._static)
+        self._reset_state()
 
-    def flush_class         (self):
+    def _flush_package              (self):
 
-        self._stmt_handler.handle_class(name      =self.class_name, 
-                                        static    =self.static,
-                                        access    =self.coerce_access(self.access),
-                                        extends   =self.class_extends,
-                                        implements=self.class_implements)
-        self.reset_state()
+        self._stmt_handler.handle_package(name=self._package)
+        self._reset_state()
 
-    def flush_class_and_open(self):
+    def _flush_class                (self):
 
-        self.flush_class()
-        self.flush_open ()
+        self._stmt_handler.handle_class(name      =self._class_name, 
+                                        static    =self._static,
+                                        access    =self._coerce_access(self._access),
+                                        finality  =self._coerce_finality(self._finality),
+                                        type      =self._class_type,
+                                        extends   =self._class_extends,
+                                        implements=self._class_implements)
+        self._flush_open(class_name=self._class_name)
 
-    def flush_open          (self):
+    def _flush_open                 (self, class_name:str|None=None):
 
-        self._stmt_handler.handle_scope_begin()
-        self.reset_state()
+        self._class_name_stack.append(class_name)
+        self._reset_state()
         self._scope_depth += 1
 
-    def flush_close         (self):
+    def _flush_close                (self):
 
-        self._stmt_handler.handle_scope_end()
-        self.reset_state()
+        self._stmt_handler.handle_class_end()
+        self._reset_state()
         self._scope_depth -= 1
 
-    def flush_attr_decl     (self):
+    def _flush_attr_decl            (self):
 
-        self._stmt_handler.handle_attr_decl(name     =self.attr_name, 
-                                            static   =self.static,
-                                            access   =self.coerce_access(self.access), 
-                                            type_name=self.type_name)
-        self.reset_state()
+        self._stmt_handler.handle_attr(name     =self._attr_name, 
+                                       static   =self._static,
+                                       final    =self._finality is model.FinalityTypes.FINAL,
+                                       access   =self._coerce_access(self._access), 
+                                       type_name=self._type_name,
+                                       value    =None)
+        self._reset_state()
 
-    def flush_attr_declinit (self):
+    def _flush_attr_declinit        (self):
 
-        self._stmt_handler.handle_attr_declinit(name     =self.attr_name, 
-                                                static   =self.static,
-                                                access   =self.coerce_access(self.access), 
-                                                type_name=self.type_name,
-                                                value    =''.join(self.expr_parts))
-        self.reset_state()
+        self._stmt_handler.handle_attr(name     =self._attr_name, 
+                                       static   =self._static,
+                                       final    =self._finality is model.FinalityTypes.FINAL,
+                                       access   =self._coerce_access(self._access), 
+                                       type_name=self._type_name,
+                                       value    =''.join(self._body_parts))
+        self._reset_state()
 
-    def flush_method_decl   (self): 
+    def _flush_method_decl          (self): 
         
-        self._stmt_handler.handle_method_decl(name      =self.attr_name,
-                                              static    =self.static,
-                                              access    =self.coerce_access(self.access),
-                                              type_name =self.type_name,
-                                              args      =self.args)
-        self.reset_state()
+        self._stmt_handler.handle_method(name      =self._attr_name,
+                                         static    =self._static,
+                                         access    =self._coerce_access(self._access),
+                                         finality  =self._coerce_finality(self._finality),
+                                         type_name =self._type_name,
+                                         args      =self._args,
+                                         body      =None)
+        self._reset_state()
 
-    def flush_method_impl   (self): pass
+    def _flush_method_impl          (self): 
+        
+        self._stmt_handler.handle_method(name      =self._attr_name,
+                                         static    =self._static,
+                                         access    =self._coerce_access(self._access),
+                                         finality  =self._coerce_finality(self._finality),
+                                         type_name =self._type_name,
+                                         args      =self._args,
+                                         body      =''.join(self._body_parts))
+        self._reset_state()
 
-    def store_implements           (self):
+    def _store_implements           (self):
 
-        self.assert_unreserved()
-        self.class_implements.append(self._part)
-        self.state = state.States.CLASS_IMPLEMENTS_NAMED
+        self._class_implements.append(self._part)
+        self._state = state.States.CLASS_IMPLEMENTS_NAMED
 
-    def store_method_arg_type_name (self):
+    def _store_method_arg_type_name (self):
 
-        self.assert_unreserved()
-        self.arg_type_name = self._part
-        self.state         = state.States.METHOD_ARG_TYPED
+        if self._part == words.FINAL:
 
-    def store_method_arg           (self):
+            self._finality = model.FinalityTypes.FINAL
+            return
 
-        self.args.append(model.Argument(name=self.arg_name, type_name=self.arg_type_name))
-        self.arg_name       = None
-        self.arg_type_name  = None
+        self._arg_type_name = self._part
+        self._state         = state.States.METHOD_ARG_TYPED
 
-    def handle_part         (self, part:str, line:str): 
+    def _store_method_arg           (self):
+
+        self._args[self._arg_name] = model.Argument(type_name=self._arg_type_name, final=self._finality is model.FinalityTypes.FINAL)
+        self._arg_name       = None
+        self._arg_type_name  = None
+
+    def handle_part(self, part:str, line:str): 
         
         def _pad(x:str,v:int): return (lambda s: f'{s}{(v-len(s))*' '}')(x if isinstance(x, str) else str(x))
-        if DEBUG: print(_pad(self.state,                        40), 
-                       _pad("static" if self.static else "",    8), 
-                       _pad(self.access,                       35), 
-                       _pad(self.type_name,                    15), part)
+        if _DEBUG: print(
+            _pad(self._state,                        40), 
+            _pad("static" if self._static else "",    8), 
+            _pad(self._access,                       35), 
+            _pad(self._type_name,                    15), 
+            repr(part)
+        )
         self._part = part
-        if   self.state is state.States.BEGIN:
+        if   self._state is state.States.BEGIN:
 
             if   part == words.SEMICOLON  : pass
-            elif part == words.BRACE_OPEN : self.flush_open ()
-            elif part == words.BRACE_CLOSE: self.flush_close()
-            elif part == words.IMPORT     : self.state = state.States.IMPORT
-            elif part == words.PACKAGE    : self.state = state.States.PACKAGE
+            elif part == words.BRACE_OPEN : self._flush_open ()
+            elif part == words.BRACE_CLOSE: self._flush_close()
+            elif part == words.IMPORT     : self._state = state.States.IMPORT
+            elif part == words.PACKAGE    : self._state = state.States.PACKAGE
+            elif part in FINALITY_TYPE_NAMES_SET: 
+                
+                if self._finality is not None: raise exc.Exception(line)
+                self._finality = FINALITY_TYPE_MAP_BY_NAME[part]
+
             elif part in ACCESS_MOD_NAMES_SET:
 
-                if self.access is not None: raise exc.Exception(line)
-                self.access = ACCESS_MOD_MAP_BY_NAME[part]
+                if self._access is not None: raise exc.Exception(line)
+                self._access = ACCESS_MOD_MAP_BY_NAME[part]
+
+            elif part in CLASS_TYPE_NAMES_SET:
+
+                if self._class_type is not None: raise exc.Exception(line)
+                self._class_type = CLASS_TYPE_MAP_BY_NAME[part]
+                self._state = state.States.CLASS_BEGIN
 
             elif part == words.STATIC    :
 
-                if self.static: raise exc.Exception(line)
-                self.static = True
+                if self._static: raise exc.Exception(line)
+                self._static = True
 
-            elif part == words.CLASS     : 
-                
-                self.state = state.States.CLASS_BEGIN
-
-            elif part == words.ATSIGN    : self.state = state.States.ANNOTATION
+            elif part == words.ATSIGN    : self._state = state.States.ANNOTATION
             else: 
                 
-                self.type_name  = part
-                self.state      = state.States.TYPED_BEGIN
+                self._type_name  = part
+                self._state      = state.States.TYPED_BEGIN
 
             return
         
-        elif self.state is state.States.PACKAGE:
+        elif self._state is state.States.PACKAGE:
 
-            if self.package is None: 
+            if self._package is None: 
 
-                self.assert_unreserved()
-                self.package = part
+                self._package = part
                 return
             
             if part == words.SEMICOLON:
 
-                self.flush_package()
-                return
-
-            raise exc.PackageException(line)
-        
-        elif self.state is state.States.IMPORT:
-
-            if not self.imported: 
-
-                if part == words.STATIC: 
-                    
-                    self.static = True
-                    return
-                
-                self.assert_unreserved()
-                self.imported = part
-                return
-
-            if part == words.SEMICOLON:
-
-                self.flush_import()
-                return
-
-            raise exc.ImportException(line)
-        
-        elif self.state is state.States.ANNOTATION:
-
-            self.assert_unreserved()
-            self._stmt_handler.handle_annotation(part)
-            self.reset_state()
-            return
-        
-        elif self.state is state.States.CLASS_BEGIN:
-
-            self.assert_unreserved()
-            self.class_name  = part
-            self.state = state.States.CLASS_AFTER_NAME
-            return
-
-        elif self.state is state.States.CLASS_AFTER_NAME:
-
-            if   part == words.EXTENDS:
-
-                if self.class_extends is not None: raise exc.ClassException(line)
-                self.state = state.States.CLASS_EXTENDS
-                return
-
-            if part == words.IMPLEMENTS:
-
-                if self.class_implements: raise exc.ClassException(line)
-                self.state = state.States.CLASS_IMPLEMENTS
-                return
-
-            if part == words.BRACE_OPEN:
-
-                self.flush_class_and_open()
-                return
-
-            raise exc.ClassException(line)
-
-        elif self.state is state.States.CLASS_EXTENDS:
-
-            self.assert_unreserved()
-            self.class_extends = part
-            self.state   = state.States.CLASS_AFTER_NAME
-            return
-
-        elif self.state is state.States.CLASS_IMPLEMENTS:
-
-            self.store_implements()
-            return
-
-        elif self.state is state.States.CLASS_IMPLEMENTS_NAMED:
-
-            if part == words.COMMA:
-
-                self.state = state.States.CLASS_IMPLEMENTS_AFTER
-                return
-
-            if part == words.BRACE_OPEN:
-
-                self.flush_class_and_open()
-                return
-
-            raise exc.ClassImplementsException(line)
-        
-        elif self.state is state.States.CLASS_IMPLEMENTS_AFTER:
-
-            self.store_implements()
-            return
-
-        elif self.state is state.States.TYPED_BEGIN:
-
-            self.assert_unreserved()
-            self.attr_name  = part
-            self.state = state.States.TYPED_NAMED
-            return
-        
-        elif self.state is state.States.TYPED_NAMED:
-
-            if part == words.SEMICOLON:
-
-                self.flush_attr_decl()
-                return
-            
-            if part == words.EQUALSIGN:
-
-                self.state = state.States.ATTR_INITIALIZE
-                return
-            
-            if part == words.PARENTH_OPEN:
-
-                self.state = state.States.METHOD_SIGNATURE
-                return
-
-            else: raise exc.AttributeException(line)
-            
-        elif self.state is state.States.ATTR_INITIALIZE:
-
-            if part == words.SEMICOLON: 
-                
-                self.flush_attr_declinit()
+                self._flush_package()
                 return
 
             else:
 
-                self.expr_parts.append(part)
+                self._package += part
                 return
 
-        elif self.state is state.States.METHOD_SIGNATURE:
+            raise exc.PackageException(line)
+        
+        elif self._state is state.States.IMPORT:
 
-            self.store_method_arg_type_name()
+            if self._imported is None: 
+
+                if part == words.STATIC: 
+                    
+                    self._static = True
+                    return
+                
+                self._imported = part
+                return
+
+            if part == words.SEMICOLON:
+
+                self._flush_import()
+                return
+
+            else:
+
+                self._imported += part
+                return
+
+            raise exc.ImportException(line)
+        
+        elif self._state is state.States.ANNOTATION:
+
+            self._stmt_handler.handle_annotation(part)
+            self._reset_state()
             return
         
-        elif self.state is state.States.METHOD_ARG_TYPED:
+        elif self._state is state.States.CLASS_BEGIN:
 
-            self.assert_unreserved()
-            self.arg_name   = part
-            self.state      = state.States.METHOD_ARG_NAMED
+            self._class_name  = part
+            self._state = state.States.CLASS_AFTER_NAME
             return
-        
-        elif self.state is state.States.METHOD_ARG_NAMED:
 
-            self.store_method_arg()
+        elif self._state is state.States.CLASS_AFTER_NAME:
+
+            if   part == words.EXTENDS:
+
+                if self._class_extends is not None: raise exc.ClassException(line)
+                self._state = state.States.CLASS_EXTENDS
+                return
+
+            if part == words.IMPLEMENTS:
+
+                if self._class_implements: raise exc.ClassException(line)
+                self._state = state.States.CLASS_IMPLEMENTS
+                return
+
+            if part == words.BRACE_OPEN:
+
+                self._flush_class()
+                return
+
+            raise exc.ClassException(line)
+
+        elif self._state is state.States.CLASS_EXTENDS:
+
+            self._class_extends = part
+            self._state   = state.States.CLASS_AFTER_NAME
+            return
+
+        elif self._state is state.States.CLASS_IMPLEMENTS:
+
+            self._store_implements()
+            return
+
+        elif self._state is state.States.CLASS_IMPLEMENTS_NAMED:
+
             if part == words.COMMA:
 
-                self.state = state.States.METHOD_ARG_AFTER
+                self._state = state.States.CLASS_IMPLEMENTS_AFTER
+                return
+
+            if part == words.BRACE_OPEN:
+
+                self._flush_class()
+                return
+
+            raise exc.ClassImplementsException(line)
+        
+        elif self._state is state.States.CLASS_IMPLEMENTS_AFTER:
+
+            self._store_implements()
+            return
+
+        elif self._state is state.States.TYPED_BEGIN:
+
+            if part in words.ANGLE_OPEN:
+
+                self._type_name += part
+                self._generic_depth += 1
+                return
+
+            elif part in words.ANGLE_CLOSE:
+
+                self._type_name += part
+                self._generic_depth -= 1
+                return
+
+            elif self._generic_depth > 0:
+
+                self._type_name += part
+                return
+
+            self._attr_name  = part
+            self._state = state.States.TYPED_NAMED
+            return
+        
+        elif self._state is state.States.TYPED_NAMED:
+
+            if part == words.SEMICOLON:
+
+                self._flush_attr_decl()
+                return
+            
+            if part == words.EQUALSIGN:
+
+                self._state = state.States.ATTR_INITIALIZE
+                return
+            
+            if part == words.PARENTH_OPEN:
+
+                self._state = state.States.METHOD_SIGNATURE
+                return
+
+            else: raise exc.AttributeException(line)
+            
+        elif self._state is state.States.ATTR_INITIALIZE:
+
+            if part == words.SEMICOLON: 
+                
+                self._flush_attr_declinit()
+                return
+
+            else:
+
+                self._body_parts.append(part)
+                return
+
+        elif self._state is state.States.METHOD_SIGNATURE:
+
+            if part == words.PARENTH_CLOSE:
+
+                self._state = state.States.METHOD_DECLARED
+                return
+
+            self._store_method_arg_type_name()
+            return
+        
+        elif self._state is state.States.METHOD_ARG_TYPED:
+
+            self._arg_name   = part
+            self._state      = state.States.METHOD_ARG_NAMED
+            return
+        
+        elif self._state is state.States.METHOD_ARG_NAMED:
+
+            self._store_method_arg()
+            if part == words.COMMA:
+
+                self._state = state.States.METHOD_ARG_AFTER
                 return
             
             if part == words.PARENTH_CLOSE:
 
-                self.store_method_arg()
-                self.state = state.States.METHOD_DECLARED
+                self._state = state.States.METHOD_DECLARED
                 return
 
             raise exc.MethodException(line)
 
-        elif self.state is state.States.METHOD_ARG_AFTER:
+        elif self._state is state.States.METHOD_ARG_AFTER:
 
-            self.store_method_arg_type_name()
+            self._store_method_arg_type_name()
             return
 
-        elif self.state is state.States.METHOD_DECLARED:
+        elif self._state is state.States.METHOD_DECLARED:
 
             if part == words.SEMICOLON:
 
-                self.flush_method_decl()
+                self._flush_method_decl()
                 return
             
+            if part == words.BRACE_OPEN:
+
+                self._state              = state.States.METHOD_IMPLEMENTATION
+                self._method_impl_depth  = self._scope_depth
+                self._scope_depth      += 1
+                return
+
             raise exc.MethodException(line)
+        
+        elif self._state is state.States.METHOD_IMPLEMENTATION:
+
+            if part == words.BRACE_OPEN:
+
+                self._scope_depth += 1
+
+            elif part == words.BRACE_CLOSE:
+
+                self._scope_depth -= 1
+                if self._scope_depth == self._method_impl_depth:
+
+                    self._flush_method_impl()
+                    return
+
+            self._body_parts.append(part)
+            return
 
         raise NotImplementedError(line)
 
+    def handle_comment(self, comment:str, line:str):
+
+        print(f'Hello, comment: {repr(comment)}')
+
+    def handle_spacing(self, spacing:str, line:str):
+
+        if self._state is state.States.METHOD_IMPLEMENTATION:
+
+            self._body_parts.append(spacing)

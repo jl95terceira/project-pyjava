@@ -21,3 +21,4 @@ class States:
     METHOD_ARG_NAMED            = State('Method Arg Named')
     METHOD_ARG_AFTER            = State('Method Arg After')
     METHOD_DECLARED             = State('Method Declared')
+    METHOD_IMPLEMENTATION       = State('Method Implementation')

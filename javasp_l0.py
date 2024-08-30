@@ -1,51 +1,75 @@
 import re
 
-import javasp_l0_exc as exc
+import javasp_l0_exc   as exc
+import javasp_l0_state as state
 from javasp_l1 import L1Handler
 
-PATTERN_WORD_BEGIN = '^|(?<!\\w)'
-PATTERN_WORD_END   = '$|(?!\\w)'
-PATTERN_WORD       = '(?:[\\w\\.:\\*])+'
-PATTERN            = re.compile(f'((?:{PATTERN_WORD_BEGIN})(?:{PATTERN_WORD})(?:{PATTERN_WORD_END})|[^\\s])|(\\s+)')
+PATTERN_CHARACTER  = '\\w'
+PATTERN_WORD       = f'(?:^|(?<!{PATTERN_CHARACTER})){PATTERN_CHARACTER}+(?:$|(?!{PATTERN_CHARACTER}))'
+PATTERN            = re.compile(f'((?:{PATTERN_WORD})|(?:/\\*)|(?:\\*/)|(?://)|\\s+|.)')
 
 class L0Handler:
 
     def __init__(self):
 
-        self._next_handler = L1Handler()
+        self._next_handler              = L1Handler()
+        self._state                     = state.States.DEFAULT
+        self._string_parts :list[str]   = list()
+        self._comment_parts:list[str]   = list()
 
     def handle_line(self, line:str):
 
-        string_parts:list[str] = list()
+        if   self._state is state.States.IN_COMMENT_ONELINE: # // ...
+
+            self._comment_parts.append('\n') # newline
+            self._next_handler.handle_comment(comment=''.join(self._comment_parts), line=line)
+            self._state = state.States.DEFAULT # no longer in comment, since this is another line
+
+        elif self._state is state.States.IN_COMMENT_MULTILINE: # /* ... */
+
+            self._comment_parts.append('\n') # newline
+
         for match in re.finditer(pattern=PATTERN, string=line):
 
-            g = match.group(1)
-            if g is None: continue
-            if g.startswith('"'):
-
-                if string_parts: 
-                    
-                    if g != '"': 
-                        
-                        raise exc.BadStringException(repr(''.join((*string_parts, g))))
+            part = match.group(1)
+            if self._state is state.States.IN_STRING:  
                 
-                if   g.split('\\\\')[-1] == '"': pass
+                if part != '"':
+
+                    self._string_parts.append(part)
+
                 else:
 
-                    string_parts.append(g)
-                    continue
+                    self._state = state.States.DEFAULT
+                    self._next_handler.handle_part(part=''.join(self._string_parts), line=line)
+                    self._string_parts.clear()
+
+            elif self._state is state.States.IN_COMMENT_ONELINE:
+
+                self._comment_parts.append(part)
+                # continue, because everything else in this line is part of the comment
+
+            elif self._state is state.States.IN_COMMENT_MULTILINE: 
+                
+                if part != '*/':
+
+                    self._comment_parts.append(part)
+
+                else:
+
+                    self._state = state.States.DEFAULT
+                    self._next_handler.handle_comment(comment=''.join(self._comment_parts), line=line)
 
             else:
 
-                if not string_parts: pass
-                elif g.split('\\\\')[-1] == '"': 
-                
-                    g = ''.join((*string_parts, g))
+                if not part.strip(): 
+                    
+                    self._next_handler.handle_spacing(spacing=part, line=line)
 
+                elif part == '"' : self._state = state.States.IN_STRING
+                elif part == '/*': self._state = state.States.IN_COMMENT_MULTILINE
+                elif part == '//': self._state = state.States.IN_COMMENT_ONELINE
                 else:
 
-                    string_parts.append(g)
-                    continue
-
-            self._next_handler.handle_part(part=g, line=line)
-
+                    self._next_handler.handle_part(part=part, line=line)
+                

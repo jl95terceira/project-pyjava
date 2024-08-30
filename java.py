@@ -1,10 +1,10 @@
-import mmap
+import sys
 
 import javasp
 
 def main():
     
-    with open('FooBar.java', mode='r') as f:
+    with open(sys.argv[1], mode='r') as f:
 
         source = f.read()
 

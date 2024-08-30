@@ -2,6 +2,10 @@ import dataclasses
 
 import javasp_model as model
 
+def _access_name(access:model.AccessModifier):
+
+    return access.name if access is not model.AccessModifiers.PACKAGE_PRIVATE else 'package-private'
+
 class L2Handler: 
 
     def handle_package      (self, name:str): 
@@ -16,34 +20,18 @@ class L2Handler:
         
         print(f'Handling annotation: {name}')
 
-    def handle_class        (self, name:str, static:bool, access:model.AccessModifier,extends:str|None, implements:list[str]): 
+    def handle_class        (self, name:str, static:bool, access:model.AccessModifier, finality:model.FinalityType, type:model.ClassType, extends:str|None, implements:list[str]): 
         
-        print(f'Handling{'' if not static else ' static'} class: {name} - {access.name if access is not model.AccessModifiers.PACKAGE_PRIVATE else 'package-private'} access, extends {repr(extends)}, implements {repr(implements)}')
+        print(f'Handling {'' if finality is model.FinalityTypes.DEFAULT else finality.name}{'' if not static else ' static'} {type.name}: {name} - {access.name if access is not model.AccessModifiers.PACKAGE_PRIVATE else 'package-private'} access, extends {repr(extends)}, implements {repr(implements)}')
 
-    def handle_scope_begin  (self): 
+    def handle_class_end    (self): 
 
-        print(f'Handling scope begin ({repr('{')})')
+        print(f'Handling end of class')
 
-    def handle_scope_end    (self): 
+    def handle_attr         (self, name:str, static:bool, access:model.AccessModifier, final:bool, type_name:str, value:str|None):
 
-        print(f'Handling scope end ({repr('}')})')
+        print(f'Handling declaration of {repr(name)} as {_access_name(access)}{' final' if final else ''} {repr(type_name)}{f' and initialize = {value}' if value is not None else ''}')
 
-    def handle_attr_decl    (self, name:str, static:bool, access:model.AccessModifier, type_name:str):
+    def handle_method       (self, name:str, static:bool, access:model.AccessModifier, finality:model.FinalityType, type_name:str, args:dict[str,model.Argument], body:str|None):
 
-        print(f'Handling declaration of {repr(name)} as {access.name} {repr(type_name)}')
-
-    def handle_attr_declinit(self, name:str, static:bool, access:model.AccessModifier, type_name:str, value:str):
-
-        print(f'Handling declaration of {repr(name)} as {access.name} {repr(type_name)} and initialize = {value}')
-
-    def handle_nest_begin   (self):
-
-        print(f'Handling nest begin ({repr('(')})')
-
-    def handle_nest_end     (self):
-
-        print(f'Handling nest end ({repr(')')})')
-
-    def handle_method_decl  (self, name:str, static:bool, access:model.AccessModifier, type_name:str, args:list[model.Argument]):
-
-        print(f'Handling declaration of {access.name}{' static' if static else ''} method {repr(name)} with arguments ({','.join(f'{arg.type_name} {repr(arg.name)}' for arg in args)}) -> {type_name}')
+        print(f'Handling declaration of {_access_name(access)}{' static' if static else ''}{'' if finality is model.FinalityTypes.DEFAULT else f' {finality.name}'} method {repr(name)} with arguments ({','.join(f'{'' if not v.final else 'final '}{v.type_name} {repr(a)}' for a,v in args.items())}) -> {type_name}\n{f'Body: {repr(body)}' if body is not None else 'No body'}')
