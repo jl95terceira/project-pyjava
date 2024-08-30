@@ -26,7 +26,10 @@ public abstract class FooBar extends Object implements Foo,Bar {
         
         System.out.println("Hello, constructor");
     }
-
+    public FooBar(String something) {
+        
+        System.out.println(String.format("Hello, %s", something));
+    }
     protected Boolean myMethod(String  x,
                                Integer y,
                                final Long z) {

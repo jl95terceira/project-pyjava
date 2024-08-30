@@ -1,4 +1,4 @@
-_DEBUG = 1
+_DEBUG = 0
 
 import typing
 
@@ -19,31 +19,32 @@ class L1Handler:
 
     def __init__                    (self):
 
-        self._next_handler                                = L2Handler()
-        self._part             :str                       = ''
-        self._line             :str                       = ''
-        self._class_name_stack :list[str]                 = list()
+        self._next_handler                                    = L2Handler()
+        self._part             :str                           = ''
+        self._line             :str                           = ''
+        self._class_name_stack :list[str]                     = list()
         # resettable state
-        self._state                                       = state.States    .BEGIN
-        self._args_state                                  = state.ArgsStates.BEGIN
-        self._handle                                      = self._handle_default
-        self._package          :str                 |None = None
-        self._static           :bool                      = False
-        self._imported         :str                 |None = None
-        self._access           :model.AccessModifier|None = None
-        self._finality         :model.FinalityType  |None = None
-        self._class_type       :model.ClassType     |None = None
-        self._class_name       :str                 |None = None
-        self._class_extends    :str                 |None = None
-        self._class_implements :list[str]                 = list()
-        self._type_name        :str                 |None = None
-        self._generic_depth    :int                       = 0
-        self._attr_name        :str                 |None = None
-        self._body_parts       :list[str]                 = list()
-        self._arg_name         :str                 |None = None
-        self._arg_type_name    :str                 |None = None
-        self._args             :dict[str,model.Argument]  = dict()
-        self._body_scope_depth:int                        = 1
+        self._state                                           = state.States    .BEGIN
+        self._args_state                                      = state.ArgsStates.BEGIN
+        self._handle                                          = self._handle_default
+        self._package          :str                     |None = None
+        self._static           :bool                          = False
+        self._imported         :str                     |None = None
+        self._access           :model.AccessModifier    |None = None
+        self._finality         :model.FinalityType      |None = None
+        self._class_type       :model.ClassType         |None = None
+        self._class_name       :str                     |None = None
+        self._class_extends    :str                     |None = None
+        self._class_implements :list[str]                     = list()
+        self._type_name        :str                     |None = None
+        self._generic_depth    :int                           = 0
+        self._attr_name        :str                     |None = None
+        self._body_parts       :list[str]                     = list()
+        self._arg_name         :str                     |None = None
+        self._arg_type_name    :str                     |None = None
+        self._args             :dict[str,model.Argument]      = dict()
+        self._args_after       :typing.Callable[[],None]|None = None
+        self._body_scope_depth:int                            = 0
 
     def _reset                      (self):
 
@@ -62,7 +63,7 @@ class L1Handler:
         self._generic_depth     = 0
         self._attr_name         = None
         self._body_parts       .clear()
-        self._body_scope_depth  = 1
+        self._body_scope_depth  = 0
         self._arg_name          = None
         self._arg_type_name     = None
         self._args             .clear()
@@ -119,7 +120,7 @@ class L1Handler:
 
     def _flush_constructor          (self): 
         
-        self._next_handler.handle_constructor(body=''.join(self._body_parts))
+        self._next_handler.handle_constructor(args=self._args, body=''.join(self._body_parts))
         self._reset()
 
     def _flush_attr_decl            (self):
@@ -164,12 +165,17 @@ class L1Handler:
                                          body      =''.join(self._body_parts))
         self._reset()
 
+    def _flush_signature_end        (self):
+
+            self._handle = self._handle_default
+            self._args_after()
+
     def _store_implements           (self):
 
         self._class_implements.append(self._part)
         self._state = state.States.CLASS_IMPLEMENTS_NAMED
 
-    def _store_method_arg_type_name (self):
+    def _store_signature_arg_type_name(self):
 
         if self._part == words.FINAL:
 
@@ -177,9 +183,9 @@ class L1Handler:
             return
 
         self._arg_type_name = self._part
-        self._state         = state.States.METHOD_ARG_TYPED
+        self._args_state    = state.ArgsStates.TYPED
 
-    def _store_method_arg           (self):
+    def _store_signature_arg        (self):
 
         self._args[self._arg_name] = model.Argument(type_name=self._arg_type_name, final=self._finality is model.FinalityTypes.FINAL)
         self._arg_name       = None
@@ -203,14 +209,9 @@ class L1Handler:
 
     def _parse_signature            (self, after:typing.Callable[[],None]):
     
-        if self._part == words.FINAL:
-
-            self._finality = model.FinalityTypes.FINAL
-
-        else:
-
-            self._arg_type_name = self._part
-            self._state         = arg_typed_state
+        self._handle     = self._handle_signature
+        self._args_state = state.ArgsStates.BEGIN
+        self._args_after = after
     
     def _handle_default             (self):
 
@@ -222,7 +223,8 @@ class L1Handler:
                 
                 if self._static and (self._type_name is None): 
                     
-                    self._state = state.States.STATIC_CONSTRUCTOR_BODY
+                    self._state             = state.States.STATIC_CONSTRUCTOR_BODY
+                    self._body_scope_depth += 1
                     
                 else:
 
@@ -392,6 +394,7 @@ class L1Handler:
                 if (self._type_name == self._class_name_stack[-1]): # constructor, since previously we got a word equal to the class' name
 
                     self._state = state.States.CONSTRUCTOR_SIGNATURE
+                    self._parse_signature(after=self._state_setter(state.States.CONSTRUCTOR_BODY))
 
                 else:
 
@@ -417,18 +420,15 @@ class L1Handler:
             elif self._part == words.PARENTH_OPEN:
 
                 self._state = state.States.METHOD_SIGNATURE
+                self._parse_signature(after=self._state_setter(state.States.METHOD_DECLARED))
 
             else: raise exc.AttributeException(self._line)
             return
             
-        elif self._state is state.States.CONSTRUCTOR_SIGNATURE:
-
-            self._parse_signature(arg_typed_state=state.States.CONSTRUCTOR_ARG_TYPED)
-            return
-        
         elif self._state is state.States.CONSTRUCTOR_BODY:
 
             self._parse_body_part(after=self._flush_constructor)
+            return
 
         elif self._state is state.States.ATTR_INITIALIZE:
 
@@ -442,71 +442,75 @@ class L1Handler:
                 self._body_parts.append(self._part)
                 return
 
-        elif self._state is state.States.METHOD_SIGNATURE:
-
-            if self._part == words.PARENTH_CLOSE:
-
-                self._state = state.States.METHOD_DECLARED
-                return
-
-            self._parse_signature(arg_typed_state=state.States.METHOD_ARG_TYPED)
-            return
-        
         elif self._state is state.States.METHOD_DECLARED:
 
             if   self._part == words.SEMICOLON:
 
                 self._flush_method_decl()
             
-            elif self._part == words.BRACE_OPEN:
+            else:
 
                 self._state = state.States.METHOD_BODY
+                self._handle_default()
 
-            else: raise exc.MethodException(self._line)
+            return
         
         elif self._state is state.States.METHOD_BODY:
 
             self._parse_body_part(after=self._flush_method_impl)
             return
-
-        raise NotImplementedError(self._line)
-
-    def _handle_signature           (self, after:typing.Callable[[],None]): 
         
-        if self._args_state is state.ArgsStates.TYPED:
+        raise NotImplementedError(self._line)
+        
+
+    def _handle_signature           (self): 
+        
+        if   self._args_state is state.ArgsStates.BEGIN:
+
+            if   self._part == words.PARENTH_CLOSE:
+
+                self._flush_signature_end()
+
+            elif self._part == words.FINAL:
+
+                self._finality = model.FinalityTypes.FINAL
+
+            else:
+
+                self._arg_type_name = self._part
+                self._args_state    = state.ArgsStates.TYPED
+
+        elif self._args_state is state.ArgsStates.TYPED:
 
             self._arg_name   = self._part
             self._args_state = state.ArgsStates.NAMED
-            return
         
         elif self._args_state is state.ArgsStates.NAMED:
 
-            self._store_method_arg()
-            if self._part == words.COMMA:
+            self._store_signature_arg()
+            if   self._part == words.COMMA:
 
                 self._args_state = state.ArgsStates.AFTER
-                return
             
-            if self._part == words.PARENTH_CLOSE:
+            elif self._part == words.PARENTH_CLOSE:
 
-                self._args_state = state.States.METHOD_DECLARED
-                return
+                self._flush_signature_end()
 
-            raise exc.MethodException(self._line)
+            else: raise exc.MethodException(self._line)
 
         elif self._args_state is state.ArgsStates.AFTER:
 
-            self._store_method_arg_type_name()
-            return        
+            self._store_signature_arg_type_name()
 
     def handle_part     (self, part   :str, line:str): 
         
         def _pad(x:str,v:int): return (lambda s: f'{s}{(v-len(s))*' '}')(x if isinstance(x, str) else str(x))
         if _DEBUG: print(
             _pad(self._state,                        40), 
-            _pad("static" if self._static else "",    8), 
-            _pad(self._access,                       35), 
-            _pad(self._type_name,                    15), 
+            #_pad("static" if self._static else "",    8), 
+            #_pad(self._access,                       35), 
+            #_pad(self._type_name,                    15), 
+            _pad(self._body_scope_depth,                  2),
             repr(part)
         )
         self._part = part
@@ -519,6 +523,4 @@ class L1Handler:
 
     def handle_spacing  (self, spacing:str, line:str):
 
-        if self._state is state.States.METHOD_BODY:
-
-            self._body_parts.append(spacing)
+        self._body_parts.append(spacing)
