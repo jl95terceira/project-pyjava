@@ -6,6 +6,9 @@ def _access_name(access:model.AccessModifier):
 
     return access.name if access is not model.AccessModifiers.PACKAGE_PRIVATE else 'package-private'
 
+# For now, all we do is print the events of the parsing process.
+# TODO: something more useful :)
+
 class L2Handler: 
 
     def handle_package           (self, name:str): 
