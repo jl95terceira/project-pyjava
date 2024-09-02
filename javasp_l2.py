@@ -1,10 +1,4 @@
-import dataclasses
-
 import javasp_model as model
-
-def _access_name(access:model.AccessModifier):
-
-    return access.name if access is not model.AccessModifiers.PACKAGE_PRIVATE else 'package-private'
 
 def _join_args(*aa:str):
 
