@@ -1,35 +1,42 @@
 import dataclasses
+import functools
+import uuid
 
 import javasp_words as words
-import javasp_util  as util
 from batteries import *
 
-class ClassType(util.Named): pass
+@dataclasses.dataclass
+class HashedAndKeyworded:
+
+    keyword:str = dataclasses.field()
+
+class ClassType(HashedAndKeyworded): pass
 class ClassTypes:
 
     _e:Enumerator[ClassType] = Enumerator()
-    CLASS     = _e(ClassType(words.CLASS))
-    INTERFACE = _e(ClassType(words.INTERFACE))
+    CLASS     = _e(ClassType(keyword=words.CLASS))
+    INTERFACE = _e(ClassType(keyword=words.INTERFACE))
+    ENUM      = _e(ClassType(keyword=words.ENUM))
     @staticmethod
     def values(): yield from ClassTypes._e
 
-class FinalityType(util.Named): pass
+class FinalityType(HashedAndKeyworded): pass
 class FinalityTypes:
 
     _e:Enumerator[FinalityType] = Enumerator()
-    DEFAULT         = _e(FinalityType(''))
-    ABSTRACT        = _e(FinalityType(words.ABSTRACT))
-    FINAL           = _e(FinalityType(words.FINAL))
+    DEFAULT  = _e(FinalityType(keyword=''))
+    ABSTRACT = _e(FinalityType(keyword=words.ABSTRACT))
+    FINAL    = _e(FinalityType(keyword=words.FINAL))
     def values(): yield from FinalityTypes._e
 
-class AccessModifier(util.Named): pass
+class AccessModifier(HashedAndKeyworded): pass
 class AccessModifiers:
 
     _e:Enumerator[AccessModifier] = Enumerator()
-    PUBLIC          = _e(AccessModifier(words.PUBLIC))
-    PROTECTED       = _e(AccessModifier(words.PROTECTED))
-    PACKAGE_PRIVATE = _e(AccessModifier(''))
-    PRIVATE         = _e(AccessModifier(words.PRIVATE))
+    PUBLIC    = _e(AccessModifier(keyword=words.PUBLIC))
+    PROTECTED = _e(AccessModifier(keyword=words.PROTECTED))
+    DEFAULT   = _e(AccessModifier(keyword=''))
+    PRIVATE   = _e(AccessModifier(keyword=words.PRIVATE))
     @staticmethod
     def values(): yield from AccessModifiers._e
 

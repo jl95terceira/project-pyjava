@@ -59,3 +59,7 @@ class L2Handler:
                                                    f'{type_name =}',
                                                    f'{args      =}',
                                                    f'{body      =}')}')
+
+    def handle_enum_value        (self, name:str, arg_values:list[str]):
+
+        print(f'Handling enum value: {name}{_join_args(f'{arg_values=}')}')

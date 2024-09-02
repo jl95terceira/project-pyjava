@@ -6,7 +6,7 @@ from javasp_l1 import L1Handler
 
 PATTERN_CHARACTER  = '\\w'
 PATTERN_WORD       = f'(?:^|(?<!{PATTERN_CHARACTER})){PATTERN_CHARACTER}+(?:$|(?!{PATTERN_CHARACTER}))'
-PATTERN            = re.compile(f'((?:{PATTERN_WORD})|(?:/\\*)|(?:\\*/)|(?://)|\\s+|.)')
+PATTERN            = re.compile(f'((?:{PATTERN_WORD})|(?:/\\*)|(?:\\*/)|(?://)|(\\\\.)|\\s+|.)')
 
 class L0Handler:
 
