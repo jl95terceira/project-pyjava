@@ -4,6 +4,9 @@ def _join_args(*aa:str):
 
     return f'\n{'\n  '.join(('', *aa))}\n'
 
+# For now, all we do is print the events of the parsing process.
+# TODO: something more useful :)
+
 class L2Handler: 
 
     def handle_package           (self, name:str): 
