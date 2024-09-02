@@ -14,6 +14,9 @@ FINALITY_TYPE_NAMES_SET     = {x.name   for x in model.FinalityTypes  .values()}
 FINALITY_TYPE_MAP_BY_NAME   = {x.name:x for x in model.FinalityTypes  .values()}
 CLASS_TYPE_NAMES_SET        = {x.name   for x in model.ClassTypes     .values()}
 CLASS_TYPE_MAP_BY_NAME      = {x.name:x for x in model.ClassTypes     .values()}
+BODY_STATES                 = {state.States.STATIC_CONSTRUCTOR_BODY,
+                               state.States.CONSTRUCTOR_BODY,
+                               state.States.METHOD_BODY}
 
 class L1Handler:
 
@@ -193,7 +196,18 @@ class L1Handler:
 
     def _parse_body_part            (self, after:typing.Callable[[],None]):
 
-        if self._part == words.BRACE_OPEN:
+        if self._body_scope_depth == 0:
+           
+           if self._part != words.BRACE_OPEN:
+
+                raise exc.BodyNotOpeningWithBraceException(self._line)
+           
+           else:
+               
+               self._body_scope_depth += 1
+               return
+
+        elif self._part == words.BRACE_OPEN:
 
             self._body_scope_depth += 1
 
@@ -240,23 +254,23 @@ class L1Handler:
 
             elif self._part in FINALITY_TYPE_NAMES_SET: 
                 
-                if self._finality is not None: raise exc.Exception(self._line)
+                if self._finality is not None: raise exc.FinalityRepeatedException(self._line)
                 self._finality = FINALITY_TYPE_MAP_BY_NAME[self._part]
 
             elif self._part in ACCESS_MOD_NAMES_SET:
 
-                if self._access is not None: raise exc.Exception(self._line)
+                if self._access is not None: raise exc.AccessModifierRepeatedException(self._line)
                 self._access = ACCESS_MOD_MAP_BY_NAME[self._part]
 
             elif self._part in CLASS_TYPE_NAMES_SET:
 
-                if self._class_type is not None: raise exc.Exception(self._line)
+                if self._class_type is not None: raise exc.ClassTypeRepeatedException(self._line)
                 self._class_type = CLASS_TYPE_MAP_BY_NAME[self._part]
                 self._state = state.States.CLASS_BEGIN
 
             elif self._part == words.STATIC    :
 
-                if self._static: raise exc.Exception(self._line)
+                if self._static: raise exc.StaticRepeatedException(self._line)
                 self._static = True
 
             elif self._part == words.ATSIGN    : 
@@ -398,7 +412,7 @@ class L1Handler:
 
                 else:
 
-                    raise exc.Exception(self._line)
+                    raise exc.MethodOrConstructorException(self._line)
 
             else:
 
@@ -523,4 +537,14 @@ class L1Handler:
 
     def handle_spacing  (self, spacing:str, line:str):
 
-        self._body_parts.append(spacing)
+        if   self._state is state.States.ATTR_INITIALIZE:
+        
+            self._body_parts.append(spacing)
+
+        elif self._state in BODY_STATES:
+
+            self._body_parts.append(spacing)
+
+    def handle_newline  (self, line:str):
+
+        self.handle_spacing(spacing='\n', line=line)

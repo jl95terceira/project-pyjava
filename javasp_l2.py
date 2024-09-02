@@ -34,11 +34,11 @@ class L2Handler:
 
     def handle_constructor       (self, args:dict[str,model.Argument], body:str):
 
-        print(f'Handling constructor with args {repr(args)}')
+        print(f'Handling constructor with args {repr(args)}\n  Body: {repr(body)}')
 
     def handle_attr              (self, name:str, static:bool, access:model.AccessModifier, final:bool, type_name:str, value:str|None):
 
-        print(f'Handling declaration of {repr(name)} as {_access_name(access)}{' final' if final else ''} {repr(type_name)}{f' and initialize = {value}' if value is not None else ''}')
+        print(f'Handling declaration of {repr(name)} as {_access_name(access)}{' final' if final else ''} {repr(type_name)}{f'\n  = {value}' if value is not None else ''}')
 
     def handle_method            (self, name:str, static:bool, access:model.AccessModifier, finality:model.FinalityType, type_name:str, args:dict[str,model.Argument], body:str|None):
 

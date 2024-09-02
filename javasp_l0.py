@@ -14,11 +14,12 @@ class L0Handler:
 
         self._next_handler              = L1Handler()
         self._state                     = state.States.DEFAULT
-        self._string_parts :list[str]   = list()
         self._comment_parts:list[str]   = list()
+        self._first_line                = True
 
     def handle_line(self, line:str):
 
+        # parsing a comment?
         if   self._state is state.States.IN_COMMENT_ONELINE: # // ...
 
             self._comment_parts.append('\n') # newline
@@ -29,22 +30,19 @@ class L0Handler:
 
             self._comment_parts.append('\n') # newline
 
+        # at 1st line? 
+        if not self._first_line:
+
+            self._next_handler.handle_newline(line=line)
+
+        else:
+
+            self._first_line = False
+
         for match in re.finditer(pattern=PATTERN, string=line):
 
             part = match.group(1)
-            if self._state is state.States.IN_STRING:  
-                
-                if part != '"':
-
-                    self._string_parts.append(part)
-
-                else:
-
-                    self._state = state.States.DEFAULT
-                    self._next_handler.handle_part(part=''.join(self._string_parts), line=line)
-                    self._string_parts.clear()
-
-            elif self._state is state.States.IN_COMMENT_ONELINE:
+            if self._state is state.States.IN_COMMENT_ONELINE:
 
                 self._comment_parts.append(part)
                 # continue, because everything else in this line is part of the comment
@@ -66,10 +64,8 @@ class L0Handler:
                     
                     self._next_handler.handle_spacing(spacing=part, line=line)
 
-                elif part == '"' : self._state = state.States.IN_STRING
                 elif part == '/*': self._state = state.States.IN_COMMENT_MULTILINE
                 elif part == '//': self._state = state.States.IN_COMMENT_ONELINE
                 else:
 
                     self._next_handler.handle_part(part=part, line=line)
-                
