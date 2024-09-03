@@ -74,6 +74,9 @@ class Class:
     implements:list[str]
 
 @dataclasses.dataclass
+class ClassEnd: pass
+
+@dataclasses.dataclass
 class StaticConstructor:
 
     body:str

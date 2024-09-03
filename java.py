@@ -1,6 +1,7 @@
 import sys
 
 import project.package as java
+import project.tests.test_
 
 def main():
     

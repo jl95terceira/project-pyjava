@@ -170,7 +170,7 @@ class L1Handler:
     def _flush_class_end            (self):
 
         self._class_name_stack.pop()
-        self._next_handler.handle_class_end()
+        self._next_handler.handle_class_end(model.ClassEnd())
         self._reset()
 
     def _flush_static_constructor   (self): 

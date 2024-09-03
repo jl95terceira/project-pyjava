@@ -25,7 +25,7 @@ class L2Handler:
         
         print(f'Handling class: {class_}\n')
 
-    def handle_class_end         (self): 
+    def handle_class_end         (self, class_end:model.ClassEnd=model.ClassEnd()): 
 
         print(f'Handling end of class\n')
 
