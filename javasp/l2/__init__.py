@@ -1,4 +1,4 @@
-import javasp_model as model
+from .. import model
 
 def _join_args(*aa:str):
 

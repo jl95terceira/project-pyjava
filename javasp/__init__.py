@@ -1,7 +1,7 @@
 import re
 import typing
 
-from javasp_l0 import *
+from .l0 import L0Handler
 
 def parse_whole(source:str):
 

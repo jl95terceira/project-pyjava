@@ -13,9 +13,12 @@ public abstract class FooBar extends Object implements Foo,Bar {
     private static       Object   ab;
     private              long     cde     = 123L;
     public  static final String   answer  = "forty two";
-    public               String[] answer2 = new String[]{"for\\ty \"two\""};
-    public         final String   answer3 = "".join(" ",List.of("forty", "two"));
-    private Map<String,String>    props   = new HashMap<>() {};
+    public               String[] answer2 = new String[]{"for\\ty             \"two\""};
+    /**
+     * this is another multi-line comment with            a             lot           of    space
+     */
+    public static        byte  [] raw;
+    public         final String   answer3 = "".join(" ",List.of("forty", "two")); // one-line
 
     static {
 
@@ -26,22 +29,25 @@ public abstract class FooBar extends Object implements Foo,Bar {
         
         System.out.println("Hello, constructor");
     }
-    public FooBar(String something) {
+    public FooBar(String something, byte b, byte[] bb) {
         
         System.out.println(String.format("Hello, %s", something));
     }
-    protected Boolean myMethod(String  x,
+
+    protected       Boolean myMethod(String  x,
                                Integer y,
                                final Long z) {
 
         return (new Thingy() {
-
-            more { braces {}}
-
+            {
+                {
+                    // lots of braces :)
+                }
+            }
         }).get();
     }
-    public          void coiso() {}
-    public abstract void coisa();
+    public          void    coiso   () {}
+    public abstract void    coisa   ();
 
     public interface YelloPink {
 
@@ -53,14 +59,11 @@ public abstract class FooBar extends Object implements Foo,Bar {
 
         VALUE_A;
     }
-
     public enum FooEnum2 {
 
         VALUE_A,
         VALUE_B;
     }
-
-    public static byte[] raw;
     public enum FooEnum3 {
 
         VALUE_A(123);
@@ -70,8 +73,8 @@ public abstract class FooBar extends Object implements Foo,Bar {
     public enum FooEnum4 {
 
         VALUE_A(123),
-        VALUE_B("DEF");
+        VALUE_B("D EF");
 
-        FooEnum3(Object x) {}
+        FooEnum4(final Object x) {}
     }
 }

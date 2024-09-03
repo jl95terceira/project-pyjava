@@ -1,9 +1,8 @@
 import dataclasses
-import functools
-import uuid
 
-import javasp_words as words
-from batteries import *
+from .batteries import *
+
+from .          import words
 
 @dataclasses.dataclass
 class HashedAndKeyworded:

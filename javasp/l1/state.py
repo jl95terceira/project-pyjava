@@ -1,9 +1,9 @@
-import javasp_util as util
+from .. import util
 
 class State(util.Named): pass
 class States:
 
-    BEGIN                       = State('')
+    DEFAULT                     = State('')
     PACKAGE                     = State('Package')
     IMPORT                      = State('Import')
     ANNOTATION                  = State('Annotation')
@@ -15,6 +15,7 @@ class States:
     CLASS_IMPLEMENTS_AFTER      = State('Class Impl. After')
     ENUM                        = State('Enum')
     ENUM_NAMED                  = State('Enum Named')
+    ENUM_DEFINED                = State('Enum Defined')
     CONSTRUCTOR_SIGNATURE       = State('Constr. Sign.')
     CONSTRUCTOR_DECLARED        = State('Constr. Declared')
     CONSTRUCTOR_BODY            = State('Constr. Body')
@@ -30,18 +31,18 @@ class States:
 class TypeState(util.Named): pass
 class TypeStates:
 
-    BEGIN       = TypeState('')
-    ONGOING     = TypeState('Ongoing')
-    ONGOING_DOT = TypeState('Ongoing: Dot')
+    BEGIN    = TypeState('Begin')
+    DEFAULT  = TypeState('')
+    AFTERDOT = TypeState('After-Dot')
 
-class SignState(util.Named): pass
-class SignStates:
+class SignatureState(util.Named): pass
+class SignatureStates:
 
-    BEGIN            = SignState('')
-    ONGOING          = SignState('Ongoing')
-    ONGOING_TYPED    = SignState('Ongoing: Typed')
-    ONGOING_NAMED    = SignState('Ongoing: Named')
-    ONGOING_SEPARATE = SignState('Ongoing: Sep.')
+    BEGIN        = SignatureState('Begin')
+    DEFAULT      = SignatureState('')
+    ARG_TYPED    = SignatureState('Arg Typed')
+    ARG_NAMED    = SignatureState('Arg Named')
+    ARG_SEPARATE = SignatureState('Arg Sep.')
 
 class BodyState(util.Named): pass
 class BodyStates:
@@ -52,6 +53,6 @@ class BodyStates:
 class ParArgsState(util.Named): pass
 class ParArgsStates:
 
-    BEGIN         = ParArgsState('')
-    ONGOING       = ParArgsState('Ongoing')
-    ONGOING_SEP   = ParArgsState('Ongoing: Sep.')
+    BEGIN    = ParArgsState('Begin')
+    DEFAULT  = ParArgsState('')
+    SEPARATE = ParArgsState('Sep.')

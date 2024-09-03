@@ -1,13 +1,14 @@
-_DEBUG = 1
+_DEBUG          = 0
+_DEBUG_HANDLERS = 0
 
 import re
 import typing
 
-import javasp_l1_state as state
-import javasp_l1_exc   as exc
-import javasp_model    as model
-import javasp_words    as words
-from javasp_l2 import L2Handler
+from .    import state
+from .    import exc
+from ..   import model
+from ..   import words
+from ..l2 import L2Handler
 
 _ACCESS_MOD_NAMES_SET        = {x.keyword   for x in model.AccessModifiers.values()}
 _ACCESS_MOD_MAP_BY_NAME      = {x.keyword:x for x in model.AccessModifiers.values()}
@@ -28,10 +29,11 @@ class L1Handler:
 
             def _pad(x:str,v:int): return (lambda s: f'{s}{(v-len(s))*' '}')(x if isinstance(x, str) else str(x))
             if _DEBUG: print(
-                _pad(f'{self._state}'     , 30), 
-                _pad(f'{len(self._handlers_stack)=}', 20),
-                #_pad(f'{self._type_state}', 30),
-                #_pad(f'{self._sign_state}', 30),
+                _pad(f'{self._state}'     , 35), 
+                #_pad(f'{len(self._handlers_stack)=}', 20),
+                _pad(f'{self._class_name_stack[-1] if self._class_name_stack else ''}', 10),
+                _pad(f'{self._type_state}', 30),
+                _pad(f'{self._sign_state}', 30),
                 #_pad(f'{self._body_state}', 30),
                 _pad(f'{self._parargs_state}', 30),
                 repr(self._part)
@@ -42,17 +44,17 @@ class L1Handler:
 
     def __init__                    (self):
 
-        self._next_handler                                      = L2Handler()
-        self._part             :str                             = ''
-        self._line             :str                             = ''
-        self._class_name_stack :list[str]                       = list()
-        self._handlers_stack   :list[typing.Callable[[],None]]  = list()
+        self._next_handler                                    = L2Handler()
+        self._part             :str                           = ''
+        self._line             :str                           = ''
+        self._class_name_stack :list[str]                     = list()
+        self._handlers_stack   :list[_Handler]                = list()
+        self._handler                                         = _Handler(self._handle_default, name='default')
         # resettable state
-        self._state                                           = state.States.BEGIN
+        self._state                                           = state.States.DEFAULT
         self._type_state       :state.TypeState         |None = None
-        self._sign_state       :state.SignState         |None = None
+        self._sign_state       :state.SignatureState    |None = None
         self._body_state       :state.BodyState         |None = None
-        self._handle                                          = self._handle_default
         self._package          :str                     |None = None
         self._static           :bool                          = False
         self._imported         :str                     |None = None
@@ -70,12 +72,12 @@ class L1Handler:
         self._sign_after       :typing.Callable[[],None]|None = None
         self._type_name        :str                     |None = None
         self._type_after       :typing.Callable[[],None]|None = None
-        self._generictype_depth:int                     |None = None
+        self._type_depth:int                            |None = None
         self._body_parts       :list[str]                     = list()
-        self._body_scope_depth :int                     |None = None
+        self._body_depth :int                           |None = None
         self._body_after       :typing.Callable[[],None]|None = None
         self._enumv_name       :str                     |None = None
-        self._enumv_arg_values :list[str]               |None = list()
+        self._parargs          :list[str]               |None = list()
         self._parargs_state    :state.ParArgsState      |None = None
         self._parargs_after    :typing.Callable[[],None]|None = None
         self._parargs_value    :str                     |None = None
@@ -83,11 +85,10 @@ class L1Handler:
 
     def _reset                      (self, another_state:state.State|None=None):
 
-        self._state             = state.States.BEGIN if another_state is None else another_state
+        self._state             = state.States.DEFAULT if another_state is None else another_state
         self._type_state        = None
         self._sign_state        = None
         self._body_state        = None
-        self._handle            = self._handle_default
         self._package           = None
         self._static            = False
         self._imported          = None
@@ -104,26 +105,26 @@ class L1Handler:
         self._sign             .clear()
         self._sign_after        = None
         self._type_name         = None
-        self._generictype_depth = None
+        self._type_depth        = None
         self._body_parts       .clear()
-        self._body_scope_depth  = None
+        self._body_depth        = None
         self._enumv_name        = None
-        self._enumv_arg_values .clear()
+        self._parargs    .clear()
         self._parargs_state     = None
         self._parargs_after     = None
         self._parargs_value     = None
         self._parargs_depth     = None
 
-    def _stack_handler              (self, handler:typing.Callable[[], None]):
+    def _stack_handler              (self, handler:'_Handler'):
 
-        if _DEBUG: print('STACK HANDLER')
-        self._handlers_stack.append(self._handle)
-        self._handle = handler
+        if _DEBUG_HANDLERS: print(f'STACK HANDLER: {self._handler.name} -> {handler.name}')
+        self._handlers_stack.append(self._handler)
+        self._handler = handler
 
     def _unstack_handler            (self):
 
-        if _DEBUG: print('UNSTACK HANDLER')
-        self._handle = self._handlers_stack.pop()
+        if _DEBUG_HANDLERS: print(f'UNSTACK HANDLER: {self._handlers_stack[-1].name} <- {self._handler.name}')
+        self._handler = self._handlers_stack.pop()
 
     def _state_setter               (self, state_:state.State):
 
@@ -224,18 +225,18 @@ class L1Handler:
                                          body      =''.join(self._body_parts))
         self._reset()
 
-    def _flush_signature_end        (self):
+    def _flush_signature            (self):
 
         self._unstack_handler()
         self._sign_state = None
         self._sign_after()
 
-    def _flush_type_end             (self):
+    def _flush_type                 (self):
 
         self._unstack_handler()
         self._type_state = None
         self._type_after()
-        self._handle    () # re-handle part (word), since it was used only for look-ahead
+        self._handler    () # re-handle part (word), since it was used only for look-ahead
 
     def _flush_body                 (self):
 
@@ -244,37 +245,30 @@ class L1Handler:
 
     def _flush_enumv_empty          (self):
 
-        # no handler to unstack - called from default handler directly
         self._next_handler.handle_enum_value(name=self._enumv_name, arg_values=list())
+        self._state = state.States.ENUM_DEFINED
 
     def _flush_enumv                (self):
 
+        self._next_handler.handle_enum_value(name=self._enumv_name, arg_values=self._parargs)
+        self._state = state.States.ENUM_DEFINED
+
+    def _flush_parargs              (self):
+
+        if self._parargs_value:
+
+            self._store_pararg()
+
         self._unstack_handler()
-        self._next_handler.handle_enum_value(name=self._enumv_name, arg_values=self._enumv_arg_values)
         self._parargs_state = None
         self._parargs_after()
-
-    def _store_implements           (self):
-
-        self._class_implements.append(self._part)
-        self._state = state.States.CLASS_IMPLEMENTS_NAMED
 
     def _store_attr_type            (self):
 
         self._attr_type_name = self._type_name
         self._state = state.States.ATTR_TYPED
 
-    def _store_signature_arg_type_name(self):
-
-        if self._part == words.FINAL:
-
-            self._finality = model.FinalityTypes.FINAL
-            return
-
-        self._arg_type_name = self._part
-        self._sign_state    = state.SignStates.ONGOING_TYPED
-
-    def _store_signature_arg        (self):
+    def _store_sign_arg             (self):
 
         self._sign[self._arg_name] = model.Argument(type_name=self._arg_type_name, final=self._finality is model.FinalityTypes.FINAL)
         self._arg_name       = None
@@ -283,49 +277,49 @@ class L1Handler:
     def _store_arg_type             (self):
 
         self._arg_type_name = self._type_name
-        self._sign_state = state.SignStates.ONGOING_TYPED
+        self._sign_state = state.SignatureStates.ARG_TYPED
 
-    def _store_enumv_arg            (self):
+    def _store_pararg               (self):
 
-        self._enumv_arg_values.append(self._parargs_value)
+        self._parargs.append(self._parargs_value)
         self._parargs_value = ''
 
     def _parse_body                 (self, after:typing.Callable[[],None]):
 
-        self._stack_handler(self._handle_body)
+        self._stack_handler(_Handler(self._handle_body, name='BODY'))
         self._body_state       = state.BodyStates.BEGIN
-        self._body_scope_depth = 0
+        self._body_depth       = 0
         self._body_after       = after
-        self._handle() # re-handle part ('{'), since it was used only for look-ahead
+        self._handler() # re-handle part ('{'), since it was used only for look-ahead
 
     def _parse_signature            (self, after:typing.Callable[[],None]):
     
-        self._stack_handler(self._handle_signature)
-        self._sign_state = state.SignStates.BEGIN
+        self._stack_handler(_Handler(self._handle_signature, name='SIGNATURE'))
+        self._sign_state = state.SignatureStates.BEGIN
         self._sign_after = after
-        self._handle() # # re-handle part ('('), since it was used only for look-ahead
+        self._handler() # re-handle part ('('), since it was used only for look-ahead
     
     def _parse_type                 (self, after:typing.Callable[[],None]):
 
-        self._stack_handler(self._handle_type)
+        self._stack_handler(_Handler(self._handle_type, name='TYPE'))
         self._type_state        = state.TypeStates.BEGIN
         self._type_name         = ''
-        self._generictype_depth = 0
+        self._type_depth        = 0
         self._type_after        = after
-        self._handle() # # re-handle part (word), since it was used only for look-ahead
+        self._handler() # re-handle part (word), since it was used only for look-ahead
 
     def _parse_parargs   (self, after:typing.Callable[[],None]):
 
-        self._stack_handler(self._handle_parargs)
+        self._stack_handler(_Handler(self._handle_parargs, name='PARARGS'))
         self._parargs_state = state.ParArgsStates.BEGIN
         self._parargs_depth = 0
         self._parargs_after = after
-        self._handle() # re-handle part ('('), since it was used only for look-ahead
+        self._handler() # re-handle part ('('), since it was used only for look-ahead
 
     @__DEBUGGED
     def _handle_default             (self):
 
-        if   self._state is state.States.BEGIN:
+        if   self._state is state.States.DEFAULT:
 
             if   self._part == words.SEMICOLON  : pass
 
@@ -362,7 +356,7 @@ class L1Handler:
 
                 if self._class_type is not None: raise exc.ClassTypeRepeatedException(self._line)
                 self._class_type = _CLASS_TYPE_MAP_BY_NAME[self._part]
-                self._state = state.States.CLASS_BEGIN
+                self._state      = state.States.CLASS_BEGIN
 
             elif self._part == words.STATIC    :
 
@@ -456,7 +450,8 @@ class L1Handler:
 
         elif self._state is state.States.CLASS_IMPLEMENTS:
 
-            self._store_implements()
+            self._class_implements.append(self._part)
+            self._state = state.States.CLASS_IMPLEMENTS_NAMED
             return
 
         elif self._state is state.States.CLASS_IMPLEMENTS_NAMED:
@@ -474,7 +469,8 @@ class L1Handler:
         
         elif self._state is state.States.CLASS_IMPLEMENTS_AFTER:
 
-            self._store_implements()
+            self._state = state.States.CLASS_IMPLEMENTS
+            self._handler()
             return
 
         elif self._state is state.States.ATTR_TYPED:
@@ -570,15 +566,11 @@ class L1Handler:
 
         elif self._state is state.States.ENUM_NAMED:
 
-            if   self._part == words.SEMICOLON:
+            if   self._part in {words.SEMICOLON,
+                                words.COMMA}:
 
                 self._flush_enumv_empty()
-                self._reset()
-
-            elif self._part == words.COMMA:
-
-                self._flush_enumv_empty()
-                self._reset(another_state=state.States.ENUM)
+                self._handler() # re-handle part (either semicolon or comma), as it was used only for look-ahead
 
             else:
                 
@@ -586,24 +578,37 @@ class L1Handler:
 
             return
 
+        elif self._state is state.States.ENUM_DEFINED:
+
+            if self._part == words.SEMICOLON:
+
+                self._reset()
+
+            elif self._part is words.COMMA:
+
+                self._reset(another_state=state.States.ENUM)
+
+            else: raise exc.EnumValueException(self._line)
+            return
+
         raise NotImplementedError(self._line)
         
     @__DEBUGGED
     def _handle_signature           (self): 
         
-        if   self._sign_state is state.SignStates.BEGIN:
+        if   self._sign_state is state.SignatureStates.BEGIN:
 
             if  self._part != words.PARENTH_OPEN:
 
-                raise exc.MethodException(self._line)
+                raise exc.MethodOpenException(self._line)
             
-            self._sign_state = state.SignStates.ONGOING
+            self._sign_state = state.SignatureStates.DEFAULT
 
-        elif self._sign_state is state.SignStates.ONGOING:
+        elif self._sign_state is state.SignatureStates.DEFAULT:
 
             if   self._part == words.PARENTH_CLOSE:
 
-                self._flush_signature_end()
+                self._flush_signature()
 
             elif self._part == words.FINAL:
 
@@ -613,55 +618,58 @@ class L1Handler:
 
                 self._parse_type(after=self._store_arg_type)
 
-        elif self._sign_state is state.SignStates.ONGOING_TYPED:
+        elif self._sign_state is state.SignatureStates.ARG_TYPED:
 
             self._arg_name   = self._part
-            self._sign_state = state.SignStates.ONGOING_NAMED
+            self._sign_state = state.SignatureStates.ARG_NAMED
         
-        elif self._sign_state is state.SignStates.ONGOING_NAMED:
+        elif self._sign_state is state.SignatureStates.ARG_NAMED:
 
-            self._store_signature_arg()
             if   self._part == words.COMMA:
 
-                self._sign_state = state.SignStates.ONGOING_SEPARATE
+                self._store_sign_arg()
+                self._sign_state = state.SignatureStates.ARG_SEPARATE
             
             elif self._part == words.PARENTH_CLOSE:
 
-                self._flush_signature_end()
+                self._store_sign_arg()
+                self._flush_signature    ()
 
-            else: raise exc.MethodException(self._line)
+            else: raise exc.MethodAfterNameException(self._line)
 
-        elif self._sign_state is state.SignStates.ONGOING_SEPARATE:
+        elif self._sign_state is state.SignatureStates.ARG_SEPARATE:
 
-            self._store_signature_arg_type_name()
+            if not _WORD_PATTERN.match(self._part): raise exc.MethodException(self._line)
+            self._sign_state = state.SignatureStates.DEFAULT
+            self._handler()
 
         else: raise AssertionError(f'{self._sign_state=}')
 
     @__DEBUGGED
     def _handle_type                (self):
 
-        if self._type_state is state.TypeStates.BEGIN:
+        if self._type_state   is state.TypeStates.BEGIN:
 
             if not _WORD_PATTERN.match(self._part):
 
                 raise exc.TypeException(self._line)
             
             self._type_name  += self._part
-            self._type_state  = state.TypeStates.ONGOING
+            self._type_state  = state.TypeStates.DEFAULT
 
-        elif self._type_state is state.TypeStates.ONGOING:
+        elif self._type_state is state.TypeStates.DEFAULT:
 
             if   self._part in words.ANGLE_OPEN: # generic type - nest
 
                 self._type_name += self._part
-                self._generictype_depth += 1
+                self._type_depth += 1
 
             elif self._part in words.ANGLE_CLOSE: # generic type - de-nest
 
                 self._type_name += self._part
-                self._generictype_depth -= 1
+                self._type_depth -= 1
 
-            elif self._generictype_depth > 0: # generic type
+            elif self._type_depth > 0: # generic type
 
                 self._type_name += self._part
 
@@ -673,17 +681,17 @@ class L1Handler:
             elif self._part == words.DOT:
 
                 self._type_name  += self._part
-                self._type_state  = state.TypeStates.ONGOING_DOT
+                self._type_state  = state.TypeStates.AFTERDOT
 
             else:
 
-                self._flush_type_end()
+                self._flush_type()
 
-        elif self._type_state is state.TypeStates.ONGOING_DOT:
+        elif self._type_state is state.TypeStates.AFTERDOT:
 
             if not _WORD_PATTERN.match(self._part): raise exc.TypeException(self._line)
             self._type_name  += self._part
-            self._type_state  = state.TypeStates.ONGOING
+            self._type_state  = state.TypeStates.DEFAULT
 
         else: raise AssertionError(f'{self._type_state=}')
 
@@ -692,9 +700,9 @@ class L1Handler:
 
         if self._body_state is state.BodyStates.BEGIN:
 
-            if self._body_scope_depth != 0:
+            if self._body_depth != 0:
 
-                raise AssertionError(f'{self._body_scope_depth=}')
+                raise AssertionError(f'{self._body_depth=}')
 
             if self._part != words.BRACE_OPEN:
 
@@ -703,19 +711,19 @@ class L1Handler:
             else:
                
                 self._body_state = state.BodyStates.ONGOING
-                self._body_scope_depth += 1
+                self._body_depth += 1
 
         elif self._body_state is state.BodyStates.ONGOING:
 
             if self._part == words.BRACE_OPEN:
 
-                self._body_scope_depth += 1
+                self._body_depth += 1
                 self._body_parts.append(self._part)
 
             elif self._part == words.BRACE_CLOSE:
 
-                self._body_scope_depth -= 1
-                if self._body_scope_depth == 0:
+                self._body_depth -= 1
+                if self._body_depth == 0:
 
                     self._flush_body()
                 
@@ -726,7 +734,7 @@ class L1Handler:
         else: raise AssertionError(f'{self._body_state=}')
 
     @__DEBUGGED
-    def _handle_parargs  (self):
+    def _handle_parargs             (self):
 
         if self._parargs_state is state.ParArgsStates.BEGIN:
 
@@ -736,11 +744,11 @@ class L1Handler:
             
             else:
 
-                self._parargs_state  = state.ParArgsStates.ONGOING
+                self._parargs_state  = state.ParArgsStates.DEFAULT
                 self._parargs_value  = ''
                 self._parargs_depth += 1
 
-        elif self._parargs_state is state.ParArgsStates.ONGOING:
+        elif self._parargs_state is state.ParArgsStates.DEFAULT:
 
             if self._part == words.PARENTH_CLOSE:
 
@@ -751,8 +759,7 @@ class L1Handler:
 
                 else:
 
-                    self._store_enumv_arg()
-                    self._flush_enumv    ()
+                    self._flush_parargs()
 
             elif self._part == words.PARENTH_OPEN:
 
@@ -763,8 +770,8 @@ class L1Handler:
 
                 if self._parargs_depth == 0:
 
-                    self._store_enumv_arg()
-                    self._parargs_state = state.ParArgsStates.ONGOING_SEP
+                    self._store_pararg()
+                    self._parargs_state = state.ParArgsStates.SEPARATE
                 
                 else:
 
@@ -774,14 +781,14 @@ class L1Handler:
 
                 self._parargs_value += self._part
 
-        elif self._parargs_state is state.ParArgsStates.ONGOING_SEP: 
+        elif self._parargs_state is state.ParArgsStates.SEPARATE: 
             
             if self._part == words.PARENTH_CLOSE: 
                 
                 raise exc.EnumValueException(self._line)
             
-            self._parargs_state = state.ParArgsStates.ONGOING
-            self._handle() # re-handle part, since it was used only for look-ahead
+            self._parargs_state = state.ParArgsStates.DEFAULT
+            self._handler() # re-handle part, since it was used only for look-ahead
 
         else: raise AssertionError(f'{self._parargs_state=}')
 
@@ -789,7 +796,7 @@ class L1Handler:
         
         self._part = part
         self._line = line
-        self._handle()
+        self._handler()
 
     def handle_comment              (self, comment:str, line:str):
 
@@ -805,7 +812,7 @@ class L1Handler:
 
             self._body_parts.append(spacing)
 
-    def handle_newline              (self, line:str):
+    def handle_newline              (self, line   :str):
 
         self.handle_spacing(spacing='\n', line=line)
 
@@ -817,3 +824,12 @@ class _StateSetter:
         self._s  = s
 
     def __call__(self): self._l1._state = self._s
+
+class _Handler:
+
+    def __init__(self, callable:typing.Callable[[],None], name:str): 
+        
+        self._callable = callable
+        self.name      = name
+
+    def __call__(self): self._callable()
