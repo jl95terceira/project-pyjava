@@ -6,6 +6,7 @@ import typing
 
 from .    import state
 from .    import exc
+from ..   import handlers
 from ..   import model
 from ..   import words
 from ..l2 import L2Handler
@@ -42,9 +43,9 @@ class L1Handler:
         
         return g
 
-    def __init__                    (self):
+    def __init__                    (self, stream_handler:handlers.StreamHandler):
 
-        self._next_handler                                    = L2Handler()
+        self._next_handler                                    = stream_handler
         self._part             :str                           = ''
         self._line             :str                           = ''
         self._class_name_stack :list[str]                     = list()

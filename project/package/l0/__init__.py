@@ -2,15 +2,16 @@ import re
 
 from .    import exc
 from .    import state
+from ..   import handlers
 from ..l1 import L1Handler
 
 PATTERN  = re.compile(f'((?:\\w+)|(?:/\\*)|(?:\\*/)|(?://)|(?:\\\\.)|\\s+|.)')
 
 class L0Handler:
 
-    def __init__(self):
+    def __init__(self, stream_handler:handlers.StreamHandler):
 
-        self._next_handler              = L1Handler()
+        self._next_handler              = L1Handler(stream_handler=stream_handler)
         self._state                     = state.States.DEFAULT
         self._comment_parts:list[str]   = list()
         self._string_parts :list[str]   = list()
