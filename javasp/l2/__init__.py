@@ -9,57 +9,42 @@ def _join_args(*aa:str):
 
 class L2Handler: 
 
-    def handle_package           (self, name:str): 
+    def handle_package           (self, package:model.Package): 
         
-        print(f'Handling package: {name}')
+        print(f'Handling package: {package}\n')
 
-    def handle_import            (self, name:str,static:bool): 
+    def handle_import            (self, import_:model.Import): 
         
-        print(f'Handling import: {name}{_join_args(f'{static    =}')}')
+        print(f'Handling import: {import_}\n')
         
-    def handle_annotation        (self, name:str): 
+    def handle_annotation        (self, annot:model.Annotation): 
         
-        print(f'Handling annotation: {name}')
+        print(f'Handling annotation: {annot}\n')
 
-    def handle_class             (self, name:str, static:bool, access:model.AccessModifier, finality:model.FinalityType, type:model.ClassType, extends:str|None, implements:list[str]): 
+    def handle_class             (self, class_:model.Class): 
         
-        print(f'Handling class: {name}{_join_args(f'{access    =}',
-                                                  f'{static    =}',
-                                                  f'{finality  =}',
-                                                  f'{type      =}',
-                                                  f'{extends   =}',
-                                                  f'{implements=}')}')
+        print(f'Handling class: {class_}\n')
 
     def handle_class_end         (self): 
 
-        print(f'Handling end of class')
+        print(f'Handling end of class\n')
 
-    def handle_static_constructor(self, body:str):
+    def handle_static_constructor(self, sconstr:model.StaticConstructor):
 
-        print(F'Handling static constructor{_join_args(f'{body      =}')}')
+        print(F'Handling static constructor{sconstr}\n')
 
-    def handle_constructor       (self, args:dict[str,model.Argument], body:str):
+    def handle_constructor       (self, constr:model.Constructor):
 
-        print(f'Handling constructor:{_join_args(f'{args      =}',
-                                                 f'{body      =}')}')
+        print(f'Handling constructor:{constr}\n')
 
-    def handle_attr              (self, name:str, static:bool, access:model.AccessModifier, final:bool, type_name:str, value:str|None):
+    def handle_attr              (self, attr:model.Attribute):
 
-        print(f'Handling attribute: {name}{_join_args(f'{access    =}',
-                                                      f'{static    =}',
-                                                      f'{final     =}',
-                                                      f'{type_name =}',
-                                                      f'{value     =}')}')
+        print(f'Handling attribute: {attr}\n')
+            
+    def handle_method            (self, method:model.Method):
 
-    def handle_method            (self, name:str, static:bool, access:model.AccessModifier, finality:model.FinalityType, type_name:str, args:dict[str,model.Argument], body:str|None):
+        print(f'Handling method: {method}\n')
 
-        print(f'Handling method: {name}{_join_args(f'{access    =}',
-                                                   f'{static    =}',
-                                                   f'{finality  =}',
-                                                   f'{type_name =}',
-                                                   f'{args      =}',
-                                                   f'{body      =}')}')
+    def handle_enum_value        (self, enum:model.EnumValue):
 
-    def handle_enum_value        (self, name:str, arg_values:list[str]):
-
-        print(f'Handling enum value: {name}{_join_args(f'{arg_values=}')}')
+        print(f'Handling enum value: {enum}\n')

@@ -1,3 +1,4 @@
+import collections.abc
 import dataclasses
 
 from .batteries import *
@@ -44,3 +45,70 @@ class Argument:
 
     type_name:str
     final    :bool
+
+@dataclasses.dataclass
+class Package:
+
+    name:str
+
+@dataclasses.dataclass
+class Import:
+
+    name  :str
+    static:bool
+
+@dataclasses.dataclass
+class Annotation:
+
+    name:str
+
+@dataclasses.dataclass
+class Class:
+
+    name      :str
+    static    :bool
+    access    :AccessModifier
+    finality  :FinalityType
+    type      :ClassType
+    extends   :str|None
+    implements:list[str]
+
+@dataclasses.dataclass
+class StaticConstructor:
+
+    body:str
+
+@dataclasses.dataclass
+class Constructor:
+
+    args:dict[str,Argument]
+    body:str
+
+@dataclasses.dataclass
+class Attribute:
+
+    name:str
+    static:bool
+    access:AccessModifier
+    final:bool
+    type_name:str
+    value:str|None
+
+@dataclasses.dataclass
+class Method:
+
+    name:str
+    static:bool
+    access:AccessModifier
+    finality:FinalityType
+    type_name:str
+    args:dict[str,Argument]
+    body:str|None
+
+@dataclasses.dataclass
+class EnumValue:
+
+    name:str
+    arg_values:list[str]
+
+

@@ -140,13 +140,13 @@ class L1Handler:
 
     def _flush_import               (self):
 
-        self._next_handler.handle_import(name  =self._imported,
-                                         static=self._static)
+        self._next_handler.handle_import(model.Import(name  =self._imported,
+                                                      static=self._static))
         self._reset()
 
     def _flush_package              (self):
 
-        self._next_handler.handle_package(name=self._package)
+        self._next_handler.handle_package(model.Package(name=self._package))
         self._reset()
 
     def _flush_annotation           (self):
@@ -156,13 +156,13 @@ class L1Handler:
 
     def _flush_class                (self):
 
-        self._next_handler.handle_class(name      =self._class_name, 
-                                        static    =self._static,
-                                        access    =self._coerce_access(self._access),
-                                        finality  =self._coerce_finality(self._finality),
-                                        type      =self._class_type,
-                                        extends   =self._class_extends,
-                                        implements=self._class_implements)
+        self._next_handler.handle_class(model.Class(name      =self._class_name, 
+                                                    static    =self._static,
+                                                    access    =self._coerce_access(self._access),
+                                                    finality  =self._coerce_finality(self._finality),
+                                                    type      =self._class_type,
+                                                    extends   =self._class_extends,
+                                                    implements=self._class_implements))
         self._class_name_stack.append(self._class_name)
         self._reset(another_state=None              if self._class_type is not model.ClassTypes.ENUM else \
                                   state.States.ENUM)
@@ -180,49 +180,37 @@ class L1Handler:
 
     def _flush_constructor          (self): 
         
-        self._next_handler.handle_constructor(args=self._sign, body=''.join(self._body_parts))
+        self._next_handler.handle_constructor(model.Constructor(args=self._sign, 
+                                                                body=''.join(self._body_parts)))
         self._reset()
 
     def _flush_attr_decl            (self):
 
-        self._next_handler.handle_attr(name     =self._attr_name, 
-                                       static   =self._static,
-                                       final    =self._finality is model.FinalityTypes.FINAL,
-                                       access   =self._coerce_access(self._access), 
-                                       type_name=self._attr_type_name,
-                                       value    =None)
-        self._reset()
+        self._flush_attr(decl_only=True)
 
-    def _flush_attr_declinit        (self):
+    def _flush_attr                 (self, decl_only=False):
 
-        self._next_handler.handle_attr(name     =self._attr_name, 
-                                       static   =self._static,
-                                       final    =self._finality is model.FinalityTypes.FINAL,
-                                       access   =self._coerce_access(self._access), 
-                                       type_name=self._attr_type_name,
-                                       value    =''.join(self._body_parts))
+        self._next_handler.handle_attr(model.Attribute(name     =self._attr_name, 
+                                                       static   =self._static,
+                                                       final    =self._finality is model.FinalityTypes.FINAL,
+                                                       access   =self._coerce_access(self._access), 
+                                                       type_name=self._attr_type_name,
+                                                       value    =None if decl_only else ''.join(self._body_parts)))
         self._reset()
 
     def _flush_method_decl          (self): 
         
-        self._next_handler.handle_method(name      =self._attr_name,
-                                         static    =self._static,
-                                         access    =self._coerce_access(self._access),
-                                         finality  =self._coerce_finality(self._finality),
-                                         type_name =self._attr_type_name,
-                                         args      =self._sign,
-                                         body      =None)
-        self._reset()
+        self._flush_method(decl_only=True)
 
-    def _flush_method_impl          (self): 
+    def _flush_method               (self, decl_only=False): 
         
-        self._next_handler.handle_method(name      =self._attr_name,
-                                         static    =self._static,
-                                         access    =self._coerce_access(self._access),
-                                         finality  =self._coerce_finality(self._finality),
-                                         type_name =self._attr_type_name,
-                                         args      =self._sign,
-                                         body      =''.join(self._body_parts))
+        self._next_handler.handle_method(model.Method(name      =self._attr_name,
+                                                      static    =self._static,
+                                                      access    =self._coerce_access(self._access),
+                                                      finality  =self._coerce_finality(self._finality),
+                                                      type_name =self._attr_type_name,
+                                                      args      =self._sign,
+                                                      body      =None if decl_only else ''.join(self._body_parts)))
         self._reset()
 
     def _flush_signature            (self):
@@ -245,12 +233,12 @@ class L1Handler:
 
     def _flush_enumv_empty          (self):
 
-        self._next_handler.handle_enum_value(name=self._enumv_name, arg_values=list())
-        self._state = state.States.ENUM_DEFINED
+        self._flush_enumv(no_args=True)
 
-    def _flush_enumv                (self):
+    def _flush_enumv                (self, no_args=False):
 
-        self._next_handler.handle_enum_value(name=self._enumv_name, arg_values=self._parargs)
+        self._next_handler.handle_enum_value(model.EnumValue(name      =self._enumv_name, 
+                                                             arg_values=list() if no_args else self._parargs))
         self._state = state.States.ENUM_DEFINED
 
     def _flush_parargs              (self):
@@ -521,7 +509,7 @@ class L1Handler:
 
             if self._part == words.SEMICOLON: 
                 
-                self._flush_attr_declinit()
+                self._flush_attr()
                 return
 
             else:
@@ -544,7 +532,7 @@ class L1Handler:
         
         elif self._state is state.States.METHOD_BODY:
 
-            self._parse_body(after=self._flush_method_impl)
+            self._parse_body(after=self._flush_method)
             return
         
         elif self._state is state.States.ENUM:
