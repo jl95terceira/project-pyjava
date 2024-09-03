@@ -1,6 +1,6 @@
 import sys
 
-import javasp
+import project.package as java
 
 def main():
     
@@ -8,6 +8,6 @@ def main():
 
         source = f.read()
 
-    javasp.parse_whole(source)
+    java.parse_whole(source)
 
 if __name__ == '__main__': main()
