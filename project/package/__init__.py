@@ -1,17 +1,23 @@
+import io
 import re
 import typing
 
+from .   import handlers
 from .l0 import L0Handler
 from .l2 import L2Handler
 
-def parse_whole(source:str):
+class StreamParser:
 
-    parse_by_line(map(lambda match: match.group(0), re.finditer(pattern='(?m)^(.*)$', string=source)))
+    def __init__(self, handler:handlers.StreamHandler|None=None):
 
-def parse_by_line(lines:typing.Iterable[str]):
+        self._l0 = L0Handler(stream_handler=handler if handler is not None else L2Handler())
 
-    l0 = L0Handler(stream_handler=L2Handler())
-    for line in lines:
+    def parse_whole(self, source:str): 
 
-        l0.handle_line(line)
+        for line in source.splitlines():
 
+            self.parse(line)
+
+    def parse      (self, line  :str):
+
+        self._l0.handle_line(line)

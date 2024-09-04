@@ -5,7 +5,7 @@ from .batteries import *
 
 from .          import words
 
-@dataclasses.dataclass
+@dataclasses.dataclass(frozen=True)
 class HashedAndKeyworded:
 
     keyword:str = dataclasses.field()
@@ -40,78 +40,81 @@ class AccessModifiers:
     @staticmethod
     def values(): yield from AccessModifiers._e
 
-@dataclasses.dataclass
+@dataclasses.dataclass(frozen=True)
 class Argument:
 
-    type_name:str
-    final    :bool
+    type_name:str  = dataclasses.field()
+    final    :bool = dataclasses.field(default=False)
 
-@dataclasses.dataclass
+@dataclasses.dataclass(frozen=True)
 class Package:
 
-    name:str
+    name:str = dataclasses.field()
 
-@dataclasses.dataclass
+@dataclasses.dataclass(frozen=True)
 class Import:
 
-    name  :str
-    static:bool
+    name  :str  = dataclasses.field()
+    static:bool = dataclasses.field(default=False)
 
-@dataclasses.dataclass
+@dataclasses.dataclass(frozen=True)
 class Annotation:
 
     name:str
 
-@dataclasses.dataclass
+@dataclasses.dataclass(frozen=True)
 class Class:
 
     name      :str
-    static    :bool
-    access    :AccessModifier
-    finality  :FinalityType
-    type      :ClassType
-    extends   :str|None
-    implements:list[str]
+    type      :ClassType      = dataclasses.field(default=ClassTypes     .CLASS)
+    static    :bool           = dataclasses.field(default=False)
+    access    :AccessModifier = dataclasses.field(default=AccessModifiers.DEFAULT)
+    finality  :FinalityType   = dataclasses.field(default=FinalityTypes  .DEFAULT)
+    extends   :str|None       = dataclasses.field(default=None)
+    implements:list[str]      = dataclasses.field(default_factory=list)
 
-@dataclasses.dataclass
+@dataclasses.dataclass(frozen=True)
 class ClassEnd: pass
 
-@dataclasses.dataclass
+@dataclasses.dataclass(frozen=True)
 class StaticConstructor:
 
     body:str
 
-@dataclasses.dataclass
+@dataclasses.dataclass(frozen=True)
 class Constructor:
 
     args:dict[str,Argument]
     body:str
 
-@dataclasses.dataclass
+@dataclasses.dataclass(frozen=True)
 class Attribute:
 
-    name:str
-    static:bool
-    access:AccessModifier
-    final:bool
+    name     :str
     type_name:str
-    value:str|None
+    static   :bool           = dataclasses.field(default=False)
+    access   :AccessModifier = dataclasses.field(default=AccessModifiers.DEFAULT)
+    final    :bool           = dataclasses.field(default=False)
+    value    :str|None       = dataclasses.field(default=None)
 
-@dataclasses.dataclass
+@dataclasses.dataclass(frozen=True)
 class Method:
 
-    name:str
-    static:bool
-    access:AccessModifier
-    finality:FinalityType
+    name     :str                
     type_name:str
-    args:dict[str,Argument]
-    body:str|None
+    static   :bool               = dataclasses.field(default=False)
+    access   :AccessModifier     = dataclasses.field(default=AccessModifiers.DEFAULT)
+    finality :FinalityType       = dataclasses.field(default=FinalityTypes  .DEFAULT)
+    args     :dict[str,Argument] = dataclasses.field(default_factory=dict)
+    body     :str|None           = dataclasses.field(default=None)
 
-@dataclasses.dataclass
+@dataclasses.dataclass(frozen=True)
 class EnumValue:
 
-    name:str
-    arg_values:list[str]
+    name      :str
+    arg_values:list[str] = dataclasses.field(default_factory=list)
 
+@dataclasses.dataclass(frozen=True)
+class Comment:
 
+    text:str = dataclasses.field()

@@ -1,32 +1,33 @@
-import abc
 import dataclasses
+import os.path
 import typing
 import unittest
-from   collections import deque
 
-from ..package import handlers, model
+from ..package import handlers, model, StreamParser
 
 @dataclasses.dataclass
-class TestsRegistry:
+class _TestsRegistry:
 
     def __init__(self):
 
-        self.packages            :dict[int, model.Package]            = list()
-        self.imports             :dict[int, model.Import]             = list()
-        self.annotations         :dict[int, model.Annotation]         = list()
-        self.classes             :dict[int, model.Class]              = list()
-        self.class_ends          :dict[int, model.ClassEnd]           = list()
-        self.static_constructors :dict[int, model.StaticConstructor]  = list()
-        self.constructors        :dict[int, model.Constructor]        = list()
-        self.attributes          :dict[int, model.Attribute]          = list()
-        self.methods             :dict[int, model.Method]             = list()
-        self.enum_values         :dict[int, model.EnumValue]          = list()
+        self.packages            :dict[int, model.Package]            = dict()
+        self.imports             :dict[int, model.Import]             = dict()
+        self.annotations         :dict[int, model.Annotation]         = dict()
+        self.classes             :dict[int, model.Class]              = dict()
+        self.class_ends          :dict[int, model.ClassEnd]           = dict()
+        self.static_constructors :dict[int, model.StaticConstructor]  = dict()
+        self.constructors        :dict[int, model.Constructor]        = dict()
+        self.attributes          :dict[int, model.Attribute]          = dict()
+        self.methods             :dict[int, model.Method]             = dict()
+        self.enum_values         :dict[int, model.EnumValue]          = dict()
+        self.comments            :dict[int, model.Comment]            = dict()
+        self.a                   :list[typing.Any]                    = list()
 
 class TestRegistrator:
 
     def __init__(self):
 
-        self._tr = TestsRegistry()
+        self._tr = _TestsRegistry()
         self._i  = 0
 
     def _index(self): 
@@ -35,9 +36,10 @@ class TestRegistrator:
         self._i += 1
         return i
     
-    def _register[T](self, registry_getter:typing.Callable[[TestsRegistry],dict[int,T]], x:T):
+    def _register[T](self, registry_getter:typing.Callable[[_TestsRegistry],dict[int,T]], x:T):
 
         registry_getter(self._tr)[self._index()] = x
+        self._tr.a.append(x)
 
     def r_package         (self, package        :model.Package)          : self._register(lambda tr: tr.packages            , package)
     def r_import_         (self, import_        :model.Import)           : self._register(lambda tr: tr.imports             , import_)
@@ -49,26 +51,41 @@ class TestRegistrator:
     def r_attribute       (self, attr           :model.Attribute)        : self._register(lambda tr: tr.attributes          , attr)
     def r_method          (self, method         :model.Method)           : self._register(lambda tr: tr.methods             , method)
     def r_enum_value      (self, enum_value     :model.EnumValue)        : self._register(lambda tr: tr.enum_values         , enum_value)
+    def r_comment         (self, comment        :model.Comment)          : self._register(lambda tr: tr.comments            , comment)
 
-    def handler(self) -> handlers.StreamHandler:
+    def handler(self, tc:unittest.TestCase):
 
-        return TestHandler(tr=self._tr)
+        return _TestHandler(tr=self._tr, tc=tc)
 
-class TestHandler(abc.ABC): 
+class _TestHandler(handlers.StreamHandler): 
 
-    def __init__(self, tr:TestsRegistry):
+    def __init__(self, tr:_TestsRegistry, tc:unittest.TestCase):
 
-        self._tr = tr
-        self._i  = 0
+        self._tr         = tr
+        self._tc         = tc
+        self._i:int|None = None
 
-    def _test[T](self, registry_getter:typing.Callable[[TestsRegistry],dict[int,T]], y:T):
+    def _test[T](self, registry_getter:typing.Callable[[_TestsRegistry],dict[int,T]], y:T):
 
-        r = registry_getter(self._tr)
         i = self._i
-        assert i in r
+        print(f'Got at position {i}: {type(y).__name__}')
+        self._tc.assertLess (i, len(self._tr.a), msg=f'no more entities expected at position {i} and beyond\n  Got: {y}')
+        r = registry_getter(self._tr)
+        self._tc.assertIn   (i, r              , msg=f'unexpected type of entity at position {i}\n  Expected: {self._tr.a[i]}\n  Got     : {y}')
         x = r[i]
-        assert x == y
+        self._tc.assertEqual(x, y              , msg=f'attributes different than expected for entity at position {i}\n  Expected: {x}\n  Got     : {y}')
         self._i += 1
+
+    def begin(self):
+
+        self._i = 0
+
+    def test_file(self, fn:str):
+
+        self.begin()
+        with open(os.path.join(os.path.split(__file__)[0], 'java_files', fn), mode='r', encoding='utf-8') as f:
+
+            StreamParser(handler=self).parse_whole(f.read())
 
     @typing.override
     def handle_package           (self, package         :model.Package)             : self._test(lambda tr: tr.packages             , package)
@@ -90,3 +107,5 @@ class TestHandler(abc.ABC):
     def handle_method            (self, method          :model.Method)              : self._test(lambda tr: tr.methods              , method)
     @typing.override
     def handle_enum_value        (self, enum_value      :model.EnumValue)           : self._test(lambda tr: tr.enum_values          , enum_value)
+    @typing.override
+    def handle_comment           (self, comment         :model.Comment)             : self._test(lambda tr: tr.comments             , comment)

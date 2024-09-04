@@ -21,7 +21,7 @@ class L0Handler:
 
         if   self._state is state.States.IN_COMMENT_ONELINE: # // ...
 
-            self._next_handler.handle_comment(comment=''.join(self._comment_parts), line=line)
+            self._next_handler.handle_comment(text=''.join(self._comment_parts), line=line)
             self._comment_parts.clear()
             self._state = state.States.DEFAULT # no longer in comment, since this is another line
 
@@ -65,7 +65,7 @@ class L0Handler:
 
                 else:
 
-                    self._next_handler.handle_comment(comment=''.join(self._comment_parts), line=line)
+                    self._next_handler.handle_comment(text=''.join(self._comment_parts), line=line)
                     self._comment_parts.clear()
                     self._state = state.States.DEFAULT
 

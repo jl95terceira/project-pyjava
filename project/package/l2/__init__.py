@@ -57,3 +57,8 @@ class L2Handler(handlers.StreamHandler):
     def handle_enum_value        (self, enum:model.EnumValue):
 
         print(f'Handling enum value: {enum}\n')
+
+    @typing.override
+    def handle_comment           (self, comment:model.Comment):
+
+        print(f'Handling comment: {comment}\n')

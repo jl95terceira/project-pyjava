@@ -81,8 +81,8 @@ class L1Handler:
         self._parargs          :list[str]               |None = list()
         self._parargs_state    :state.ParArgsState      |None = None
         self._parargs_after    :typing.Callable[[],None]|None = None
-        self._parargs_value    :str                     |None = None
-        self._parargs_depth    :int                     |None = None
+        self._pararg_value    :str                      |None = None
+        self._pararg_depth    :int                      |None = None
 
     def _reset                      (self, another_state:state.State|None=None):
 
@@ -108,13 +108,7 @@ class L1Handler:
         self._type_name         = None
         self._type_depth        = None
         self._body_parts       .clear()
-        self._body_depth        = None
         self._enumv_name        = None
-        self._parargs    .clear()
-        self._parargs_state     = None
-        self._parargs_after     = None
-        self._parargs_value     = None
-        self._parargs_depth     = None
 
     def _stack_handler              (self, handler:'_Handler'):
 
@@ -176,7 +170,7 @@ class L1Handler:
 
     def _flush_static_constructor   (self): 
         
-        self._next_handler.handle_static_constructor(body=''.join(self._body_parts))
+        self._next_handler.handle_static_constructor(model.StaticConstructor(body=''.join(self._body_parts)))
         self._reset()
 
     def _flush_constructor          (self): 
@@ -219,6 +213,8 @@ class L1Handler:
         self._unstack_handler()
         self._sign_state = None
         self._sign_after()
+        self._sign_after = None
+        #self._sign      .clear()
 
     def _flush_type                 (self):
 
@@ -230,7 +226,10 @@ class L1Handler:
     def _flush_body                 (self):
 
         self._unstack_handler()
+        self._body_parts.clear()
+        self._body_depth = None
         self._body_after()
+        self._body_after = None
 
     def _flush_enumv_empty          (self):
 
@@ -244,13 +243,17 @@ class L1Handler:
 
     def _flush_parargs              (self):
 
-        if self._parargs_value:
+        if self._pararg_value:
 
             self._store_pararg()
 
         self._unstack_handler()
-        self._parargs_state = None
+        self._parargs_state  = None
+        self._pararg_value   = None
+        self._pararg_depth   = None
         self._parargs_after()
+        self._parargs       .clear()
+        self._parargs_after = None
 
     def _store_attr_type            (self):
 
@@ -270,8 +273,9 @@ class L1Handler:
 
     def _store_pararg               (self):
 
-        self._parargs.append(self._parargs_value)
-        self._parargs_value = ''
+        self._parargs.append(self._pararg_value)
+        self._pararg_value = ''
+        self._pararg_depth = 0
 
     def _parse_body                 (self, after:typing.Callable[[],None]):
 
@@ -301,7 +305,8 @@ class L1Handler:
 
         self._stack_handler(_Handler(self._handle_parargs, name='PARARGS'))
         self._parargs_state = state.ParArgsStates.BEGIN
-        self._parargs_depth = 0
+        self._pararg_value  = ''
+        self._pararg_depth  = 0
         self._parargs_after = after
         self._handler() # re-handle part ('('), since it was used only for look-ahead
 
@@ -317,7 +322,7 @@ class L1Handler:
                 if self._static and (self._attr_type_name is None): 
                     
                     self._state = state.States.STATIC_CONSTRUCTOR_BODY
-                    self._parse_body(after=self._flush_constructor)
+                    self._parse_body(after=self._flush_static_constructor)
                     
                 else:
 
@@ -734,17 +739,17 @@ class L1Handler:
             else:
 
                 self._parargs_state  = state.ParArgsStates.DEFAULT
-                self._parargs_value  = ''
-                self._parargs_depth += 1
+                self._pararg_value  = ''
+                self._pararg_depth += 1
 
         elif self._parargs_state is state.ParArgsStates.DEFAULT:
 
             if self._part == words.PARENTH_CLOSE:
 
-                self._parargs_depth -= 1
-                if self._parargs_depth != 0:
+                self._pararg_depth -= 1
+                if self._pararg_depth != 0:
 
-                    self._parargs_value += self._part
+                    self._pararg_value += self._part
 
                 else:
 
@@ -752,23 +757,23 @@ class L1Handler:
 
             elif self._part == words.PARENTH_OPEN:
 
-                self._parargs_depth += 1
-                self._parargs_value += self._part
+                self._pararg_depth += 1
+                self._pararg_value += self._part
 
             elif self._part == words.COMMA:
 
-                if self._parargs_depth == 0:
+                if self._pararg_depth == 0:
 
                     self._store_pararg()
                     self._parargs_state = state.ParArgsStates.SEPARATE
                 
                 else:
 
-                    self._parargs_value += self._part
+                    self._pararg_value += self._part
 
             else:
 
-                self._parargs_value += self._part
+                self._pararg_value += self._part
 
         elif self._parargs_state is state.ParArgsStates.SEPARATE: 
             
@@ -787,9 +792,9 @@ class L1Handler:
         self._line = line
         self._handler()
 
-    def handle_comment              (self, comment:str, line:str):
+    def handle_comment              (self, text   :str, line:str):
 
-        print(f'Hello, comment: {repr(comment)}')
+        self._next_handler.handle_comment(comment=model.Comment(text=text))
 
     def handle_spacing              (self, spacing:str, line:str):
 
