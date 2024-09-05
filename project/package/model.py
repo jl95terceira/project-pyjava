@@ -71,7 +71,7 @@ class Class:
     access    :AccessModifier = dataclasses.field(default=AccessModifiers.DEFAULT)
     finality  :FinalityType   = dataclasses.field(default=FinalityTypes  .DEFAULT)
     extends   :str|None       = dataclasses.field(default=None)
-    implements:list[str]      = dataclasses.field(default_factory=list)
+    implements:set[str]       = dataclasses.field(default_factory=set)
 
 @dataclasses.dataclass(frozen=True)
 class ClassEnd: pass

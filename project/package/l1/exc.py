@@ -7,6 +7,7 @@ class AttributeException                (Exception): pass
 class BodyException                     (Exception): pass
 class ClassException                    (Exception): pass
 class ClassImplementsException          (Exception): pass
+class ClassImplementsDuplicateException (Exception): pass
 class ClassTypeRepeatedException        (Exception): pass
 class EnumValueNameException            (Exception): pass
 class EnumValueException                (Exception): pass

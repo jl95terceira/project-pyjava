@@ -13,7 +13,9 @@ public class Test1 {
     protected                String  b3 = "abc";
     public      static final Object  b4 = new Object() {};   
 
-    static {}
+    static {
+        System.out.println("Hello, static");
+    }
 
     public Test1(Map<String, String> properties) {}
 }

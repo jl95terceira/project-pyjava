@@ -36,7 +36,7 @@ class L2Handler(handlers.StreamHandler):
     @typing.override
     def handle_static_constructor(self, sconstr:model.StaticConstructor):
 
-        print(F'Handling static constructor{sconstr}\n')
+        print(F'Handling static constructor: {sconstr}\n')
 
     @typing.override
     def handle_constructor       (self, constr:model.Constructor):

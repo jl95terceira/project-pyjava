@@ -33,10 +33,10 @@ class L1Handler:
                 _pad(f'{self._state}'     , 35), 
                 #_pad(f'{len(self._handlers_stack)=}', 20),
                 _pad(f'{self._class_name_stack[-1] if self._class_name_stack else ''}', 10),
-                _pad(f'{self._type_state}', 30),
-                _pad(f'{self._sign_state}', 30),
-                #_pad(f'{self._body_state}', 30),
-                _pad(f'{self._parargs_state}', 30),
+                #_pad(f'{self._type_state}', 30),
+                #_pad(f'{self._sign_state}', 30),
+                _pad(f'{self._body_state}', 30),
+                #_pad(f'{self._parargs_state}', 30),
                 repr(self._part)
             )
             f(self,*a,**ka)
@@ -64,7 +64,7 @@ class L1Handler:
         self._class_type       :model.ClassType         |None = None
         self._class_name       :str                     |None = None
         self._class_extends    :str                     |None = None
-        self._class_implements :list[str]                     = list()
+        self._class_implements :set[str]                      = set()
         self._attr_type_name   :str                     |None = None
         self._attr_name        :str                     |None = None
         self._arg_name         :str                     |None = None
@@ -146,7 +146,7 @@ class L1Handler:
 
     def _flush_annotation           (self):
 
-        self._next_handler.handle_annotation(self._part)
+        self._next_handler.handle_annotation(model.Annotation(self._part))
         self._reset()
 
     def _flush_class                (self):
@@ -221,14 +221,14 @@ class L1Handler:
         self._unstack_handler()
         self._type_state = None
         self._type_after()
-        self._handler    () # re-handle part (word), since it was used only for look-ahead
+        self._handler   () # re-handle part (word), since it was used only for look-ahead
 
     def _flush_body                 (self):
 
         self._unstack_handler()
+        self._body_after()
         self._body_parts.clear()
         self._body_depth = None
-        self._body_after()
         self._body_after = None
 
     def _flush_enumv_empty          (self):
@@ -258,7 +258,7 @@ class L1Handler:
     def _store_attr_type            (self):
 
         self._attr_type_name = self._type_name
-        self._state = state.States.ATTR_TYPED
+        self._state = state.States.DECL_1
 
     def _store_sign_arg             (self):
 
@@ -324,9 +324,11 @@ class L1Handler:
                     self._state = state.States.STATIC_CONSTRUCTOR_BODY
                     self._parse_body(after=self._flush_static_constructor)
                     
-                else:
+                elif self._class_name is not None:
 
                     self._flush_class()
+
+                else: raise exc.Exception(self._line)
 
             elif self._part == words.BRACE_CLOSE: 
                 
@@ -444,7 +446,8 @@ class L1Handler:
 
         elif self._state is state.States.CLASS_IMPLEMENTS:
 
-            self._class_implements.append(self._part)
+            if self._part in self._class_implements: raise exc.ClassImplementsDuplicateException(self._line)
+            self._class_implements.add(self._part)
             self._state = state.States.CLASS_IMPLEMENTS_NAMED
             return
 
@@ -467,7 +470,7 @@ class L1Handler:
             self._handler()
             return
 
-        elif self._state is state.States.ATTR_TYPED:
+        elif self._state is state.States.DECL_1:
 
             if self._part == words.PARENTH_OPEN:
                 
@@ -483,11 +486,11 @@ class L1Handler:
             else:
 
                 self._attr_name  = self._part
-                self._state = state.States.ATTR_NAMED
+                self._state = state.States.DECL_2
 
             return
         
-        elif self._state is state.States.ATTR_NAMED:
+        elif self._state is state.States.DECL_2:
 
             if   self._part == words.SEMICOLON:
 
@@ -724,6 +727,10 @@ class L1Handler:
                 else:
                     
                     self._body_parts.append(self._part)
+
+            else:
+
+                self._body_parts.append(self._part)
 
         else: raise AssertionError(f'{self._body_state=}')
 

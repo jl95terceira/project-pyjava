@@ -10,7 +10,10 @@ class StreamParser:
 
     def __init__(self, handler:handlers.StreamHandler|None=None):
 
-        self._l0 = L0Handler(stream_handler=handler if handler is not None else L2Handler())
+        self._h  = handler if handler is not None else L2Handler()
+        self._l0 = self._make_l0()
+
+    def _make_l0   (self): return L0Handler(stream_handler=self._h)
 
     def parse_whole(self, source:str): 
 
