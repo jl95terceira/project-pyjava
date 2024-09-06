@@ -41,12 +41,6 @@ class AccessModifiers:
     def values(): yield from AccessModifiers._e
 
 @dataclasses.dataclass(frozen=True)
-class Argument:
-
-    type_name:str  = dataclasses.field()
-    final    :bool = dataclasses.field(default=False)
-
-@dataclasses.dataclass(frozen=True)
 class Package:
 
     name:str = dataclasses.field()
@@ -77,6 +71,18 @@ class Class:
 class ClassEnd: pass
 
 @dataclasses.dataclass(frozen=True)
+class Type:
+
+    name    :str  = dataclasses.field()
+    is_array:bool = dataclasses.field(default=False)
+
+@dataclasses.dataclass(frozen=True)
+class Argument:
+
+    type :Type = dataclasses.field()
+    final:bool = dataclasses.field(default=False)
+
+@dataclasses.dataclass(frozen=True)
 class StaticConstructor:
 
     body:str
@@ -90,8 +96,8 @@ class Constructor:
 @dataclasses.dataclass(frozen=True)
 class Attribute:
 
-    name     :str
-    type_name:str
+    name     :str            = dataclasses.field()
+    type     :Type           = dataclasses.field()
     static   :bool           = dataclasses.field(default=False)
     access   :AccessModifier = dataclasses.field(default=AccessModifiers.DEFAULT)
     final    :bool           = dataclasses.field(default=False)
@@ -100,8 +106,8 @@ class Attribute:
 @dataclasses.dataclass(frozen=True)
 class Method:
 
-    name     :str                
-    type_name:str
+    name     :str                = dataclasses.field()
+    type     :Type               = dataclasses.field()
     static   :bool               = dataclasses.field(default=False)
     access   :AccessModifier     = dataclasses.field(default=AccessModifiers.DEFAULT)
     finality :FinalityType       = dataclasses.field(default=FinalityTypes  .DEFAULT)

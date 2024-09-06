@@ -1,9 +1,19 @@
+import builtins
 import dataclasses
+import functools
 import os.path
 import typing
 import unittest
 
 from ..package import handlers, model, StreamParser
+
+DEBUG = 0
+
+@functools.wraps(builtins.print)
+def print(*aa,**kaa):
+
+    if not DEBUG: return
+    builtins.print(*aa,**kaa)
 
 @dataclasses.dataclass
 class _TestsRegistry:
@@ -91,13 +101,16 @@ class _TestHandler(handlers.StreamHandler):
 
         print(f'Got: {got}')
         i   = self._i
-        self._tc.assertLess (i  , len(self._tr.a), msg=f'no more entities expected at position {i} and beyond\n  Got: {got}')
+        MSG = lambda: f'no more entities expected at position {i} and beyond\n  Got: {got}'
+        self._tc.assertLess (i  , len(self._tr.a), msg=MSG())
         exo = self._tr.a[i]
         print(f'Exp: {exo}')
         reg = registry_getter(self._tr)
-        self._tc.assertIn   (i  , reg            , msg=f'unexpected type of entity at position {i}\n  Expected: {self._tr.a[i]}\n  Got     : {got}')
+        MSG = lambda: f'unexpected type of entity at position {i}\n  Expected: {self._tr.a[i]}\n  Got     : {got}'
+        self._tc.assertIn   (i  , reg            , msg=MSG())
         exo = reg[i]
-        self._tc.assertEqual(exo, got            , msg=f'attributes different than expected for entity at position {i}\n  Expected: {exo}\n  Got     : {got}')
+        MSG = lambda: f'attributes different than expected for entity at position {i}\n  Expected: {exo}\n  Got     : {got}'
+        self._tc.assertEqual(exo, got            , msg=MSG())
         self._i += 1
 
     def reset(self):

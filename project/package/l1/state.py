@@ -31,9 +31,11 @@ class States:
 class TypeState(util.Named): pass
 class TypeStates:
 
-    BEGIN    = TypeState('Begin')
-    DEFAULT  = TypeState('')
-    AFTERDOT = TypeState('After-Dot')
+    BEGIN       = TypeState('Begin')
+    DEFAULT     = TypeState('')
+    ARRAY_OPEN  = TypeState('Array (\'[\')')
+    ARRAY_CLOSE = TypeState('Array (\']\')')
+    AFTERDOT    = TypeState('After-Dot')
 
 class SignatureState(util.Named): pass
 class SignatureStates:

@@ -65,15 +65,18 @@ class L1Handler:
         self._class_name       :str                     |None = None
         self._class_extends    :str                     |None = None
         self._class_implements :set[str]                      = set()
-        self._attr_type_name   :str                     |None = None
+        self._attr_type        :model.Type              |None = None
         self._attr_name        :str                     |None = None
         self._arg_name         :str                     |None = None
-        self._arg_type_name    :str                     |None = None
+        self._arg_type         :model.Type              |None = None
         self._sign             :dict[str,model.Argument]      = dict()
         self._sign_after       :typing.Callable[[],None]|None = None
         self._type_name        :str                     |None = None
+        self._type_is_array    :bool                    |None = None
+        self._type             :model.Type              |None = None
         self._type_after       :typing.Callable[[],None]|None = None
-        self._type_depth:int                            |None = None
+        self._type_depth       :int                     |None = None
+        self._type_can_be_array:bool                    |None = None
         self._body_parts       :list[str]                     = list()
         self._body_depth :int                           |None = None
         self._body_after       :typing.Callable[[],None]|None = None
@@ -99,14 +102,10 @@ class L1Handler:
         self._class_name        = None
         self._class_extends     = None
         self._class_implements .clear()
-        self._attr_type_name    = None
+        self._attr_type         = None
         self._attr_name         = None
-        self._arg_name          = None
-        self._arg_type_name     = None
         self._sign             .clear()
         self._sign_after        = None
-        self._type_name         = None
-        self._type_depth        = None
         self._body_parts       .clear()
         self._enumv_name        = None
 
@@ -179,23 +178,15 @@ class L1Handler:
                                                                 body=''.join(self._body_parts)))
         self._reset()
 
-    def _flush_attr_decl            (self):
-
-        self._flush_attr(decl_only=True)
-
     def _flush_attr                 (self, decl_only=False):
 
         self._next_handler.handle_attr(model.Attribute(name     =self._attr_name, 
                                                        static   =self._static,
                                                        final    =self._finality is model.FinalityTypes.FINAL,
                                                        access   =self._coerce_access(self._access), 
-                                                       type_name=self._attr_type_name,
+                                                       type     =self._attr_type,
                                                        value    =None if decl_only else ''.join(self._body_parts)))
         self._reset()
-
-    def _flush_method_decl          (self): 
-        
-        self._flush_method(decl_only=True)
 
     def _flush_method               (self, decl_only=False): 
         
@@ -203,7 +194,7 @@ class L1Handler:
                                                       static    =self._static,
                                                       access    =self._coerce_access(self._access),
                                                       finality  =self._coerce_finality(self._finality),
-                                                      type_name =self._attr_type_name,
+                                                      type      =self._attr_type,
                                                       args      =self._sign,
                                                       body      =None if decl_only else ''.join(self._body_parts)))
         self._reset()
@@ -218,9 +209,16 @@ class L1Handler:
 
     def _flush_type                 (self):
 
+        self._type              = model.Type(name=self._type_name, is_array=self._type_is_array)
+        self._type_name         = None
+        self._type_is_array     = None
         self._unstack_handler()
-        self._type_state = None
         self._type_after()
+        self._type              = None
+        self._type_state        = None
+        self._type_depth        = None
+        self._type_can_be_array = None
+        self._type_after        = None
         self._handler   () # re-handle part (word), since it was used only for look-ahead
 
     def _flush_body                 (self):
@@ -230,10 +228,6 @@ class L1Handler:
         self._body_parts.clear()
         self._body_depth = None
         self._body_after = None
-
-    def _flush_enumv_empty          (self):
-
-        self._flush_enumv(no_args=True)
 
     def _flush_enumv                (self, no_args=False):
 
@@ -257,18 +251,18 @@ class L1Handler:
 
     def _store_attr_type            (self):
 
-        self._attr_type_name = self._type_name
-        self._state = state.States.DECL_1
+        self._attr_type = self._type
+        self._state     = state.States.DECL_1
 
     def _store_sign_arg             (self):
 
-        self._sign[self._arg_name] = model.Argument(type_name=self._arg_type_name, final=self._finality is model.FinalityTypes.FINAL)
-        self._arg_name       = None
-        self._arg_type_name  = None
+        self._sign[self._arg_name] = model.Argument(type=self._arg_type, final=self._finality is model.FinalityTypes.FINAL)
+        self._arg_name = None
+        self._arg_type = None
 
     def _store_arg_type             (self):
 
-        self._arg_type_name = self._type_name
+        self._arg_type   = self._type
         self._sign_state = state.SignatureStates.ARG_TYPED
 
     def _store_pararg               (self):
@@ -292,16 +286,18 @@ class L1Handler:
         self._sign_after = after
         self._handler() # re-handle part ('('), since it was used only for look-ahead
     
-    def _parse_type                 (self, after:typing.Callable[[],None]):
+    def _parse_type                 (self, after:typing.Callable[[],None], can_be_array:bool=True):
 
         self._stack_handler(_Handler(self._handle_type, name='TYPE'))
         self._type_state        = state.TypeStates.BEGIN
         self._type_name         = ''
         self._type_depth        = 0
+        self._type_can_be_array = can_be_array
+        self._type_is_array     = False
         self._type_after        = after
         self._handler() # re-handle part (word), since it was used only for look-ahead
 
-    def _parse_parargs   (self, after:typing.Callable[[],None]):
+    def _parse_parargs              (self, after:typing.Callable[[],None]):
 
         self._stack_handler(_Handler(self._handle_parargs, name='PARARGS'))
         self._parargs_state = state.ParArgsStates.BEGIN
@@ -319,7 +315,7 @@ class L1Handler:
 
             elif self._part == words.BRACE_OPEN : 
                 
-                if self._static and (self._attr_type_name is None): 
+                if self._static and (self._attr_type is None): 
                     
                     self._state = state.States.STATIC_CONSTRUCTOR_BODY
                     self._parse_body(after=self._flush_static_constructor)
@@ -474,9 +470,9 @@ class L1Handler:
 
             if self._part == words.PARENTH_OPEN:
                 
-                if (self._attr_type_name == self._class_name_stack[-1]): # constructor, since previously we got a word equal to the class' name
+                if (self._attr_type.name == self._class_name_stack[-1]): # constructor, since previously we got a word equal to the class' name
 
-                    self._state = state.States    .CONSTRUCTOR_SIGNATURE
+                    self._state = state.States.CONSTRUCTOR_SIGNATURE
                     self._parse_signature(after=self._state_setter(state.States.CONSTRUCTOR_DECLARED))
 
                 else:
@@ -494,7 +490,7 @@ class L1Handler:
 
             if   self._part == words.SEMICOLON:
 
-                self._flush_attr_decl()
+                self._flush_attr(decl_only=True)
             
             elif self._part == words.EQUALSIGN:
 
@@ -530,7 +526,7 @@ class L1Handler:
 
             if   self._part == words.SEMICOLON:
 
-                self._flush_method_decl()
+                self._flush_method(decl_only=True)
             
             else:
 
@@ -566,7 +562,7 @@ class L1Handler:
             if   self._part in {words.SEMICOLON,
                                 words.COMMA}:
 
-                self._flush_enumv_empty()
+                self._flush_enumv(no_args=True)
                 self._handler() # re-handle part (either semicolon or comma), as it was used only for look-ahead
 
             else:
@@ -670,10 +666,11 @@ class L1Handler:
 
                 self._type_name += self._part
 
-            elif self._part in {words.SQUARE_OPEN, 
-                                words.SQUARE_CLOSED}:
+            elif self._part == words.SQUARE_OPEN:
                 
-                self._type_name += self._part
+                if not self._type_can_be_array: raise exc.TypeCannotBeArrayException(self._line)
+                self._type_is_array = True
+                self._type_state    = state.TypeStates.ARRAY_OPEN
 
             elif self._part == words.DOT:
 
@@ -683,6 +680,18 @@ class L1Handler:
             else:
 
                 self._flush_type()
+
+        elif self._type_state is state.TypeStates.ARRAY_OPEN:
+
+            if self._part == words.SQUARE_CLOSED:
+
+                self._type_state = state.TypeStates.ARRAY_CLOSE
+
+            else: raise exc.TypeArraySyntaxException(self._line)
+
+        elif self._type_state is state.TypeStates.ARRAY_CLOSE:
+
+            self._flush_type()
 
         elif self._type_state is state.TypeStates.AFTERDOT:
 

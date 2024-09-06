@@ -21,3 +21,5 @@ class PackageException                  (Exception): pass
 class ReservedWordException             (Exception): pass
 class StaticRepeatedException           (Exception): pass
 class TypeException                     (Exception): pass
+class TypeCannotBeArrayException        (Exception): pass
+class TypeArraySyntaxException          (Exception): pass
