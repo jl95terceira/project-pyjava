@@ -7,7 +7,7 @@ class States:
     PACKAGE                     = State('Package')
     IMPORT                      = State('Import')
     ANNOTATION                  = State('Annotation')
-    CLASS_BEGIN                 = State('Class')
+    CLASS                 = State('Class')
     CLASS_AFTER_NAME            = State('Class After-Name')
     CLASS_EXTENDS               = State('Class Ext.')
     CLASS_IMPLEMENTS            = State('Class Impl.')
@@ -52,9 +52,9 @@ class BodyStates:
     BEGIN   = BodyState('')
     ONGOING = BodyState('Ongoing')
 
-class ParArgsState(util.Named): pass
-class ParArgsStates:
+class CallArgsState(util.Named): pass
+class CallArgsStates:
 
-    BEGIN    = ParArgsState('Begin')
-    DEFAULT  = ParArgsState('')
-    SEPARATE = ParArgsState('Sep.')
+    BEGIN    = CallArgsState('Begin')
+    DEFAULT  = CallArgsState('')
+    SEPARATE = CallArgsState('Sep.')

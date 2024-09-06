@@ -8,7 +8,7 @@ import static java.util.logging.Level.*;
  * This is a multi-line comment.
  */
 @DataClass
-public abstract class FooBar extends Object implements Foo,Bar {
+public abstract class FooBar<A,B> extends Object implements Foo,Bar {
 
     private static       Object   ab;
     private              long     cde     = 123L;
@@ -46,6 +46,7 @@ public abstract class FooBar extends Object implements Foo,Bar {
             }
         }).get();
     }
+    private         int[]   ayoh    (String[] aa, String a) {}
     public          void    coiso   () {}
     public abstract void    coisa   ();
 
