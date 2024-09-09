@@ -46,9 +46,9 @@ public abstract class FooBar<A,B> extends Object implements Foo,Bar {
             }
         }).get();
     }
-    private         int[]   ayoh    (String[] aa, String a) {}
-    public          void    coiso   () {}
-    public abstract void    coisa   ();
+    private         int[]            ayoh    (String[] aa, String a) {}
+    public          void             coiso   () {}
+    public abstract Optional<String> coisa   ();
 
     public interface YelloPink {
 

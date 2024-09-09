@@ -60,6 +60,7 @@ class Annotation:
 class Class:
 
     name      :str
+    generics  :str            = dataclasses.field(default='')
     type      :ClassType      = dataclasses.field(default=ClassTypes     .CLASS)
     static    :bool           = dataclasses.field(default=False)
     access    :AccessModifier = dataclasses.field(default=AccessModifiers.DEFAULT)
@@ -74,6 +75,7 @@ class ClassEnd: pass
 class Type:
 
     name    :str  = dataclasses.field()
+    generics:str  = dataclasses.field(default='')
     is_array:bool = dataclasses.field(default=False)
 
 @dataclasses.dataclass(frozen=True)

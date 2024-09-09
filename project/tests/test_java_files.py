@@ -23,7 +23,7 @@ class Tests(unittest.TestCase):
         self.tr.r_attribute    (model.Attribute        (name='b3', type=model.Type('String') ,              access=model.AccessModifiers.PROTECTED  , value=' "abc"'          , final =False))
         self.tr.r_attribute    (model.Attribute        (name='b4', type=model.Type('Object', is_array=True) , static=True, access=model.AccessModifiers.PUBLIC     , value=' new Object[]{}', final =True))
         self.tr.r_static_constr(model.StaticConstructor(body='\n'+8*' '+'System.out.println("Hello, static");\n'+4*' '))
-        self.tr.r_constructor  (model.Constructor      (args={'properties':model.Argument(type=model.Type('Map<String,String>'))}, body=''))
+        self.tr.r_constructor  (model.Constructor      (args={'properties':model.Argument(type=model.Type('Map', generics='<String,String>'))}, body=''))
         self.tr.r_class_end    ()
         # do it
         self.th.test_file('Test1.java')
