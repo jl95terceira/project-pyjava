@@ -9,13 +9,17 @@ public class Test1 {
     protected                String[]  a3;
     public      static       Object    a4;
     private            final int       b1 = 123;
-                static final boolean   b2 = true;
-    protected                String    b3 = "abc";
+                static final boolean   b2 =   true;
+    protected                String    b3 =  "abc";
     public      static final Object[]  b4 = new Object[]{};
 
     static {
         System.out.println("Hello, static");
     }
 
-    public Test1(Map<String, String> properties) {}
+    public Test1(Map<String, String> properties,
+                 Boolean             awesome) {}
+    public Test1(byte[]              data)    {
+        Test1(null, false);
+    }
 }

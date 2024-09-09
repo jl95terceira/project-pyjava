@@ -99,12 +99,11 @@ class _TestHandler(handlers.StreamHandler):
 
     def _test[T](self, registry_getter:typing.Callable[[_TestsRegistry],dict[int,T]], got:T):
 
-        print(f'Got: {got}')
         i   = self._i
         MSG = lambda: f'no more entities expected at position {i} and beyond\n  Got: {got}'
         self._tc.assertLess (i  , len(self._tr.a), msg=MSG())
         exo = self._tr.a[i]
-        print(f'Exp: {exo}')
+        print(f'Expected object: {exo}')
         reg = registry_getter(self._tr)
         MSG = lambda: f'unexpected type of entity at position {i}\n  Expected: {self._tr.a[i]}\n  Got     : {got}'
         self._tc.assertIn   (i  , reg            , msg=MSG())
@@ -129,7 +128,7 @@ class _TestHandler(handlers.StreamHandler):
 
     def test     (self, line:str, end=True):
 
-        print(line)
+        print(f'Got line       : {repr(line)}')
         self._p.parse(line)
         if end: self.end()
 
