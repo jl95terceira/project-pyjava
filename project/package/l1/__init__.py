@@ -11,19 +11,19 @@ from ..   import model
 from ..   import words
 from ..l2 import L2Handler
 
-_ACCESS_MOD_MAP_BY_NAME      = {'public'    :model.AccessModifiers.PUBLIC,
+_ACCESS_MOD_MAP_BY_KEYWORD      = {'public'    :model.AccessModifiers.PUBLIC,
                                 ''          :model.AccessModifiers.DEFAULT,
                                 'protected' :model.AccessModifiers.PROTECTED,
                                 'private'   :model.AccessModifiers.PRIVATE}
-_ACCESS_MOD_NAMES_SET        = set(_ACCESS_MOD_MAP_BY_NAME)
-_FINALITY_TYPE_MAP_BY_NAME   = {''          :model.FinalityTypes.DEFAULT,
+_ACCESS_MOD_NAMES_SET        = set(_ACCESS_MOD_MAP_BY_KEYWORD)
+_FINALITY_TYPE_MAP_BY_KEYWORD   = {''          :model.FinalityTypes.DEFAULT,
                                 'abstract'  :model.FinalityTypes.ABSTRACT,
                                 'final'     :model.FinalityTypes.FINAL}
-_FINALITY_TYPE_NAMES_SET     = set(_FINALITY_TYPE_MAP_BY_NAME)
-_CLASS_TYPE_MAP_BY_NAME      = {'class'     :model.ClassTypes.CLASS,
+_FINALITY_TYPE_NAMES_SET     = set(_FINALITY_TYPE_MAP_BY_KEYWORD)
+_CLASS_TYPE_MAP_BY_KEYWORD      = {'class'     :model.ClassTypes.CLASS,
                                 'interface' :model.ClassTypes.INTERFACE,
                                 'enum'      :model.ClassTypes.ENUM}
-_CLASS_TYPE_NAMES_SET        = set(_CLASS_TYPE_MAP_BY_NAME)
+_CLASS_TYPE_NAMES_SET        = set(_CLASS_TYPE_MAP_BY_KEYWORD)
 _WORD_PATTERN                = re.compile('^\\w+$')
 
 class L1Handler:
@@ -372,17 +372,17 @@ class L1Handler:
             elif self._part in _FINALITY_TYPE_NAMES_SET: 
                 
                 if self._finality is not None: raise exc.FinalityDuplicateException(self._line)
-                self._finality = _FINALITY_TYPE_MAP_BY_NAME[self._part]
+                self._finality = _FINALITY_TYPE_MAP_BY_KEYWORD[self._part]
 
             elif self._part in _ACCESS_MOD_NAMES_SET:
 
                 if self._access is not None: raise exc.AccessModifierDuplicateException(self._line)
-                self._access = _ACCESS_MOD_MAP_BY_NAME[self._part]
+                self._access = _ACCESS_MOD_MAP_BY_KEYWORD[self._part]
 
             elif self._part in _CLASS_TYPE_NAMES_SET:
 
                 if self._class_type is not None: raise exc.ClassException(self._line)
-                self._class_type = _CLASS_TYPE_MAP_BY_NAME[self._part]
+                self._class_type = _CLASS_TYPE_MAP_BY_KEYWORD[self._part]
                 self._state      = state.States.CLASS_BEGIN
                 self._class_implements = set()
                 self._parse_type(after=self._store_class_name, rehandle=False, can_be_array=False)

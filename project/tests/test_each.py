@@ -2,13 +2,15 @@ import itertools
 import unittest
 
 from . import *
-from ..package.l1 import _ACCESS_MOD_MAP_BY_NAME, \
-                         _FINALITY_TYPE_MAP_BY_NAME, \
-                         _CLASS_TYPE_MAP_BY_NAME
+# re-use keyword maps - not pretty (since they are an implementation detail, suggested by the 
+# leading '_') but very useful to construct strings to be used in tests as Java source
+from ..package.l1 import _ACCESS_MOD_MAP_BY_KEYWORD, \
+                         _FINALITY_TYPE_MAP_BY_KEYWORD, \
+                         _CLASS_TYPE_MAP_BY_KEYWORD
 
-_ACCESS_MOD_MAP_RE    = dict((v,k) for k,v in _ACCESS_MOD_MAP_BY_NAME   .items())
-_FINALITY_TYPE_MAP_RE = dict((v,k) for k,v in _FINALITY_TYPE_MAP_BY_NAME.items())
-_CLASS_TYPE_MAP_RE    = dict((v,k) for k,v in _CLASS_TYPE_MAP_BY_NAME   .items())
+_ACCESS_MOD_MAP_RE    = dict((v,k) for k,v in _ACCESS_MOD_MAP_BY_KEYWORD   .items())
+_FINALITY_TYPE_MAP_RE = dict((v,k) for k,v in _FINALITY_TYPE_MAP_BY_KEYWORD.items())
+_CLASS_TYPE_MAP_RE    = dict((v,k) for k,v in _CLASS_TYPE_MAP_BY_KEYWORD   .items())
 
 class GeneralTests              (unittest.TestCase): 
 
@@ -128,13 +130,13 @@ class ClassTestsCombinations    (unittest.TestCase):
 
     def test(self):
 
-        for i,(access, 
-               static    ,
-               finality  ,
-               type      ) in enumerate(itertools.product(model.AccessModifiers.values(),
-                                                          (True,False,),
-                                                          model.FinalityTypes  .values(),
-                                                          model.ClassTypes     .values())):
+        for i,(access   , 
+               static   ,
+               finality ,
+               type     ) in enumerate(itertools.product(model.AccessModifiers.values(),
+                                                         (True,False,),
+                                                         model.FinalityTypes  .values(),
+                                                         model.ClassTypes     .values())):
 
             with self.subTest(i=i):
 
