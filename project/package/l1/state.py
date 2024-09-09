@@ -37,12 +37,13 @@ class TypeStates:
     ARRAY_OPEN  = TypeState('Array (\'[\')')
     ARRAY_CLOSE = TypeState('Array (\']\')')
     AFTERDOT    = TypeState('After-Dot')
+    GENERICS    = TypeState('Generics')
 
-class GenericsComprState(util.Named): pass
-class GenericsComprStates:
+class GenericsComprehensionState(util.Named): pass
+class GenericsComprehensionStates:
 
-    BEGIN   = GenericsComprState('Begin')
-    DEFAULT = GenericsComprState('')
+    BEGIN   = GenericsComprehensionState('Begin')
+    DEFAULT = GenericsComprehensionState('')
 
 class SignatureState(util.Named): pass
 class SignatureStates:

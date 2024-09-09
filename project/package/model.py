@@ -116,6 +116,7 @@ class Method:
     static   :bool               = dataclasses.field(default=False)
     access   :AccessModifier     = dataclasses.field(default=AccessModifiers.DEFAULT)
     finality :FinalityType       = dataclasses.field(default=FinalityTypes  .DEFAULT)
+    generics :str                = dataclasses.field(default='')
     args     :dict[str,Argument] = dataclasses.field(default_factory=dict)
     body     :str|None           = dataclasses.field(default=None)
 

@@ -41,9 +41,9 @@ class L1Handler:
             if _DEBUG: print(
                 _pad(f'{self._state}'     , 35), 
                 _pad(f'{len(self._handlers_stack)=}', 20),
-                _pad(f'{self._class_name_stack[-1] if self._class_name_stack else ''}', 10),
+                #_pad(f'{self._class_name_stack[-1] if self._class_name_stack else ''}', 10),
+                _pad(f'{self._sign_state}', 30),
                 _pad(f'{self._type_state}', 30),
-                #_pad(f'{self._sign_state}', 30),
                 #_pad(f'{self._body_state}', 30),
                 #_pad(f'{self._callargs_state}', 30),
                 repr(self._part)
@@ -57,56 +57,58 @@ class L1Handler:
         self._next_handler                                    = stream_handler
         self._part             :str                           = ''
         self._line             :str                           = ''
-        self._class_name_stack :list[str]                     = list()
-        self._handlers_stack   :list[_Handler]                = list()
-        self._handler                                         = _Handler(self._handle_default, name='default')
+        self._class_name_stack :list[str]                         = list()
+        self._handlers_stack   :list[_Handler]                    = list()
+        self._handler                                             = _Handler(self._handle_default, name='default')
         # resettable state
-        self._state                                           = state.States.DEFAULT
-        self._type_state       :state.TypeState         |None = None
-        self._generics_state   :state.GenericsComprState|None = None
-        self._sign_state       :state.SignatureState    |None = None
-        self._body_state       :state.BodyState         |None = None
-        self._package          :str                     |None = None
-        self._static           :bool                          = False
-        self._imported         :str                     |None = None
-        self._access           :model.AccessModifier    |None = None
-        self._finality         :model.FinalityType      |None = None
-        self._class_type       :model.ClassType         |None = None
-        self._class_name       :str                     |None = None
-        self._class_generics   :str                     |None = None
+        self._state                                               = state.States.DEFAULT
+        self._type_state       :state.TypeState             |None = None
+        self._generics_state   :state.GenericsComprehensionState    |None = None
+        self._sign_state       :state.SignatureState        |None = None
+        self._body_state       :state.BodyState             |None = None
+        self._package          :str                         |None = None
+        self._static           :bool                              = False
+        self._imported         :str                         |None = None
+        self._access           :model.AccessModifier        |None = None
+        self._finality         :model.FinalityType          |None = None
+        self._class_type       :model.ClassType             |None = None
+        self._class_name       :str                         |None = None
+        self._class_generics   :str                         |None = None
         self._class_subc       :dict[model.InheritanceType, set[str]]\
-                                                        |None = None
-        self._class_subc_cur   :model.InheritanceType   |None = None
-        self._attr_type        :model.Type              |None = None
-        self._attr_name        :str                     |None = None
-        self._attr_value_parts :list[str]               |None = None
-        self._attr_nest_depth  :int                     |None = None
-        self._attr_scope_depth :int                     |None = None
-        self._arg_name         :str                     |None = None
-        self._arg_type         :model.Type              |None = None
-        self._sign             :dict[str,model.Argument]|None = None
+                                                            |None = None
+        self._class_subc_cur   :model.InheritanceType       |None = None
+        self._attr_type        :model.Type                  |None = None
+        self._attr_name        :str                         |None = None
+        self._attr_value_parts :list[str]                   |None = None
+        self._attr_nest_depth  :int                         |None = None
+        self._attr_scope_depth :int                         |None = None
+        self._arg_name         :str                         |None = None
+        self._arg_type         :model.Type                  |None = None
+        self._sign             :dict[str,model.Argument]    |None = None
         self._sign_after       :typing.Callable[[dict[str,model.Argument]],None]\
-                                                        |None = None
-        self._constructor_sign :dict[str,model.Argument]|None = None
-        self._method_generics  :str                     |None = None
-        self._method_sign      :dict[str,model.Argument]|None = None
-        self._type_name        :str                     |None = None
-        self._type_generics    :str                     |None = None
-        self._type_is_array    :bool                    |None = None
-        self._type             :model.Type              |None = None
-        self._type_after       :typing.Callable[[],None]|None = None
-        self._type_depth       :int                     |None = None
-        self._type_can_be_array:bool                    |None = None
-        self._body_parts       :list[str]               |None = None
-        self._body_depth       :int                     |None = None
-        self._body_after       :typing.Callable[[],None]|None = None
-        self._enumv_name       :str                     |None = None
-        self._callargs         :list[str]               |None = None
-        self._callargs_state   :state.CallArgsState     |None = None
-        self._callargs_after   :typing.Callable[[],None]|None = None
-        self._callarg_value    :str                     |None = None
-        self._callarg_depth    :int                     |None = None
-        self._throws           :list[model.Type]        |None = None
+                                                            |None = None
+        self._constructor_sign :dict[str,model.Argument]    |None = None
+        self._method_sign      :dict[str,model.Argument]    |None = None
+        self._method_generics  :str                         |None = None
+        self._type             :model.Type                  |None = None
+        self._type_can_be_array:bool                        |None = None
+        self._type_name        :str                         |None = None
+        self._type_is_array    :bool                        |None = None
+        self._type_generics    :str                         |None = None
+        self._type_after       :typing.Callable[[],None]    |None = None
+        self._generics_parts   :list[str]                   |None = None
+        self._generics_depth   :int                         |None = None
+        self._generics_after   :typing.Callable[[str],None] |None = None
+        self._body_parts       :list[str]                   |None = None
+        self._body_depth       :int                         |None = None
+        self._body_after       :typing.Callable[[],None]    |None = None
+        self._enumv_name       :str                         |None = None
+        self._callargs         :list[str]                   |None = None
+        self._callargs_state   :state.CallArgsState         |None = None
+        self._callargs_after   :typing.Callable[[],None]    |None = None
+        self._callarg_value    :str                         |None = None
+        self._callarg_depth    :int                         |None = None
+        self._throws           :list[model.Type]            |None = None
 
     def _reset                      (self, another_state:state.State|None=None):
 
@@ -216,10 +218,15 @@ class L1Handler:
                                                       static    =self._static,
                                                       access    =self._coerce_access(self._access),
                                                       finality  =self._coerce_finality(self._finality),
+                                                      generics  =self._method_generics,
                                                       type      =self._attr_type,
                                                       args      =self._method_sign,
                                                       body      =body))
-        self._method_sign = None
+        self._attr_name       = None
+        self._static          = False
+        self._method_generics = None
+        self._attr_type       = None
+        self._method_sign     = None
         self._reset()
 
     def _flush_method_declared      (self, signature:dict[str,model.Argument]):
@@ -233,7 +240,7 @@ class L1Handler:
                                                              arg_values=list() if no_args else self._callargs))
         self._state = state.States.ENUM_DEFINED
 
-    def _after_type                 (self):
+    def _after_type                 (self, rehandle=True):
 
         self._type              = model.Type(name=self._type_name, generics=self._type_generics, is_array=self._type_is_array)
         self._type_name         = None
@@ -242,10 +249,19 @@ class L1Handler:
         self._type_after(self._type)
         self._type              = None
         self._type_state        = None
-        self._type_depth        = None
+        self._generics_depth    = None
         self._type_can_be_array = None
         self._type_after        = None
-        self._handler   () # re-handle part (word), since it was used only for look-ahead
+        if rehandle: self._handler() # re-handle part (word), since it was used only for look-ahead
+
+    def _after_generics             (self): 
+        
+        self._unstack_handler()
+        self._generics_after(''.join(self._generics_parts))
+        self._generics_state = None
+        self._generics_depth = None
+        self._generics_parts = None
+        self._generics_after = None
 
     def _after_signature            (self):
 
@@ -294,6 +310,16 @@ class L1Handler:
         self._attr_type = type
         self._state     = state.States.DECL_1
 
+    def _store_type_generics        (self, generics:str):
+
+        self._type_generics = generics
+        self._after_type(rehandle=False)
+
+    def _store_method_generics      (self, generics:str):
+
+        self._method_generics = generics
+        self._state = state.States.DEFAULT
+
     def _store_sign_arg             (self):
 
         self._sign[self._arg_name] = model.Argument(type=self._arg_type, final=self._finality is model.FinalityTypes.FINAL)
@@ -316,7 +342,7 @@ class L1Handler:
         self._throws.append(type)
         self._state = state.States.METHOD_DECLARED
 
-    def _parse_body                 (self, after:typing.Callable[[str],None]):
+    def _parse_body                 (self, after:typing.Callable[[str                     ],None]):
 
         self._stack_handler(_Handler(self._handle_body, name='BODY'))
         self._body_state       = state.BodyStates.BEGIN
@@ -333,16 +359,24 @@ class L1Handler:
         self._sign_after = after
         self._handler() # re-handle part ('('), since it was used only for look-ahead
     
-    def _parse_type                 (self, after:typing.Callable[[],None], rehandle:bool=True, can_be_array:bool=True):
+    def _parse_type                 (self, after:typing.Callable[[                        ],None], rehandle:bool=True, can_be_array:bool=True):
 
         self._stack_handler(_Handler(self._handle_type, name='TYPE'))
-        self._type_state        = state.TypeStates.BEGIN
-        self._type_name         = ''
-        self._type_generics     = ''
-        self._type_depth        = 0
-        self._type_can_be_array = can_be_array
-        self._type_is_array     = False
-        self._type_after        = after
+        self._type_state          = state.TypeStates.BEGIN
+        self._type_name           = ''
+        self._type_can_be_array   = can_be_array
+        self._type_is_array       = False
+        self._type_generics = ''
+        self._type_after          = after
+        if rehandle: self._handler()
+
+    def _parse_generics             (self, after:typing.Callable[[str                     ],None], rehandle:bool=True): 
+        
+        self._stack_handler(_Handler(self._handle_generics, name='GENERICS'))
+        self._generics_state = state.GenericsComprehensionStates.BEGIN
+        self._generics_depth = 0
+        self._generics_parts = list()
+        self._generics_after = after
         if rehandle: self._handler()
 
     def _parse_callargs             (self, after:typing.Callable[[],None]):
@@ -373,7 +407,7 @@ class L1Handler:
 
                     self._flush_class()
 
-                else: raise exc.Exception(self._line)
+                else: raise exc.NotConstructorException(self._line)
 
             elif self._part == words.BRACE_CLOSE: 
                 
@@ -411,7 +445,8 @@ class L1Handler:
 
             elif self._part == words.ANGLE_OPEN:
 
-                raise NotImplementedError()
+                if self._method_generics is not None: raise exc.DuplicateGenericsException(self._line)
+                self._parse_generics(after=self._store_method_generics)
 
             else: 
                 
@@ -720,17 +755,8 @@ class L1Handler:
 
             if   self._part in words.ANGLE_OPEN: # generic type - nest
 
-                self._type_generics += self._part
-                self._type_depth    += 1
-
-            elif self._part in words.ANGLE_CLOSE: # generic type - de-nest
-
-                self._type_generics += self._part
-                self._type_depth    -= 1
-
-            elif self._type_depth > 0: # generic type
-
-                self._type_generics += self._part
+                self._type_state = state.TypeStates.GENERICS
+                self._parse_generics(after=self._store_type_generics, rehandle=True)
 
             elif self._part == words.SQUARE_OPEN:
                 
@@ -770,7 +796,21 @@ class L1Handler:
     @__DEBUGGED
     def _handle_generics            (self):
 
-        raise NotImplementedError()
+        if   self._generics_state is state.GenericsComprehensionStates.BEGIN:
+
+            if self._part is not words.ANGLE_OPEN: raise exc.GenericsComprehensionException(self._line)
+            self._generics_state = state.GenericsComprehensionStates.DEFAULT
+            self._handler()
+
+        elif self._generics_state is state.GenericsComprehensionStates.DEFAULT:
+
+            self._generics_depth +=  1 if self._part == words.ANGLE_OPEN  else \
+                                    -1 if self._part == words.ANGLE_CLOSE else \
+                                    0
+            self._generics_parts.append(self._part)
+            if self._generics_depth == 0:
+
+                self._after_generics()
 
     @__DEBUGGED
     def _handle_body                (self):
