@@ -1,4 +1,3 @@
-import collections.abc
 import dataclasses
 
 from .batteries import *
