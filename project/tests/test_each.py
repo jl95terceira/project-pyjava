@@ -2,6 +2,13 @@ import itertools
 import unittest
 
 from . import *
+from ..package.l1 import _ACCESS_MOD_MAP_BY_NAME, \
+                         _FINALITY_TYPE_MAP_BY_NAME, \
+                         _CLASS_TYPE_MAP_BY_NAME
+
+_ACCESS_MOD_MAP_RE    = dict((v,k) for k,v in _ACCESS_MOD_MAP_BY_NAME   .items())
+_FINALITY_TYPE_MAP_RE = dict((v,k) for k,v in _FINALITY_TYPE_MAP_BY_NAME.items())
+_CLASS_TYPE_MAP_RE    = dict((v,k) for k,v in _CLASS_TYPE_MAP_BY_NAME   .items())
 
 class GeneralTests              (unittest.TestCase): 
 
@@ -88,7 +95,12 @@ class ClassTests                (unittest.TestCase):
 
     def test(self, access=model.AccessModifiers.PUBLIC, static=False, type=model.ClassTypes.CLASS, name='Foo', extends='Bar', implements=['Tim','Tom',], end='{'):
 
-        self.th.test(' '.join(filter(bool, (access.keyword, 'static' if static else '', type.keyword, name, 'extends', extends, 'implements', ', '.join(implements), end))))
+        self.th.test(' '.join(filter(bool, (_ACCESS_MOD_MAP_RE[access], 
+                                            'static' if static else '', 
+                                            _CLASS_TYPE_MAP_RE[type], 
+                                            name, 
+                                            'extends', extends, 
+                                            'implements', ', '.join(implements), end))))
 
     def test_correct            (self): self.test()
     @to_fail
@@ -129,4 +141,7 @@ class ClassTestsCombinations    (unittest.TestCase):
                 self.tr.clear_registry()
                 self.th.reset         ()
                 self.tr.r_class_      (model.Class(name='Hello', access=access, static=static, finality=finality, type=type))
-                self.th.test          (' '.join(filter(bool, (access.keyword, 'static' if static else '', finality.keyword, type.keyword, 'Hello {'))))
+                self.th.test          (' '.join(filter(bool, (_ACCESS_MOD_MAP_RE[access], 
+                                                              'static' if static else '', 
+                                                              _FINALITY_TYPE_MAP_RE[finality], 
+                                                              _CLASS_TYPE_MAP_RE[type], 'Hello {'))))

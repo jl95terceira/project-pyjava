@@ -1,41 +1,35 @@
 import dataclasses
 
-from .batteries import *
+from .batteries import Enumerator
+from .util      import Named
 
-from .          import words
-
-@dataclasses.dataclass(frozen=True)
-class HashedAndKeyworded:
-
-    keyword:str = dataclasses.field()
-
-class ClassType(HashedAndKeyworded): pass
+class ClassType(Named): pass
 class ClassTypes:
 
     _e:Enumerator[ClassType] = Enumerator()
-    CLASS     = _e(ClassType(keyword=words.CLASS))
-    INTERFACE = _e(ClassType(keyword=words.INTERFACE))
-    ENUM      = _e(ClassType(keyword=words.ENUM))
+    CLASS     = _e(ClassType(name='CLASS'    ))
+    INTERFACE = _e(ClassType(name='INTERFACE'))
+    ENUM      = _e(ClassType(name='ENUM'     ))
     @staticmethod
     def values(): yield from ClassTypes._e
 
-class FinalityType(HashedAndKeyworded): pass
+class FinalityType(Named): pass
 class FinalityTypes:
 
     _e:Enumerator[FinalityType] = Enumerator()
-    DEFAULT  = _e(FinalityType(keyword=''))
-    ABSTRACT = _e(FinalityType(keyword=words.ABSTRACT))
-    FINAL    = _e(FinalityType(keyword=words.FINAL))
+    DEFAULT  = _e(FinalityType(name='DEFAULT' ))
+    ABSTRACT = _e(FinalityType(name='ABSTRACT'))
+    FINAL    = _e(FinalityType(name='FINAL'   ))
     def values(): yield from FinalityTypes._e
 
-class AccessModifier(HashedAndKeyworded): pass
+class AccessModifier(Named): pass
 class AccessModifiers:
 
     _e:Enumerator[AccessModifier] = Enumerator()
-    PUBLIC    = _e(AccessModifier(keyword=words.PUBLIC))
-    PROTECTED = _e(AccessModifier(keyword=words.PROTECTED))
-    DEFAULT   = _e(AccessModifier(keyword=''))
-    PRIVATE   = _e(AccessModifier(keyword=words.PRIVATE))
+    PUBLIC    = _e(AccessModifier(name='PUBLIC'   ))
+    PROTECTED = _e(AccessModifier(name='PROTECTED'))
+    DEFAULT   = _e(AccessModifier(name='DEFAULT'  ))
+    PRIVATE   = _e(AccessModifier(name='PRIVATE'  ))
     @staticmethod
     def values(): yield from AccessModifiers._e
 

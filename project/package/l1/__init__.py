@@ -11,12 +11,19 @@ from ..   import model
 from ..   import words
 from ..l2 import L2Handler
 
-_ACCESS_MOD_NAMES_SET        = {x.keyword   for x in model.AccessModifiers.values()}
-_ACCESS_MOD_MAP_BY_NAME      = {x.keyword:x for x in model.AccessModifiers.values()}
-_FINALITY_TYPE_NAMES_SET     = {x.keyword   for x in model.FinalityTypes  .values()}
-_FINALITY_TYPE_MAP_BY_NAME   = {x.keyword:x for x in model.FinalityTypes  .values()}
-_CLASS_TYPE_NAMES_SET        = {x.keyword   for x in model.ClassTypes     .values()}
-_CLASS_TYPE_MAP_BY_NAME      = {x.keyword:x for x in model.ClassTypes     .values()}
+_ACCESS_MOD_MAP_BY_NAME      = {'public'    :model.AccessModifiers.PUBLIC,
+                                ''          :model.AccessModifiers.DEFAULT,
+                                'protected' :model.AccessModifiers.PROTECTED,
+                                'private'   :model.AccessModifiers.PRIVATE}
+_ACCESS_MOD_NAMES_SET        = set(_ACCESS_MOD_MAP_BY_NAME)
+_FINALITY_TYPE_MAP_BY_NAME   = {''          :model.FinalityTypes.DEFAULT,
+                                'abstract'  :model.FinalityTypes.ABSTRACT,
+                                'final'     :model.FinalityTypes.FINAL}
+_FINALITY_TYPE_NAMES_SET     = set(_FINALITY_TYPE_MAP_BY_NAME)
+_CLASS_TYPE_MAP_BY_NAME      = {'class'     :model.ClassTypes.CLASS,
+                                'interface' :model.ClassTypes.INTERFACE,
+                                'enum'      :model.ClassTypes.ENUM}
+_CLASS_TYPE_NAMES_SET        = set(_CLASS_TYPE_MAP_BY_NAME)
 _WORD_PATTERN                = re.compile('^\\w+$')
 
 class L1Handler:
