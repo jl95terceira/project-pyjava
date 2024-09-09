@@ -38,6 +38,12 @@ class TypeStates:
     ARRAY_CLOSE = TypeState('Array (\']\')')
     AFTERDOT    = TypeState('After-Dot')
 
+class GenericsComprState(util.Named): pass
+class GenericsComprStates:
+
+    BEGIN   = GenericsComprState('Begin')
+    DEFAULT = GenericsComprState('')
+
 class SignatureState(util.Named): pass
 class SignatureStates:
 

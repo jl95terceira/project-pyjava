@@ -40,7 +40,7 @@ class L1Handler:
             def _pad(x:str,v:int): return (lambda s: f'{s}{(v-len(s))*' '}')(x if isinstance(x, str) else str(x))
             if _DEBUG: print(
                 _pad(f'{self._state}'     , 35), 
-                #_pad(f'{len(self._handlers_stack)=}', 20),
+                _pad(f'{len(self._handlers_stack)=}', 20),
                 _pad(f'{self._class_name_stack[-1] if self._class_name_stack else ''}', 10),
                 _pad(f'{self._type_state}', 30),
                 #_pad(f'{self._sign_state}', 30),
@@ -63,6 +63,7 @@ class L1Handler:
         # resettable state
         self._state                                           = state.States.DEFAULT
         self._type_state       :state.TypeState         |None = None
+        self._generics_state   :state.GenericsComprState|None = None
         self._sign_state       :state.SignatureState    |None = None
         self._body_state       :state.BodyState         |None = None
         self._package          :str                     |None = None
@@ -84,8 +85,10 @@ class L1Handler:
         self._arg_name         :str                     |None = None
         self._arg_type         :model.Type              |None = None
         self._sign             :dict[str,model.Argument]|None = None
-        self._sign_after       :typing.Callable[[],None]|None = None
+        self._sign_after       :typing.Callable[[dict[str,model.Argument]],None]\
+                                                        |None = None
         self._constructor_sign :dict[str,model.Argument]|None = None
+        self._method_generics  :str                     |None = None
         self._method_sign      :dict[str,model.Argument]|None = None
         self._type_name        :str                     |None = None
         self._type_generics    :str                     |None = None
@@ -103,7 +106,7 @@ class L1Handler:
         self._callargs_after   :typing.Callable[[],None]|None = None
         self._callarg_value    :str                     |None = None
         self._callarg_depth    :int                     |None = None
-        self._throws           :list[str]               |None = None
+        self._throws           :list[model.Type]        |None = None
 
     def _reset                      (self, another_state:state.State|None=None):
 
@@ -123,6 +126,7 @@ class L1Handler:
         self._attr_name         = None
         self._body_parts        = None
         self._enumv_name        = None
+        self._throws            = None
 
     def _stack_handler              (self, handler:'_Handler'):
 
@@ -235,7 +239,7 @@ class L1Handler:
         self._type_name         = None
         self._type_is_array     = None
         self._unstack_handler()
-        self._type_after()
+        self._type_after(self._type)
         self._type              = None
         self._type_state        = None
         self._type_depth        = None
@@ -273,10 +277,10 @@ class L1Handler:
         self._callargs       = None
         self._callargs_after = None
 
-    def _store_class_name           (self):
+    def _store_class_name           (self, type:model.Type):
 
-        self._class_name     = self._type.name
-        self._class_generics = self._type_generics
+        self._class_name     = type.name
+        self._class_generics = type.generics
         self._state          = state.States.CLASS_AFTER_NAME
         self._class_subc     = defaultdict(set)
 
@@ -285,9 +289,9 @@ class L1Handler:
         self._state            = state.States.CONSTRUCTOR_DECLARED
         self._constructor_sign = signature
 
-    def _store_attr_type            (self):
+    def _store_attr_type            (self, type:model.Type):
 
-        self._attr_type = self._type
+        self._attr_type = type
         self._state     = state.States.DECL_1
 
     def _store_sign_arg             (self):
@@ -296,9 +300,9 @@ class L1Handler:
         self._arg_name = None
         self._arg_type = None
 
-    def _store_arg_type             (self):
+    def _store_arg_type             (self, type:model.Type):
 
-        self._arg_type   = self._type
+        self._arg_type   = type
         self._sign_state = state.SignatureStates.ARG_TYPED
 
     def _store_callarg              (self):
@@ -306,6 +310,11 @@ class L1Handler:
         self._callargs.append(self._callarg_value)
         self._callarg_value = ''
         self._callarg_depth = 0
+
+    def _store_throws               (self, type:model.Type):
+
+        self._throws.append(type)
+        self._state = state.States.METHOD_DECLARED
 
     def _parse_body                 (self, after:typing.Callable[[str],None]):
 
@@ -316,7 +325,7 @@ class L1Handler:
         self._body_after       = after
         self._handler() # re-handle part ('{'), since it was used only for look-ahead
 
-    def _parse_signature            (self, after:typing.Callable[[],None]):
+    def _parse_signature            (self, after:typing.Callable[[dict[str,model.Argument]],None]):
     
         self._stack_handler(_Handler(self._handle_signature, name='SIGNATURE'))
         self._sign       = dict()
@@ -399,6 +408,10 @@ class L1Handler:
             elif self._part == words.ATSIGN    : 
                 
                 self._state = state.States.ANNOTATION
+
+            elif self._part == words.ANGLE_OPEN:
+
+                raise NotImplementedError()
 
             else: 
                 
@@ -576,20 +589,18 @@ class L1Handler:
             
             elif self._part == words.THROWS:
 
-                self._state == state.States.METHOD_THROWS
+                if self._throws is not None: raise exc.MethodException(self._line)
+                self._state  = state.States.METHOD_THROWS
                 self._throws = list()
+                self._parse_type(after=self._store_throws, rehandle=False, can_be_array=False)
 
             else:
 
                 self._state = state.States.METHOD_BODY
-                self._handle_default()
+                self._handler()
 
             return
         
-        elif self._state is state.States.METHOD_THROWS:
-
-            raise NotImplementedError(self._state)
-
         elif self._state is state.States.METHOD_BODY:
 
             self._parse_body(after=self._flush_method)
@@ -757,6 +768,11 @@ class L1Handler:
         else: raise AssertionError(f'{self._type_state=}')
 
     @__DEBUGGED
+    def _handle_generics            (self):
+
+        raise NotImplementedError()
+
+    @__DEBUGGED
     def _handle_body                (self):
 
         if self._body_state is state.BodyStates.BEGIN:
@@ -799,7 +815,7 @@ class L1Handler:
         else: raise AssertionError(f'{self._body_state=}')
 
     @__DEBUGGED
-    def _handle_callargs             (self):
+    def _handle_callargs            (self):
 
         if self._callargs_state is state.CallArgsStates.BEGIN:
 
