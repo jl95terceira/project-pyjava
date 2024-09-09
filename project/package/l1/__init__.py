@@ -565,7 +565,7 @@ class L1Handler:
 
             return
         
-        elif self._state == state.States.METHOD_THROWS:
+        elif self._state is state.States.METHOD_THROWS:
 
             raise NotImplementedError(self._state)
 
