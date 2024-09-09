@@ -15,6 +15,4 @@ class StaticDuplicateException          (Exception): pass
 class TypeArrayNotAllowedException      (Exception): pass
 class TypeException                     (Exception): pass
 class TypeOrNameMissingException        (Exception): pass
-class GenericsComprehensionException    (Exception): pass
-class DuplicateGenericsException        (Exception): pass
 class NotConstructorException           (Exception): pass

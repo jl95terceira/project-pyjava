@@ -39,12 +39,6 @@ class TypeStates:
     AFTERDOT    = TypeState('After-Dot')
     GENERICS    = TypeState('Generics')
 
-class GenericsComprehensionState(util.Named): pass
-class GenericsComprehensionStates:
-
-    BEGIN   = GenericsComprehensionState('Begin')
-    DEFAULT = GenericsComprehensionState('')
-
 class SignatureState(util.Named): pass
 class SignatureStates:
 

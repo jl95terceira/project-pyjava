@@ -1,5 +1,5 @@
-_DEBUG          = 0
-_DEBUG_HANDLERS = 0
+_DEBUG          = 1
+_DEBUG_HANDLERS = 1
 
 from   collections import defaultdict
 import re
@@ -10,7 +10,7 @@ from .    import exc
 from ..   import handlers
 from ..   import model
 from ..   import words
-from ..l2 import L2Handler
+from .    import sub
 
 _INHERIT_TYPE_MAP_BY_KEYWORD = {'extends'   :model.InheritanceTypes.EXTENDS,
                                 'implements':model.InheritanceTypes.IMPLEMENTS}
@@ -63,7 +63,6 @@ class L1Handler:
         # resettable state
         self._state                                               = state.States.DEFAULT
         self._type_state       :state.TypeState             |None = None
-        self._generics_state   :state.GenericsComprehensionState    |None = None
         self._sign_state       :state.SignatureState        |None = None
         self._body_state       :state.BodyState             |None = None
         self._package          :str                         |None = None
@@ -96,9 +95,6 @@ class L1Handler:
         self._type_is_array    :bool                        |None = None
         self._type_generics    :str                         |None = None
         self._type_after       :typing.Callable[[],None]    |None = None
-        self._generics_parts   :list[str]                   |None = None
-        self._generics_depth   :int                         |None = None
-        self._generics_after   :typing.Callable[[str],None] |None = None
         self._body_parts       :list[str]                   |None = None
         self._body_depth       :int                         |None = None
         self._body_after       :typing.Callable[[],None]    |None = None
@@ -140,6 +136,10 @@ class L1Handler:
 
         if _DEBUG_HANDLERS: print(f'UNSTACK HANDLER: {self._handlers_stack[-1].name} <- {self._handler.name}')
         self._handler = self._handlers_stack.pop()
+
+    def _unstacking                 (self, f):
+
+        return _ChainedCall(lambda *a, **ka: self._unstack_handler(), f)
 
     def _state_setter               (self, state_:state.State):
 
@@ -249,19 +249,9 @@ class L1Handler:
         self._type_after(self._type)
         self._type              = None
         self._type_state        = None
-        self._generics_depth    = None
         self._type_can_be_array = None
         self._type_after        = None
-        if rehandle: self._handler() # re-handle part (word), since it was used only for look-ahead
-
-    def _after_generics             (self): 
-        
-        self._unstack_handler()
-        self._generics_after(''.join(self._generics_parts))
-        self._generics_state = None
-        self._generics_depth = None
-        self._generics_parts = None
-        self._generics_after = None
+        if rehandle: self._handler(self._part,self._line) # re-handle part (word), since it was used only for look-ahead
 
     def _after_signature            (self):
 
@@ -349,7 +339,7 @@ class L1Handler:
         self._body_parts       = list()
         self._body_depth       = 0
         self._body_after       = after
-        self._handler() # re-handle part ('{'), since it was used only for look-ahead
+        self._handler(self._part,self._line) # re-handle part ('{'), since it was used only for look-ahead
 
     def _parse_signature            (self, after:typing.Callable[[dict[str,model.Argument]],None]):
     
@@ -357,7 +347,7 @@ class L1Handler:
         self._sign       = dict()
         self._sign_state = state.SignatureStates.BEGIN
         self._sign_after = after
-        self._handler() # re-handle part ('('), since it was used only for look-ahead
+        self._handler(self._part,self._line) # re-handle part ('('), since it was used only for look-ahead
     
     def _parse_type                 (self, after:typing.Callable[[                        ],None], rehandle:bool=True, can_be_array:bool=True):
 
@@ -368,16 +358,11 @@ class L1Handler:
         self._type_is_array       = False
         self._type_generics = ''
         self._type_after          = after
-        if rehandle: self._handler()
+        if rehandle: self._handler(self._part,self._line)
 
-    def _parse_generics             (self, after:typing.Callable[[str                     ],None], rehandle:bool=True): 
+    def _parse_generics             (self, after:typing.Callable[[str                     ],None]): 
         
-        self._stack_handler(_Handler(self._handle_generics, name='GENERICS'))
-        self._generics_state = state.GenericsComprehensionStates.BEGIN
-        self._generics_depth = 0
-        self._generics_parts = list()
-        self._generics_after = after
-        if rehandle: self._handler()
+        self._stack_handler(_Handler(sub.generics.Handler(after=self._unstacking(after)), name='GENERICS'))
 
     def _parse_callargs             (self, after:typing.Callable[[],None]):
 
@@ -387,10 +372,10 @@ class L1Handler:
         self._callarg_value  = ''
         self._callarg_depth  = 0
         self._callargs_after = after
-        self._handler() # re-handle part ('('), since it was used only for look-ahead
+        self._handler(self._part,self._line) # re-handle part ('('), since it was used only for look-ahead
 
     @__DEBUGGED
-    def _handle_default             (self):
+    def _handle_default             (self, part:str, line:str):
 
         if   self._state is state.States.DEFAULT:
 
@@ -447,6 +432,7 @@ class L1Handler:
 
                 if self._method_generics is not None: raise exc.DuplicateGenericsException(self._line)
                 self._parse_generics(after=self._store_method_generics)
+                self._handler(part, line)
 
             else: 
                 
@@ -540,7 +526,7 @@ class L1Handler:
             elif self._part in _INHERIT_TYPE_NAMES_SET: 
                 
                 self._state = state.States.CLASS_AFTER_NAME
-                self._handler()
+                self._handler(self._part,self._line)
 
             else: raise exc.ClassException(self._line)
             return
@@ -548,7 +534,7 @@ class L1Handler:
         elif self._state is state.States.CLASS_SUBCLASSES_AFTER:
 
             self._state = state.States.CLASS_SUBCLASSES
-            self._handler()
+            self._handler(self._part,self._line)
             return
 
         elif self._state is state.States.DECL_1:
@@ -632,7 +618,7 @@ class L1Handler:
             else:
 
                 self._state = state.States.METHOD_BODY
-                self._handler()
+                self._handler(self._part,self._line)
 
             return
         
@@ -664,7 +650,7 @@ class L1Handler:
                                 words.COMMA}:
 
                 self._flush_enumv(no_args=True)
-                self._handler() # re-handle part (either semicolon or comma), as it was used only for look-ahead
+                self._handler(self._part,self._line) # re-handle part (either semicolon or comma), as it was used only for look-ahead
 
             else:
                 
@@ -688,7 +674,7 @@ class L1Handler:
         raise NotImplementedError(self._line)
         
     @__DEBUGGED
-    def _handle_signature           (self): 
+    def _handle_signature           (self, part:str, line:str): 
         
         if   self._sign_state is state.SignatureStates.BEGIN:
 
@@ -735,12 +721,12 @@ class L1Handler:
 
             if not _WORD_PATTERN.match(self._part): raise exc.MethodException(self._line)
             self._sign_state = state.SignatureStates.DEFAULT
-            self._handler()
+            self._handler(self._part,self._line)
 
         else: raise AssertionError(f'{self._sign_state=}')
 
     @__DEBUGGED
-    def _handle_type                (self):
+    def _handle_type                (self, part:str, line:str):
 
         if self._type_state   is state.TypeStates.BEGIN:
 
@@ -756,7 +742,8 @@ class L1Handler:
             if   self._part in words.ANGLE_OPEN: # generic type - nest
 
                 self._type_state = state.TypeStates.GENERICS
-                self._parse_generics(after=self._store_type_generics, rehandle=True)
+                self._parse_generics(after=self._store_type_generics)
+                self._handler(part, line)
 
             elif self._part == words.SQUARE_OPEN:
                 
@@ -794,26 +781,7 @@ class L1Handler:
         else: raise AssertionError(f'{self._type_state=}')
 
     @__DEBUGGED
-    def _handle_generics            (self):
-
-        if   self._generics_state is state.GenericsComprehensionStates.BEGIN:
-
-            if self._part is not words.ANGLE_OPEN: raise exc.GenericsComprehensionException(self._line)
-            self._generics_state = state.GenericsComprehensionStates.DEFAULT
-            self._handler()
-
-        elif self._generics_state is state.GenericsComprehensionStates.DEFAULT:
-
-            self._generics_depth +=  1 if self._part == words.ANGLE_OPEN  else \
-                                    -1 if self._part == words.ANGLE_CLOSE else \
-                                    0
-            self._generics_parts.append(self._part)
-            if self._generics_depth == 0:
-
-                self._after_generics()
-
-    @__DEBUGGED
-    def _handle_body                (self):
+    def _handle_body                (self, part:str, line:str):
 
         if self._body_state is state.BodyStates.BEGIN:
 
@@ -855,7 +823,7 @@ class L1Handler:
         else: raise AssertionError(f'{self._body_state=}')
 
     @__DEBUGGED
-    def _handle_callargs            (self):
+    def _handle_callargs            (self, part:str, line:str):
 
         if self._callargs_state is state.CallArgsStates.BEGIN:
 
@@ -909,7 +877,7 @@ class L1Handler:
                 raise exc.MethodCallArgsException(self._line)
             
             self._callargs_state = state.CallArgsStates.DEFAULT
-            self._handler() # re-handle part, since it was used only for look-ahead
+            self._handler(self._part,self._line) # re-handle part, since it was used only for look-ahead
 
         else: raise AssertionError(f'{self._callargs_state=}')
 
@@ -917,7 +885,7 @@ class L1Handler:
         
         self._part = part
         self._line = line
-        self._handler()
+        self._handler(self._part,self._line)
 
     def handle_comment              (self, text   :str, line:str):
 
@@ -953,4 +921,14 @@ class _Handler:
         self._callable = callable
         self.name      = name
 
-    def __call__(self): self._callable()
+    def __call__(self, *a, **ka): self._callable(*a, **ka)
+
+class _ChainedCall:
+
+    def __init__(self, *ff:typing.Callable):
+
+        self._ff = ff
+
+    def __call__(self, *a, **ka):
+
+        for f in self._ff: f(*a, **ka)
