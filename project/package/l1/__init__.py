@@ -1,6 +1,7 @@
 _DEBUG          = 0
 _DEBUG_HANDLERS = 0
 
+from   collections import defaultdict
 import re
 import typing
 
@@ -11,16 +12,20 @@ from ..   import model
 from ..   import words
 from ..l2 import L2Handler
 
-_ACCESS_MOD_MAP_BY_KEYWORD      = {'public'    :model.AccessModifiers.PUBLIC,
+_INHERIT_TYPE_MAP_BY_KEYWORD = {'extends'   :model.InheritanceTypes.EXTENDS,
+                                'implements':model.InheritanceTypes.IMPLEMENTS}
+
+_INHERIT_TYPE_NAMES_SET      = set(_INHERIT_TYPE_MAP_BY_KEYWORD)
+_ACCESS_MOD_MAP_BY_KEYWORD   = {'public'    :model.AccessModifiers.PUBLIC,
                                 ''          :model.AccessModifiers.DEFAULT,
                                 'protected' :model.AccessModifiers.PROTECTED,
                                 'private'   :model.AccessModifiers.PRIVATE}
 _ACCESS_MOD_NAMES_SET        = set(_ACCESS_MOD_MAP_BY_KEYWORD)
-_FINALITY_TYPE_MAP_BY_KEYWORD   = {''          :model.FinalityTypes.DEFAULT,
+_FINALITY_TYPE_MAP_BY_KEYWORD= {''          :model.FinalityTypes.DEFAULT,
                                 'abstract'  :model.FinalityTypes.ABSTRACT,
                                 'final'     :model.FinalityTypes.FINAL}
 _FINALITY_TYPE_NAMES_SET     = set(_FINALITY_TYPE_MAP_BY_KEYWORD)
-_CLASS_TYPE_MAP_BY_KEYWORD      = {'class'     :model.ClassTypes.CLASS,
+_CLASS_TYPE_MAP_BY_KEYWORD   = {'class'     :model.ClassTypes.CLASS,
                                 'interface' :model.ClassTypes.INTERFACE,
                                 'enum'      :model.ClassTypes.ENUM}
 _CLASS_TYPE_NAMES_SET        = set(_CLASS_TYPE_MAP_BY_KEYWORD)
@@ -68,8 +73,9 @@ class L1Handler:
         self._class_type       :model.ClassType         |None = None
         self._class_name       :str                     |None = None
         self._class_generics   :str                     |None = None
-        self._class_extends    :str                     |None = None
-        self._class_implements :set[str]                |None = None
+        self._class_subc       :dict[model.InheritanceType, set[str]]\
+                                                        |None = None
+        self._class_subc_cur   :model.InheritanceType   |None = None
         self._attr_type        :model.Type              |None = None
         self._attr_name        :str                     |None = None
         self._attr_value_parts :list[str]               |None = None
@@ -112,8 +118,7 @@ class L1Handler:
         self._finality          = None
         self._class_type        = None
         self._class_name        = None
-        self._class_extends     = None
-        self._class_implements  = None
+        self._class_subc        = None
         self._attr_type         = None
         self._attr_name         = None
         self._body_parts        = None
@@ -166,8 +171,7 @@ class L1Handler:
                                                     access    =self._coerce_access(self._access),
                                                     finality  =self._coerce_finality(self._finality),
                                                     type      =self._class_type,
-                                                    extends   =self._class_extends,
-                                                    implements=self._class_implements))
+                                                    subclass  =dict(self._class_subc)))
         self._class_name_stack.append(self._class_name)
         self._reset(another_state=None              if self._class_type is not model.ClassTypes.ENUM else \
                                   state.States.ENUM)
@@ -274,6 +278,7 @@ class L1Handler:
         self._class_name     = self._type.name
         self._class_generics = self._type_generics
         self._state          = state.States.CLASS_AFTER_NAME
+        self._class_subc     = defaultdict(set)
 
     def _store_constructor_declared (self, signature:dict[str,model.Argument]):
 
@@ -384,7 +389,6 @@ class L1Handler:
                 if self._class_type is not None: raise exc.ClassException(self._line)
                 self._class_type = _CLASS_TYPE_MAP_BY_KEYWORD[self._part]
                 self._state      = state.States.CLASS_BEGIN
-                self._class_implements = set()
                 self._parse_type(after=self._store_class_name, rehandle=False, can_be_array=False)
 
             elif self._part == words.STATIC    :
@@ -454,15 +458,12 @@ class L1Handler:
         
         elif self._state is state.States.CLASS_AFTER_NAME:
 
-            if   self._part == words.EXTENDS:
+            if   self._part in _INHERIT_TYPE_NAMES_SET:
 
-                if self._class_extends is not None: raise exc.ClassException(self._line)
-                self._state = state.States.CLASS_EXTENDS
-
-            elif self._part == words.IMPLEMENTS:
-
-                if self._class_implements: raise exc.ClassException(self._line)
-                self._state = state.States.CLASS_IMPLEMENTS
+                it = _INHERIT_TYPE_MAP_BY_KEYWORD[self._part]
+                if it in self._class_subc: raise exc.ClassException(self._line)
+                self._state          = state.States.CLASS_SUBCLASSES
+                self._class_subc_cur = it
 
             elif self._part == words.BRACE_OPEN:
 
@@ -471,35 +472,34 @@ class L1Handler:
             else: raise exc.ClassException(self._line)
             return
 
-        elif self._state is state.States.CLASS_EXTENDS:
+        elif self._state is state.States.CLASS_SUBCLASSES:
 
-            self._class_extends = self._part
-            self._state   = state.States.CLASS_AFTER_NAME
+            if self._part in self._class_subc[self._class_subc_cur]: raise exc.ClassException(self._line)
+            self._class_subc[self._class_subc_cur].add(self._part)
+            self._state = state.States.CLASS_SUBCLASSES_NAMED
             return
 
-        elif self._state is state.States.CLASS_IMPLEMENTS:
-
-            if self._part in self._class_implements: raise exc.ClassException(self._line)
-            self._class_implements.add(self._part)
-            self._state = state.States.CLASS_IMPLEMENTS_NAMED
-            return
-
-        elif self._state is state.States.CLASS_IMPLEMENTS_NAMED:
+        elif self._state is state.States.CLASS_SUBCLASSES_NAMED:
 
             if   self._part == words.COMMA:
 
-                self._state = state.States.CLASS_IMPLEMENTS_AFTER
+                self._state = state.States.CLASS_SUBCLASSES_AFTER
 
             elif self._part == words.BRACE_OPEN:
 
                 self._flush_class()
+
+            elif self._part in _INHERIT_TYPE_NAMES_SET: 
+                
+                self._state = state.States.CLASS_AFTER_NAME
+                self._handler()
 
             else: raise exc.ClassException(self._line)
             return
         
-        elif self._state is state.States.CLASS_IMPLEMENTS_AFTER:
+        elif self._state is state.States.CLASS_SUBCLASSES_AFTER:
 
-            self._state = state.States.CLASS_IMPLEMENTS
+            self._state = state.States.CLASS_SUBCLASSES
             self._handler()
             return
 

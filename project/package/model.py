@@ -1,3 +1,4 @@
+from   collections import defaultdict
 import dataclasses
 
 from .batteries import Enumerator
@@ -13,6 +14,15 @@ class ClassTypes:
     @staticmethod
     def values(): yield from ClassTypes._e
 
+class InheritanceType(Named): pass
+class InheritanceTypes:
+
+    _e:Enumerator[InheritanceType] = Enumerator()
+    EXTENDS    = _e(InheritanceType(name='EXTENDS'))
+    IMPLEMENTS = _e(InheritanceType(name='IMPLEMENTS'))
+    @staticmethod
+    def values(): yield from InheritanceTypes._e
+    
 class FinalityType(Named): pass
 class FinalityTypes:
 
@@ -58,8 +68,8 @@ class Class:
     static    :bool           = dataclasses.field(default=False)
     access    :AccessModifier = dataclasses.field(default=AccessModifiers.DEFAULT)
     finality  :FinalityType   = dataclasses.field(default=FinalityTypes  .DEFAULT)
-    extends   :str|None       = dataclasses.field(default=None)
-    implements:set[str]       = dataclasses.field(default_factory=set)
+    subclass  :dict[InheritanceType,set[str]] \
+                              = dataclasses.field(default_factory=dict)
 
 @dataclasses.dataclass(frozen=True)
 class ClassEnd: pass

@@ -92,16 +92,16 @@ class ClassTests                (unittest.TestCase):
         self.tr,self.th = gett(self)
         self.tr.r_class_(model.Class(name      ='Foo', 
                                      access    =model.AccessModifiers.PUBLIC, 
-                                     extends   ='Bar', 
-                                     implements={'Tim', 'Tom'}))
+                                     subclass  ={model.InheritanceTypes.EXTENDS   : {'Bar'},
+                                                 model.InheritanceTypes.IMPLEMENTS: {'Tim', 'Tom'}}))
 
-    def test(self, access=model.AccessModifiers.PUBLIC, static=False, type=model.ClassTypes.CLASS, name='Foo', extends='Bar', implements=['Tim','Tom',], end='{'):
+    def test(self, access=model.AccessModifiers.PUBLIC, static=False, type=model.ClassTypes.CLASS, name='Foo', extends=['Bar'], implements=['Tim','Tom',], end='{'):
 
         self.th.test(' '.join(filter(bool, (_ACCESS_MOD_MAP_RE[access], 
                                             'static' if static else '', 
                                             _CLASS_TYPE_MAP_RE[type], 
                                             name, 
-                                            'extends', extends, 
+                                            'extends'   , ', '.join(extends), 
                                             'implements', ', '.join(implements), end))))
 
     def test_correct            (self): self.test()
@@ -114,7 +114,7 @@ class ClassTests                (unittest.TestCase):
     @to_fail
     def test_wrong_name         (self): self.test(name='Fuu')
     @to_fail
-    def test_wrong_extends      (self): self.test(extends='Baz')
+    def test_wrong_extends      (self): self.test(extends   =['Baz'])
     @to_fail
     def test_wrong_implements   (self): self.test(implements={'Tim', 'Tam'})
     @to_fail
