@@ -1,28 +1,31 @@
 import re
+import typing
 
-from .    import exc
-from .    import state
-from ..   import handlers
+from .    import exc, state
+from ..   import handlers, util
 from ..l1 import L1Handler
 
 PATTERN  = re.compile(f'((?:\\w+)|(?:/\\*)|(?:\\*/)|(?://)|(?:\\\\.)|\\s+|.)')
 
-class L0Handler:
+class L0Handler(handlers.LineHandler):
 
     def __init__(self, stream_handler:handlers.StreamHandler):
 
-        self._next_handler              = L1Handler(stream_handler=stream_handler)
-        self._state                     = state.States.DEFAULT
-        self._comment_parts:list[str]   = list()
-        self._string_parts :list[str]   = list()
-        self._first_line                = True
+        self._next_handler                 = L1Handler(stream_handler=stream_handler)
+        self._state                        = state.States.DEFAULT
+        self._line         :str      |None = None
+        self._comment_parts:list[str]|None = None
+        self._string_parts :list[str]|None = None
+        self._first_line                   = True
 
+    @typing.override
     def handle_line(self, line:str):
 
+        self._next_handler.handle_line(line)
         if   self._state is state.States.IN_COMMENT_ONELINE: # // ...
 
-            self._next_handler.handle_comment(text=''.join(self._comment_parts), line=line)
-            self._comment_parts.clear()
+            self._next_handler.handle_comment(text=''.join(self._comment_parts))
+            self._comment_parts = None
             self._state = state.States.DEFAULT # no longer in comment, since this is another line
 
         elif self._state is state.States.IN_COMMENT_MULTILINE: # /* ... */
@@ -31,7 +34,7 @@ class L0Handler:
 
         if not self._first_line:
 
-            self._next_handler.handle_newline(line=line)
+            self._next_handler.handle_newline()
 
         else:
 
@@ -48,8 +51,8 @@ class L0Handler:
 
                 else:
 
-                    self._next_handler.handle_part(part=f'"{''.join(self._string_parts)}"', line=line)
-                    self._string_parts.clear()
+                    self._next_handler.handle_part(part=f'"{''.join(self._string_parts)}"')
+                    self._string_parts = None
                     self._state = state.States.DEFAULT
 
             elif self._state is state.States.IN_COMMENT_ONELINE: # // ...
@@ -65,19 +68,31 @@ class L0Handler:
 
                 else:
 
-                    self._next_handler.handle_comment(text=''.join(self._comment_parts), line=line)
-                    self._comment_parts.clear()
+                    self._next_handler.handle_comment(text=''.join(self._comment_parts))
+                    self._comment_parts = None
                     self._state = state.States.DEFAULT
 
             else:
 
                 if not part.strip(): 
                     
-                    self._next_handler.handle_spacing(spacing=part, line=line)
+                    self._next_handler.handle_spacing(spacing=part)
 
-                elif part == '"' : self._state = state.States.IN_STRING
-                elif part == '/*': self._state = state.States.IN_COMMENT_MULTILINE
-                elif part == '//': self._state = state.States.IN_COMMENT_ONELINE
+                elif part == '"' : 
+                    
+                    self._state = state.States.IN_STRING
+                    self._string_parts = list()
+
+                elif part == '/*': 
+                    
+                    self._comment_parts = list()
+                    self._state = state.States.IN_COMMENT_MULTILINE
+
+                elif part == '//': 
+                    
+                    self._comment_parts = list()
+                    self._state = state.States.IN_COMMENT_ONELINE
+
                 else:
 
-                    self._next_handler.handle_part(part=part, line=line)
+                    self._next_handler.handle_part(part=part)

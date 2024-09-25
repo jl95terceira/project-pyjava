@@ -23,9 +23,10 @@ class Tests(unittest.TestCase):
         self.tr.r_attribute    (model.Attribute        (name='b3', type=model.Type('String')                                , access=model.AccessModifiers.PROTECTED    , value='  "abc"'        , final =False))
         self.tr.r_attribute    (model.Attribute        (name='b4', type=model.Type('Object', is_array=True) , static=True   , access=model.AccessModifiers.PUBLIC       , value=' new Object[]{}', final =True))
         self.tr.r_static_constr(model.StaticConstructor(body='\n'+8*' '+'System.out.println("Hello, static");\n'+4*' '))
-        self.tr.r_constructor  (model.Constructor      (args={'properties':model.Argument(type=model.Type('Map'    , generics='<String,String>')),
-                                                              'awesome'   :model.Argument(type=model.Type('Boolean'))}, body=''))
-        self.tr.r_constructor  (model.Constructor      (args={'data'      :model.Argument(type=model.Type('byte'   , is_array=True))}, body=f'\n{8*' '}Test1(null, false);\n{4*' '}'))
+        self.tr.r_constructor  (model.Constructor      (access=model.AccessModifiers.PUBLIC,  args={'properties':model.Argument(type=model.Type('Map'    , generics='<String,String>')),
+                                                                                                    'awesome'   :model.Argument(type=model.Type('Boolean'))}, body=''))
+        self.tr.r_constructor  (model.Constructor      (access=model.AccessModifiers.PRIVATE, args={'data'      :model.Argument(type=model.Type('byte'   , is_array=True))}, body=f'\n{8*' '}Test1(null, false);\n{4*' '}'))
+        self.tr.r_constructor  (model.Constructor      (access=model.AccessModifiers.DEFAULT, args={}, body=f''))
         self.tr.r_class_end    ()
         # do it
         self.th.test_file('Test1.java')

@@ -29,31 +29,6 @@ class States:
     METHOD_THROWS               = State('Method Throws')
     METHOD_BODY                 = State('Method Body')
 
-class TypeState(util.Named): pass
-class TypeStates:
-
-    BEGIN       = TypeState('Begin')
-    DEFAULT     = TypeState('')
-    ARRAY_OPEN  = TypeState('Array (\'[\')')
-    ARRAY_CLOSE = TypeState('Array (\']\')')
-    AFTERDOT    = TypeState('After-Dot')
-    GENERICS    = TypeState('Generics')
-
-class SignatureState(util.Named): pass
-class SignatureStates:
-
-    BEGIN        = SignatureState('Begin')
-    DEFAULT      = SignatureState('')
-    ARG_TYPED    = SignatureState('Arg Typed')
-    ARG_NAMED    = SignatureState('Arg Named')
-    ARG_SEPARATE = SignatureState('Arg Sep.')
-
-class BodyState(util.Named): pass
-class BodyStates:
-
-    BEGIN   = BodyState('')
-    ONGOING = BodyState('Ongoing')
-
 class CallArgsState(util.Named): pass
 class CallArgsStates:
 

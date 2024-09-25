@@ -1,5 +1,21 @@
 import abc
 
+class LineHandler(abc.ABC):
+
+    @abc.abstractmethod
+    def handle_line                 (self, line:str): ...
+    
+class PartsHandler(LineHandler):
+
+    @abc.abstractmethod
+    def handle_part                 (self, part:str): ...
+    @abc.abstractmethod
+    def handle_comment              (self, text:str): ...
+    @abc.abstractmethod
+    def handle_spacing              (self, spacing:str): ...
+    @abc.abstractmethod
+    def handle_newline              (self): ...
+    
 from . import model
 
 class StreamHandler(abc.ABC): 

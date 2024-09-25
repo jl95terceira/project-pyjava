@@ -17,9 +17,10 @@ public class Test1 {
         System.out.println("Hello, static");
     }
 
-    public Test1(Map<String, String> properties,
-                 Boolean             awesome) {}
-    public Test1(byte[]              data)    {
+    public  Test1(Map<String, String> properties,
+                  Boolean             awesome) {}
+    private Test1(byte[]              data)    {
         Test1(null, false);
     }
+    Test1(){}
 }

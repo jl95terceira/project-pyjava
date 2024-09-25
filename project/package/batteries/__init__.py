@@ -41,6 +41,16 @@ class Enumerator[T]:
 
         return self._managed.__iter__()
 
+class ChainedCall:
+
+    def __init__(self, *ff:typing.Callable):
+
+        self._ff = ff
+
+    def __call__(self, *a, **ka):
+
+        for f in self._ff: f(*a, **ka)
+
 #_SIGINT_HOOKS:list[typing.Callable[[],None]] = []
 #def _SIGINT_MASTER_HANDLER(sig, frame):
 #

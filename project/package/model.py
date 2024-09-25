@@ -57,7 +57,7 @@ class Import:
 @dataclasses.dataclass(frozen=True)
 class Annotation:
 
-    name:str
+    name:str = dataclasses.field()
 
 @dataclasses.dataclass(frozen=True)
 class Class:
@@ -90,13 +90,14 @@ class Argument:
 @dataclasses.dataclass(frozen=True)
 class StaticConstructor:
 
-    body:str
+    body:str = dataclasses.field()
 
 @dataclasses.dataclass(frozen=True)
 class Constructor:
 
-    args:dict[str,Argument]
-    body:str
+    args  :dict[str,Argument] = dataclasses.field()
+    body  :str                = dataclasses.field()
+    access:AccessModifier     = dataclasses.field(default=AccessModifiers.DEFAULT)
 
 @dataclasses.dataclass(frozen=True)
 class Attribute:
@@ -123,8 +124,8 @@ class Method:
 @dataclasses.dataclass(frozen=True)
 class EnumValue:
 
-    name      :str
-    arg_values:list[str] = dataclasses.field(default_factory=list)
+    name:str       = dataclasses.field()
+    args:list[str] = dataclasses.field(default_factory=list)
 
 @dataclasses.dataclass(frozen=True)
 class Comment:
