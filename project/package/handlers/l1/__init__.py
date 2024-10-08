@@ -131,7 +131,8 @@ class L1Handler(handlers.PartsHandler):
     def _flush_static_constructor   (self, body:str): 
         
         self._NEXT.handle_static_constructor(model.StaticConstructor(body=body))
-        self._state = state.States.DEFAULT
+        self._state  = state.States.DEFAULT
+        self._static = False
 
     def _flush_constructor          (self, body:str): 
         
