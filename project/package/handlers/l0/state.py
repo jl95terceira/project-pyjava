@@ -1,6 +1,5 @@
-from ..batteries import *
-
-from .. import util
+from ...          import util
+from ...batteries import *
 
 class State(util.Named): pass
 class States:

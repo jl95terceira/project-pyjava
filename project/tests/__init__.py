@@ -5,7 +5,9 @@ import os.path
 import typing
 import unittest
 
-from ..package import handlers, model, StreamParser
+from ..package import handlers
+
+from ..package import model, StreamParser
 
 DEBUG = 0
 

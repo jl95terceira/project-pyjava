@@ -2,8 +2,8 @@ import re
 import typing
 
 from .    import exc, state
-from ..   import handlers, util
 from ..l1 import L1Handler
+from ...  import handlers
 
 PATTERN  = re.compile(f'((?:\\w+)|(?:/\\*)|(?:\\*/)|(?://)|(?:\\\\.)|\\s+|.)')
 

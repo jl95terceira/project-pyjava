@@ -4,9 +4,9 @@ from   collections import defaultdict
 import re
 import typing
 
-from .    import exc, state, sub
-from ..   import handlers, model, util, words
-from ..batteries import *
+from .            import exc, state
+from ...          import model, util, words, handlers
+from ...batteries import *
 
 _INHERIT_TYPE_MAP_BY_KEYWORD = {'extends'   :model.InheritanceTypes.EXTENDS,
                                 'implements':model.InheritanceTypes.IMPLEMENTS}
@@ -242,7 +242,7 @@ class L1Handler(handlers.PartsHandler):
                 if self._static and (self._attr_type is None): 
                     
                     self._state = state.States.STATIC_CONSTRUCTOR_BODY
-                    self._stack_handler(sub.body.Handler(after=self._unstacking(self._flush_static_constructor)))
+                    self._stack_handler(handlers.body.Handler(after=self._unstacking(self._flush_static_constructor)))
                     self.handle_part(part) # re-handle part ('{'), since it was used only for look-ahead
                     
                 elif self._class_name is not None:
@@ -274,7 +274,7 @@ class L1Handler(handlers.PartsHandler):
                 if self._class_type is not None: raise exc.ClassException(line)
                 self._class_type = _CLASS_TYPE_MAP_BY_KEYWORD[part]
                 self._state      = state.States.CLASS_BEGIN
-                self._stack_handler(sub.type.Handler(after=self._unstacking(self._store_class_name), part_rehandler=self.handle_part, can_be_array=False))
+                self._stack_handler(handlers.type.Handler(after=self._unstacking(self._store_class_name), part_rehandler=self.handle_part, can_be_array=False))
 
             elif part == words.STATIC    :
 
@@ -288,13 +288,13 @@ class L1Handler(handlers.PartsHandler):
             elif part == words.ANGLE_OPEN:
 
                 if self._method_generics is not None: raise exc.DuplicateGenericsException(line)
-                self._stack_handler(sub.generics.Handler(after=self._unstacking(self._store_method_generics)))
+                self._stack_handler(handlers.generics.Handler(after=self._unstacking(self._store_method_generics)))
                 self.handle_part(part)
 
             else: 
                 
                 self._state = state.States.ATTR_BEGIN
-                self._stack_handler(sub.type.Handler(after=self._unstacking(self._store_attr_type), part_rehandler=self.handle_part))
+                self._stack_handler(handlers.type.Handler(after=self._unstacking(self._store_attr_type), part_rehandler=self.handle_part))
                 self.handle_part(part)
 
             return
@@ -402,7 +402,7 @@ class L1Handler(handlers.PartsHandler):
                 if (self._attr_type.name == self._class_name_stack[-1]): # constructor, since previously we got a word equal to the class' name
 
                     self._state = state.States.CONSTRUCTOR_SIGNATURE
-                    self._stack_handler(sub.signature.Handler(after=self._unstacking(self._store_constructor_declared)))
+                    self._stack_handler(handlers.signature.Handler(after=self._unstacking(self._store_constructor_declared)))
                     self.handle_part(part) # re-handle part ('('), since it was used only for look-ahead
 
                 else:
@@ -432,7 +432,7 @@ class L1Handler(handlers.PartsHandler):
             elif part == words.PARENTH_OPEN:
 
                 self._state = state.States.METHOD_SIGNATURE
-                self._stack_handler(sub.signature.Handler(after=self._unstacking(self._store_method_signature)))
+                self._stack_handler(handlers.signature.Handler(after=self._unstacking(self._store_method_signature)))
                 self.handle_part(part) # re-handle part ('('), since it was used only for look-ahead
 
             else: raise exc.AttributeException(line)
@@ -441,7 +441,7 @@ class L1Handler(handlers.PartsHandler):
         elif self._state is state.States.CONSTRUCTOR_DECLARED:
 
             self._state = state.States.CONSTRUCTOR_BODY
-            self._stack_handler(sub.body.Handler(after=self._unstacking(self._flush_constructor)))
+            self._stack_handler(handlers.body.Handler(after=self._unstacking(self._flush_constructor)))
             self.handle_part(part) # re-handle part ('{'), since it was used only for look-ahead
             return
 
@@ -476,7 +476,7 @@ class L1Handler(handlers.PartsHandler):
                 if self._throws is not None: raise exc.MethodException(line)
                 self._state  = state.States.METHOD_THROWS
                 self._throws = list()
-                self._stack_handler(sub.type.Handler(after=self._unstacking(self._store_throws), part_rehandler=self.handle_part, can_be_array=False))
+                self._stack_handler(handlers.type.Handler(after=self._unstacking(self._store_throws), part_rehandler=self.handle_part, can_be_array=False))
 
             else:
 
@@ -487,7 +487,7 @@ class L1Handler(handlers.PartsHandler):
         
         elif self._state is state.States.METHOD_BODY:
 
-            self._stack_handler(sub.body.Handler(after=self._unstacking(self._flush_method)))
+            self._stack_handler(handlers.body.Handler(after=self._unstacking(self._flush_method)))
             self.handle_part(part) # re-handle part ('{'), since it was used only for look-ahead
             return
         
@@ -518,7 +518,7 @@ class L1Handler(handlers.PartsHandler):
 
             else:
                 
-                self._stack_handler(sub.callargs.Handler(after=self._unstacking(self._flush_enumv)))
+                self._stack_handler(handlers.callargs.Handler(after=self._unstacking(self._flush_enumv)))
                 self.handle_part(part) # re-handle part ('('), since it was used only for look-ahead
 
             return

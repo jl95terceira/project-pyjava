@@ -1,10 +1,9 @@
 import re
 import typing
 
-from .    import exc, state
-from ...  import sub
-from .... import handlers, model, util, words
-from ....batteries import *
+from .            import exc, state
+from ...          import handlers, model, util, words
+from ...batteries import *
 
 _WORD_PATTERN                = re.compile('^\\w+$')
 
@@ -33,7 +32,7 @@ class Handler(handlers.PartsHandler):
 
     def _parse_type_generics        (self, after:typing.Callable[[str],None]):
 
-        self._stack_handler(sub.generics.Handler(after=self._unstacking(after)))
+        self._stack_handler(handlers.generics.Handler(after=self._unstacking(after)))
 
     def _store_type_generics        (self, generics:str):
 
@@ -66,7 +65,7 @@ class Handler(handlers.PartsHandler):
             if   part in words.ANGLE_OPEN: # generic type - nest
 
                 self._state = state.States.GENERICS
-                self._stack_handler(sub.generics.Handler(after=self._store_type_generics))
+                self._stack_handler(handlers.generics.Handler(after=self._store_type_generics))
                 self.handle_part(part)
 
             elif part == words.SQUARE_OPEN:

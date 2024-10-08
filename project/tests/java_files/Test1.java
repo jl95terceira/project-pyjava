@@ -8,8 +8,8 @@ public class Test1 {
                 static       boolean   a2;
     protected                String[]  a3;
     public      static       Object    a4;
-    private            final int       b1 = 123;
-                static final boolean   b2 =   true;
+    private     static final int       b1 = 123;
+                       final boolean   b2 =   true;
     protected                String    b3 =  "abc";
     public      static final Object[]  b4 = new Object[]{};
 

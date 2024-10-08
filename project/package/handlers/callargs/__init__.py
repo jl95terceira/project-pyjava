@@ -1,10 +1,9 @@
 import re
 import typing
 
-from .    import exc, state
-from ...  import sub
-from .... import handlers, model, util, words
-from ....batteries import *
+from .            import exc, state
+from ...          import handlers, words
+from ...batteries import *
 
 _WORD_PATTERN = re.compile('^\\w+$')
 
@@ -26,10 +25,10 @@ class Handler(handlers.PartsHandler):
         self._callarg_depth = 0
 
     @typing.override
-    def handle_line(self, line: str): self._line = line
+    def handle_line   (self, line: str): self._line = line
 
     @typing.override
-    def handle_part(self, part:str):
+    def handle_part   (self, part:str):
 
         line = self._line
         if self._callargs_state is state.CallArgsStates.BEGIN:
@@ -55,7 +54,7 @@ class Handler(handlers.PartsHandler):
 
                 else:
 
-                    self._after_callargs()
+                    self._stop()
 
             elif part == words.PARENTH_OPEN:
 
@@ -97,7 +96,7 @@ class Handler(handlers.PartsHandler):
     @typing.override
     def handle_newline(self): pass #TO-DO
 
-    def _after_callargs             (self):
+    def _stop(self):
 
         if self._callarg_value:
 

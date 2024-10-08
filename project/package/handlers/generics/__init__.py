@@ -1,9 +1,7 @@
 import typing
 
-from .    import state
-from .    import exc
-from .... import handlers
-from .... import words
+from .   import exc, state
+from ... import handlers, words
 
 class Handler(handlers.PartsHandler):
 

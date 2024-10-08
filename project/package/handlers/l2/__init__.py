@@ -1,7 +1,7 @@
 import typing
 
-from .. import handlers
-from .. import model
+from ..  import model
+from ... import handlers
 
 # For now, all we do is print the events of the parsing process.
 # TODO: something more useful :)

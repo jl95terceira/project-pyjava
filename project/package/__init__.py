@@ -1,10 +1,6 @@
-import io
-import re
-import typing
-
-from .   import handlers
-from .l0 import L0Handler
-from .l2 import L2Handler
+from .            import handlers
+from .handlers.l0 import L0Handler
+from .handlers.l2 import L2Handler
 
 class StreamParser:
 

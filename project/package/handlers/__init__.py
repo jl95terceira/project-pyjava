@@ -16,7 +16,7 @@ class PartsHandler(LineHandler):
     @abc.abstractmethod
     def handle_newline              (self): ...
     
-from . import model
+from .. import model
 
 class StreamHandler(abc.ABC): 
 
@@ -42,3 +42,5 @@ class StreamHandler(abc.ABC):
     def handle_enum_value        (self, enum:model.EnumValue):  ...
     @abc.abstractmethod
     def handle_comment           (self, comment:model.Comment): ...
+
+from . import body, callargs, generics, signature, type

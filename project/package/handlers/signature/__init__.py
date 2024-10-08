@@ -1,10 +1,9 @@
 import re
 import typing
 
-from .    import exc, state
-from ...  import sub
-from .... import handlers, model, util, words
-from ....batteries import *
+from .            import exc, state
+from ...          import handlers, model, util, words
+from ...batteries import *
 
 _WORD_PATTERN = re.compile('^\\w+$')
 
@@ -76,7 +75,7 @@ class Handler(handlers.PartsHandler):
 
             else:
 
-                self._stack_handler(sub.type.Handler(after=self._unstacking(self._store_arg_type), part_rehandler=self.handle_part))
+                self._stack_handler(handlers.type.Handler(after=self._unstacking(self._store_arg_type), part_rehandler=self.handle_part))
                 self.handle_part(part)
 
         elif self._sign_state is state.States.ARG_TYPED:
