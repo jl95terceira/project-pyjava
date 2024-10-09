@@ -96,7 +96,7 @@ class _TestHandler(handlers.StreamHandler):
         self._tr         = tr
         self._tc         = tc
         self._i:int|None = None
-        self._p          = StreamParser(self)
+        self._parser          = StreamParser(self)
         self.reset()
 
     def _test[T](self, registry_getter:typing.Callable[[_TestsRegistry],dict[int,T]], got:T):
@@ -116,23 +116,27 @@ class _TestHandler(handlers.StreamHandler):
 
     def reset(self):
 
-        self._i = 0
-        self._p = StreamParser(self)
+        self._i      = 0
+        self._parser = StreamParser(self)
 
     def test_file(self, fn:str, pre_reset=True, end=True):
 
+        print(f'Testing file   : {repr(fn)}', flush=True)
         if pre_reset: self.reset()
         with open(os.path.join(os.path.split(__file__)[0], 'java_files', fn), mode='r', encoding='utf-8') as f:
 
-            self._p.parse_whole(f.read())
+            self._parser.parse_whole(f.read())
 
         if end: self.end()
 
     def test     (self, line:str, end=True):
 
-        print(f'Got line       : {repr(line)}')
-        self._p.parse(line)
-        if end: self.end()
+        print(f'Got line       : {repr(line)}', flush=True)
+        self._parser.parse(line)
+        if end: 
+            
+            self._parser.eof()
+            self        .end()
 
     def end(self):
 
@@ -168,6 +172,17 @@ def to_fail(f):
         try                  : f(*a,**ka)
         except AssertionError: pass
         else                 : raise AssertionError('test should have failed')
+    
+    return g
+
+def to_explode(f):
+
+    def g(*a,**ka):
+
+        try                  : f(*a,**ka)
+        except AssertionError: raise AssertionError('test should have exploded (not with an assertion error)')
+        except               : pass
+        else                 : raise AssertionError('test should have exploded')
     
     return g
 

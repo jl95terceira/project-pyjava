@@ -35,11 +35,11 @@ class PackageTests              (unittest.TestCase):
 
     def test(self, name='abc.def', end=';'): self.th.test(' '.join(filter(bool, ('package',name,end))))
 
-    def test_correct    (self): self.test()
+    def test_correct     (self): self.test()
     @to_fail
-    def test_wrong_nosc (self): self.test(end='')
-    @to_fail
-    def test_wrong_name (self): self.test(name='abc.ddf;')
+    def test_wrong_name  (self): self.test(name='abc.ddf;')
+    @to_explode
+    def test_no_semicolon(self): self.test(end='')
 
 class ImportTests               (unittest.TestCase): 
 
@@ -50,13 +50,13 @@ class ImportTests               (unittest.TestCase):
 
     def test(self, static=False, name='foo.bar', end=';'): self.th.test(' '.join(filter(bool, ('import','static' if static else '',name,end))))
 
-    def test_correct        (self): self.test()
+    def test_correct     (self): self.test()
     @to_fail
-    def test_wrong_static   (self): self.test(static=True)
+    def test_wrong_static(self): self.test(static=True)
     @to_fail
-    def test_wrong_name     (self): self.test(name='foo.baz')
-    @to_fail
-    def test_wrong_nosc     (self): self.test(end='')
+    def test_wrong_name  (self): self.test(name='foo.baz')
+    @to_explode
+    def test_no_semicolon(self): self.test(end='')
 
 class ImportTestsCombinations   (unittest.TestCase): 
 
@@ -80,10 +80,27 @@ class AnnotationTests           (unittest.TestCase):
         self.tr,self.th = gett(self)
         self.tr.r_annotation(model.Annotation(name='Log'))
 
-    def test_01(self): self.th.test('@Log')
-    def test_02(self): self.th.test('@Log;;')
+    def test_01        (self): self.th.test('@Log'  , end=True)
+    def test_02        (self): self.th.test('@Log;;', end=True)
     @to_fail
-    def test_03(self): self.th.test('@Lag')
+    def test_wrong_name(self): self.th.test('@Lag'  , end=True)
+
+class AnnotationTests2          (unittest.TestCase): 
+
+    def setUp(self):
+
+        self.tr,self.th = gett(self)
+        self.tr.r_annotation(model.Annotation(name='DataClass', args=['true', ' 123', ' this.<String, String>get()']))
+
+    def test_01          (self): self.th.test('@DataClass(true, 123, this.<String, String>get())', end=True)
+    @to_fail
+    def test_wrong_args  (self): self.th.test('@DataClass(false, 123, this.<String, String>get())', end=True)
+    @to_fail
+    def test_wrong_args_2(self): self.th.test('@DataClass(true, 456, this.<String, String>get())', end=True)
+    @to_fail
+    def test_wrong_args_2(self): self.th.test('@DataClass(true, 456, this.<String, Integer>get())', end=True)
+    @to_fail
+    def test_wrong_args_order(self): self.th.test('@DataClass(123, this.<String, String>get(), true)', end=True)
 
 class ClassTests                (unittest.TestCase): 
 
@@ -94,8 +111,9 @@ class ClassTests                (unittest.TestCase):
                                      access    =model.AccessModifiers.PUBLIC, 
                                      subclass  ={model.InheritanceTypes.EXTENDS   : {'Bar'},
                                                  model.InheritanceTypes.IMPLEMENTS: {'Tim', 'Tom'}}))
+        self.tr.r_class_end()
 
-    def test(self, access=model.AccessModifiers.PUBLIC, static=False, type=model.ClassTypes.CLASS, name='Foo', extends=['Bar'], implements=['Tim','Tom',], end='{'):
+    def test(self, access=model.AccessModifiers.PUBLIC, static=False, type=model.ClassTypes.CLASS, name='Foo', extends=['Bar'], implements=['Tim','Tom',], end='{}'):
 
         self.th.test(' '.join(filter(bool, (_ACCESS_MOD_MAP_RE[access], 
                                             'static' if static else '', 
@@ -121,6 +139,12 @@ class ClassTests                (unittest.TestCase):
     def test_wrong_implements_2 (self): self.test(implements={'Tim'})
     @to_fail
     def test_wrong_implements_3 (self): self.test(implements={'Tom'})
+    @to_explode
+    def test_no_closer          (self): self.test(end='{')
+    @to_explode
+    def test_wrong_closer       (self): self.test(end='{{')
+    @to_explode
+    def test_wrong_opener       (self): self.test(end='}')
 
 class ClassTestsCombinations    (unittest.TestCase): 
 
@@ -143,7 +167,8 @@ class ClassTestsCombinations    (unittest.TestCase):
                 self.tr.clear_registry()
                 self.th.reset         ()
                 self.tr.r_class_      (model.Class(name='Hello', access=access, static=static, finality=finality, type=type))
+                self.tr.r_class_end   ()
                 self.th.test          (' '.join(filter(bool, (_ACCESS_MOD_MAP_RE[access], 
                                                               'static' if static else '', 
                                                               _FINALITY_TYPE_MAP_RE[finality], 
-                                                              _CLASS_TYPE_MAP_RE[type], 'Hello {'))))
+                                                              _CLASS_TYPE_MAP_RE[type], 'Hello {}'))))

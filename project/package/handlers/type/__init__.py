@@ -30,10 +30,6 @@ class Handler(handlers.PartsHandler):
 
     def _unstacking                 (self, f): return ChainedCall(lambda *a, **ka: self._unstack_handler(), f)
 
-    def _parse_type_generics        (self, after:typing.Callable[[str],None]):
-
-        self._stack_handler(handlers.generics.Handler(after=self._unstacking(after)))
-
     def _store_type_generics        (self, generics:str):
 
         self._type_generics = generics
@@ -135,6 +131,18 @@ class Handler(handlers.PartsHandler):
             return
 
         pass #TO-DO
+
+    @typing.override
+    def handle_eof(self):
+
+        line = self._line
+        if self._subhandler is not None:
+
+            self._subhandler.handle_eof()
+            return
+
+        if self._state != state.States.DEFAULT: raise exc.EOFExcpetion(line)
+        self._stop(None)
 
     def _stop(self, part_to_rehandle:str|None):
 

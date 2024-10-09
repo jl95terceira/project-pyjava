@@ -96,3 +96,8 @@ class L0Handler(handlers.LineHandler):
                 else:
 
                     self._next_handler.handle_part(part=part)
+
+    @typing.override
+    def handle_eof(self):
+        
+        self._next_handler.handle_eof()

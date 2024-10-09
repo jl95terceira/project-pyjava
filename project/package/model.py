@@ -57,7 +57,8 @@ class Import:
 @dataclasses.dataclass(frozen=True)
 class Annotation:
 
-    name:str = dataclasses.field()
+    name:str       = dataclasses.field()
+    args:list[str] = dataclasses.field(default_factory=list)
 
 @dataclasses.dataclass(frozen=True)
 class Class:

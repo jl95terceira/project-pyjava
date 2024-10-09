@@ -139,3 +139,9 @@ class Handler(handlers.PartsHandler):
             return
 
         pass #TO-DO
+
+    @typing.override
+    def handle_eof(self):
+        
+        line = self._line
+        raise exc.EOFException(line) # there should not be an EOF at all, before closing the signature

@@ -17,6 +17,7 @@ class StreamParser:
 
             self.parse(line)
 
-    def parse      (self, line  :str):
+        self.eof()
 
-        self._l0.handle_line(line)
+    def parse      (self, line  :str): self._l0.handle_line(line)
+    def eof        (self):             self._l0.handle_eof ()

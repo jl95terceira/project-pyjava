@@ -16,3 +16,4 @@ class TypeArrayNotAllowedException      (Exception): pass
 class TypeException                     (Exception): pass
 class TypeOrNameMissingException        (Exception): pass
 class NotConstructorException           (Exception): pass
+class EOFException                      (Exception): pass

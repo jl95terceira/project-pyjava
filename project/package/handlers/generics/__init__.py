@@ -54,6 +54,12 @@ class Handler(handlers.PartsHandler):
     @typing.override
     def handle_newline(self): pass #TO-DO save newline somewhere
 
+    @typing.override
+    def handle_eof(self):
+        
+        line = self._line
+        raise exc.EOFException(line) # there should not be an EOF at all, before closing the comprehension
+
     def _stop(self): 
         
         self._state = state.States.END

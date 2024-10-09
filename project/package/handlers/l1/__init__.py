@@ -97,9 +97,9 @@ class L1Handler(handlers.PartsHandler):
         self._state = state.States.DEFAULT
         self._package  = None
 
-    def _flush_annotation           (self, ann:str):
+    def _flush_annotation           (self, annot:model.Annotation):
 
-        self._NEXT.handle_annotation(model.Annotation(ann))
+        self._NEXT.handle_annotation(annot)
         self._state = state.States.DEFAULT
 
     def _flush_class                (self):
@@ -231,14 +231,14 @@ class L1Handler(handlers.PartsHandler):
 
             self._subhandler.handle_part(part)
             return
-
+        
         self._part = part
         line = self._line
         if   self._state is state.States.DEFAULT:
 
             if   part == words.SEMICOLON  : pass
 
-            elif part == words.BRACE_OPEN : 
+            elif part == words.CURLY_OPEN : 
                 
                 if self._static and (self._attr_type is None): 
                     
@@ -252,7 +252,7 @@ class L1Handler(handlers.PartsHandler):
 
                 else: raise exc.NotConstructorException(line)
 
-            elif part == words.BRACE_CLOSE: 
+            elif part == words.CURLY_CLOSE: 
                 
                 self._flush_class_end()
 
@@ -285,6 +285,8 @@ class L1Handler(handlers.PartsHandler):
             elif part == words.ATSIGN    : 
                 
                 self._state = state.States.ANNOTATION
+                self._stack_handler(handlers.annotation.Handler(after=self._unstacking(self._flush_annotation), part_rehandler=self.handle_part))
+                self.handle_part(part)
 
             elif part == words.ANGLE_OPEN:
 
@@ -344,11 +346,6 @@ class L1Handler(handlers.PartsHandler):
             else: raise exc.ImportException(line)
             return
         
-        elif self._state is state.States.ANNOTATION:
-
-            self._flush_annotation(part)
-            return
-        
         elif self._state is state.States.CLASS_AFTER_NAME:
 
             if   part in _INHERIT_TYPE_NAMES_SET:
@@ -358,7 +355,7 @@ class L1Handler(handlers.PartsHandler):
                 self._state          = state.States.CLASS_SUBCLASSES
                 self._class_subc_cur = it
 
-            elif part == words.BRACE_OPEN:
+            elif part == words.CURLY_OPEN:
 
                 self._flush_class()
 
@@ -378,7 +375,7 @@ class L1Handler(handlers.PartsHandler):
 
                 self._state = state.States.CLASS_SUBCLASSES_AFTER
 
-            elif part == words.BRACE_OPEN:
+            elif part == words.CURLY_OPEN:
 
                 self._flush_class()
 
@@ -460,8 +457,8 @@ class L1Handler(handlers.PartsHandler):
             else:
 
                 self._attr_value_parts.append(part)
-                if   part == words.BRACE_OPEN   : self._attr_scope_depth += 1
-                elif part == words.BRACE_CLOSE  : self._attr_scope_depth -= 1
+                if   part == words.CURLY_OPEN   : self._attr_scope_depth += 1
+                elif part == words.CURLY_CLOSE  : self._attr_scope_depth -= 1
                 elif part == words.PARENTH_OPEN : self._attr_nest_depth  += 1
                 elif part == words.PARENTH_CLOSE: self._attr_nest_depth  -= 1
                 return
@@ -482,14 +479,9 @@ class L1Handler(handlers.PartsHandler):
             else:
 
                 self._state = state.States.METHOD_BODY
-                self.handle_part(part)
+                self._stack_handler(handlers.body.Handler(after=self._unstacking(self._flush_method)))
+                self.handle_part(part) # re-handle part ('{'), since it was used only for look-ahead
 
-            return
-        
-        elif self._state is state.States.METHOD_BODY:
-
-            self._stack_handler(handlers.body.Handler(after=self._unstacking(self._flush_method)))
-            self.handle_part(part) # re-handle part ('{'), since it was used only for look-ahead
             return
         
         elif self._state is state.States.ENUM:
@@ -497,6 +489,11 @@ class L1Handler(handlers.PartsHandler):
             if   part == words.SEMICOLON:
 
                 self._state = state.States.DEFAULT
+
+            if   part == words.CURLY_CLOSE:
+
+                self._state = state.States.DEFAULT
+                self.handle_part(part)
 
             elif not _WORD_PATTERN.match(part):
 
@@ -512,7 +509,7 @@ class L1Handler(handlers.PartsHandler):
         elif self._state is state.States.ENUM_NAMED:
 
             if   part in {words.SEMICOLON,
-                                words.COMMA}:
+                          words.COMMA}:
 
                 self._flush_enumv()
                 self.handle_part(part) # re-handle part (either semicolon or comma), as it was used only for look-ahead
@@ -574,3 +571,15 @@ class L1Handler(handlers.PartsHandler):
             return
 
         self.handle_spacing(spacing='\n')
+
+    @typing.override
+    def handle_eof                  (self):
+        
+        if self._subhandler is not None:
+
+            self._subhandler.handle_eof()
+            return
+
+        line = self._line
+        if self._state            != state.States.DEFAULT or \
+           self._class_name_stack                        : raise exc.EOFException(line)

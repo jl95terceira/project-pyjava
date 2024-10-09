@@ -6,6 +6,10 @@ from ...          import handlers, words
 from ...batteries import *
 
 _WORD_PATTERN = re.compile('^\\w+$')
+_ACREMENTERS  = {words.PARENTH_OPEN: words.PARENTH_CLOSE,
+                 words.CURLY_OPEN  : words.CURLY_CLOSE,
+                 words.ANGLE_OPEN  : words.ANGLE_CLOSE,
+                 words.SQUARE_OPEN : words.SQUARE_CLOSED}
 
 class Handler(handlers.PartsHandler):
 
@@ -16,6 +20,7 @@ class Handler(handlers.PartsHandler):
         self._callargs_state                = state.CallArgsStates.BEGIN
         self._callarg_value                 = ''
         self._callarg_depth                 = 0
+        self._callarg_depth_incrementer:str = None
         self._callargs_after                = after
 
     def _store_callarg(self):
@@ -31,46 +36,47 @@ class Handler(handlers.PartsHandler):
     def handle_part   (self, part:str):
 
         line = self._line
-        if self._callargs_state is state.CallArgsStates.BEGIN:
+        if   self._callargs_state is state.CallArgsStates.BEGIN:
 
             if part != words.PARENTH_OPEN:
 
-                raise exc.Exception(line)
+                raise exc.InvalidOpenException(line)
             
             else:
 
                 self._callargs_state  = state.CallArgsStates.DEFAULT
                 self._callarg_value  = ''
-                self._callarg_depth += 1
 
         elif self._callargs_state is state.CallArgsStates.DEFAULT:
 
-            if part == words.PARENTH_CLOSE:
+            if self._callarg_depth_incrementer is not None:
 
-                self._callarg_depth -= 1
-                if self._callarg_depth != 0:
+                if   part == self._callarg_depth_incrementer:
 
-                    self._callarg_value += part
+                    self._callarg_depth += 1
 
-                else:
+                elif part == _ACREMENTERS[self._callarg_depth_incrementer]:
 
-                    self._stop()
+                    self._callarg_depth -= 1
+                    if self._callarg_depth == 0:
 
-            elif part == words.PARENTH_OPEN:
+                        self._callarg_depth_incrementer = None
 
-                self._callarg_depth += 1
                 self._callarg_value += part
+
+            elif part == words.PARENTH_CLOSE:
+
+                self._stop()
+
+            elif part in _ACREMENTERS:
+
+                self._callarg_depth_incrementer = part
+                self.handle_part(part)
 
             elif part == words.COMMA:
 
-                if self._callarg_depth == 0:
-
-                    self._store_callarg()
-                    self._callargs_state = state.CallArgsStates.SEPARATE
-                
-                else:
-
-                    self._callarg_value += part
+                self._store_callarg()
+                self._callargs_state = state.CallArgsStates.SEPARATE
 
             else:
 
@@ -80,7 +86,7 @@ class Handler(handlers.PartsHandler):
             
             if part == words.PARENTH_CLOSE: 
                 
-                raise exc.Exception(line)
+                raise exc.AfterSeparatorException(line)
             
             self._callargs_state = state.CallArgsStates.DEFAULT
             self.handle_part(part) # re-handle part, since it was used only for look-ahead
@@ -91,10 +97,16 @@ class Handler(handlers.PartsHandler):
     def handle_comment(self, text: str): pass #TO-DO
 
     @typing.override
-    def handle_spacing(self, spacing: str): pass #TO-DO
+    def handle_spacing(self, spacing: str): self._callarg_value += spacing
 
     @typing.override
     def handle_newline(self): pass #TO-DO
+
+    @typing.override
+    def handle_eof(self):
+        
+        line = self._line
+        raise exc.EOFException(line) # there should not be an EOF at all, before closing the arguments comprehension
 
     def _stop(self):
 

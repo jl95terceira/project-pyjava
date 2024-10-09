@@ -4,7 +4,9 @@ class LineHandler(abc.ABC):
 
     @abc.abstractmethod
     def handle_line                 (self, line:str): ...
-    
+    @abc.abstractmethod
+    def handle_eof                  (self): ...
+
 class PartsHandler(LineHandler):
 
     @abc.abstractmethod
@@ -43,4 +45,4 @@ class StreamHandler(abc.ABC):
     @abc.abstractmethod
     def handle_comment           (self, comment:model.Comment): ...
 
-from . import body, callargs, generics, signature, type
+from . import body, callargs, generics, signature, type, annotation
