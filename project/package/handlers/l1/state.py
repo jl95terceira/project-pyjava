@@ -10,9 +10,9 @@ class States:
     CLASS_BEGIN                 = State('Class')
     CLASS_AFTER_NAME            = State('Class After-Name')
     CLASS_EXTENDS               = State('Class Ext.')
-    CLASS_SUBCLASSES            = State('Class Sub.')
-    CLASS_SUBCLASSES_NAMED      = State('Class Sub. Named')
-    CLASS_SUBCLASSES_AFTER      = State('Class Sub. After')
+    CLASS_SUPERCLASS            = State('Class Super')
+    CLASS_SUPERCLASS_NAMED      = State('Class Super Named')
+    CLASS_SUPERCLASS_SEP        = State('Class Super Sep.')
     ENUM                        = State('Enum')
     ENUM_NAMED                  = State('Enum Named')
     ENUM_DEFINED                = State('Enum Defined')
@@ -27,6 +27,7 @@ class States:
     METHOD_SIGNATURE            = State('Method Signature')
     METHOD_DECLARED             = State('Method Declared')
     METHOD_THROWS               = State('Method Throws')
+    METHOD_THROWS_AFTER         = State('Method Throws After')
     METHOD_BODY                 = State('Method Body')
 
 class CallArgsState(util.Named): pass

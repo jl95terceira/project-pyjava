@@ -33,7 +33,7 @@ class Handler(handlers.PartsHandler):
 
             if part != words.CURLY_OPEN:
 
-                raise exc.Exception(line)
+                raise exc.InvalidOpenException(line)
            
             else:
                

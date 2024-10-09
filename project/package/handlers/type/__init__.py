@@ -13,16 +13,16 @@ class Handler(handlers.PartsHandler):
                  part_rehandler:typing.Callable[[str],None], 
                  can_be_array  :bool=True):
 
-        self._state                 = state.States.BEGIN
+        self._state             = state.States.BEGIN
         self._subhandler:handlers.PartsHandler|None \
-                                    = None
-        self._line :str|None        = None
-        self._parts:list[str]       = list()
-        self._can_be_array          = can_be_array
-        self._is_array              = False
-        self._type_generics         = ''
-        self._after                 = after
-        self._part_rehandler        = part_rehandler
+                                = None
+        self._line :str|None    = None
+        self._parts:list[str]   = list()
+        self._can_be_array      = can_be_array
+        self._array_dim         = 0
+        self._type_generics     = ''
+        self._after             = after
+        self._part_rehandler    = part_rehandler
 
     def _stack_handler              (self, handler:handlers.PartsHandler): self._subhandler = handler
 
@@ -51,7 +51,7 @@ class Handler(handlers.PartsHandler):
 
             if not _WORD_PATTERN.match(part):
 
-                raise exc.Exception(line)
+                raise exc.InvalidNameException(line)
             
             self._parts.append(part)
             self._state  = state.States.DEFAULT
@@ -84,12 +84,20 @@ class Handler(handlers.PartsHandler):
             if part == words.SQUARE_CLOSED:
 
                 self._state = state.States.ARRAY_CLOSE
+                self._array_dim += 1
 
-            else: raise exc.Exception(line)
+            else: raise exc.ArrayNotClosedException(line)
 
         elif self._state is state.States.ARRAY_CLOSE:
 
-            self._stop(part)
+            if part == words.SQUARE_OPEN:
+
+                self._state = state.States.DEFAULT
+                self.handle_part(part)
+
+            else:
+
+                self._stop(part)
 
         elif self._state is state.States.AFTERDOT:
 
@@ -147,7 +155,7 @@ class Handler(handlers.PartsHandler):
     def _stop(self, part_to_rehandle:str|None):
 
         self._state = state.States.END
-        self._after(model.Type(name=''.join(self._parts), generics=self._type_generics, is_array=self._is_array))
+        self._after(model.Type(name=''.join(self._parts), generics=self._type_generics, array_dim=self._array_dim))
         if part_to_rehandle is not None:
 
             self._part_rehandler(part_to_rehandle)

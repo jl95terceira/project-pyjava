@@ -61,6 +61,13 @@ class Annotation:
     args:list[str] = dataclasses.field(default_factory=list)
 
 @dataclasses.dataclass(frozen=True)
+class Type:
+
+    name     :str = dataclasses.field()
+    generics :str = dataclasses.field(default='')
+    array_dim:int = dataclasses.field(default=False)
+
+@dataclasses.dataclass(frozen=True)
 class Class:
 
     name      :str
@@ -69,18 +76,11 @@ class Class:
     static    :bool           = dataclasses.field(default=False)
     access    :AccessModifier = dataclasses.field(default=AccessModifiers.DEFAULT)
     finality  :FinalityType   = dataclasses.field(default=FinalityTypes  .DEFAULT)
-    subclass  :dict[InheritanceType,set[str]] \
+    subclass  :dict[InheritanceType,set[Type]] \
                               = dataclasses.field(default_factory=dict)
 
 @dataclasses.dataclass(frozen=True)
 class ClassEnd: pass
-
-@dataclasses.dataclass(frozen=True)
-class Type:
-
-    name    :str  = dataclasses.field()
-    generics:str  = dataclasses.field(default='')
-    is_array:bool = dataclasses.field(default=False)
 
 @dataclasses.dataclass(frozen=True)
 class Argument:
@@ -120,6 +120,7 @@ class Method:
     finality :FinalityType       = dataclasses.field(default=FinalityTypes  .DEFAULT)
     generics :str                = dataclasses.field(default='')
     args     :dict[str,Argument] = dataclasses.field(default_factory=dict)
+    throws   :list[Type]         = dataclasses.field(default_factory=list)
     body     :str|None           = dataclasses.field(default=None)
 
 @dataclasses.dataclass(frozen=True)

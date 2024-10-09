@@ -46,7 +46,7 @@ class L1Handler(handlers.PartsHandler):
         self._class_type       :model.ClassType             |None = None
         self._class_name       :str                         |None = None
         self._class_generics   :str                         |None = None
-        self._class_subc       :dict[model.InheritanceType, set[str]]\
+        self._class_subc       :dict[model.InheritanceType, set[model.Type]]\
                                                             |None = None
         self._class_subc_cur   :model.InheritanceType       |None = None
         self._attr_type        :model.Type                  |None = None
@@ -167,6 +167,7 @@ class L1Handler(handlers.PartsHandler):
                                               generics  =self._method_generics,
                                               type      =self._attr_type,
                                               args      =self._method_sign,
+                                              throws    =self._throws if self._throws is not None else list(),
                                               body      =body))
         self._state           = state.States.DEFAULT
         self._attr_name       = None
@@ -175,6 +176,7 @@ class L1Handler(handlers.PartsHandler):
         self._finality        = None
         self._method_generics = None
         self._attr_type       = None
+        self._throws          = None
         self._method_sign     = None
 
     def _store_method_signature     (self, signature:dict[str,model.Argument]):
@@ -196,6 +198,13 @@ class L1Handler(handlers.PartsHandler):
         self._state          = state.States.CLASS_AFTER_NAME
         self._class_subc     = defaultdict(set)
 
+    def _store_superclass           (self, type:model.Type): 
+        
+        line = self._line
+        if type in self._class_subc[self._class_subc_cur]: raise exc.ClassException(line) # repeated super-class name
+        self._class_subc[self._class_subc_cur].add(type)
+        self._state = state.States.CLASS_SUPERCLASS_NAMED
+
     def _store_constructor_declared (self, signature:dict[str,model.Argument]):
 
         self._state            = state.States.CONSTRUCTOR_DECLARED
@@ -214,7 +223,7 @@ class L1Handler(handlers.PartsHandler):
     def _store_throws               (self, type:model.Type):
 
         self._throws.append(type)
-        self._state = state.States.METHOD_DECLARED
+        self._state = state.States.METHOD_THROWS_AFTER
 
     @typing.override
     def handle_line                 (self, line:str):
@@ -351,9 +360,10 @@ class L1Handler(handlers.PartsHandler):
             if   part in _INHERIT_TYPE_NAMES_SET:
 
                 it = _INHERIT_TYPE_MAP_BY_KEYWORD[part]
-                if it in self._class_subc: raise exc.ClassException(line)
-                self._state          = state.States.CLASS_SUBCLASSES
+                if it in self._class_subc: raise exc.ClassException(line) # repeated extends or implements
+                self._state          = state.States.CLASS_SUPERCLASS
                 self._class_subc_cur = it
+                self._stack_handler(handlers.type.Handler(after=self._unstacking(self._store_superclass), part_rehandler=self.handle_part, can_be_array=False))
 
             elif part == words.CURLY_OPEN:
 
@@ -362,18 +372,11 @@ class L1Handler(handlers.PartsHandler):
             else: raise exc.ClassException(line)
             return
 
-        elif self._state is state.States.CLASS_SUBCLASSES:
-
-            if part in self._class_subc[self._class_subc_cur]: raise exc.ClassException(line)
-            self._class_subc[self._class_subc_cur].add(part)
-            self._state = state.States.CLASS_SUBCLASSES_NAMED
-            return
-
-        elif self._state is state.States.CLASS_SUBCLASSES_NAMED:
+        elif self._state is state.States.CLASS_SUPERCLASS_NAMED:
 
             if   part == words.COMMA:
 
-                self._state = state.States.CLASS_SUBCLASSES_AFTER
+                self._state = state.States.CLASS_SUPERCLASS_SEP
 
             elif part == words.CURLY_OPEN:
 
@@ -387,9 +390,9 @@ class L1Handler(handlers.PartsHandler):
             else: raise exc.ClassException(line)
             return
         
-        elif self._state is state.States.CLASS_SUBCLASSES_AFTER:
+        elif self._state is state.States.CLASS_SUPERCLASS_SEP:
 
-            self._state = state.States.CLASS_SUBCLASSES
+            self._stack_handler(handlers.type.Handler(after=self._unstacking(self._store_superclass), part_rehandler=self.handle_part, can_be_array=False))
             self.handle_part(part)
             return
 
@@ -484,6 +487,19 @@ class L1Handler(handlers.PartsHandler):
 
             return
         
+        elif self._state is state.States.METHOD_THROWS_AFTER:
+
+            if part == words.COMMA:
+
+                self._stack_handler(handlers.type.Handler(after=self._unstacking(self._store_throws), part_rehandler=self.handle_part, can_be_array=False))
+
+            else:
+
+                self._state = state.States.METHOD_DECLARED
+                self.handle_part(part)
+
+            return
+
         elif self._state is state.States.ENUM:
 
             if   part == words.SEMICOLON:
@@ -534,7 +550,7 @@ class L1Handler(handlers.PartsHandler):
             else: raise exc.EnumValueException(line)
             return
 
-        raise NotImplementedError(line)
+        raise NotImplementedError(f'{line} (state = {self._state.name})')
         
     @typing.override
     def handle_comment              (self, text:str):

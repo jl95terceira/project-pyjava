@@ -109,18 +109,18 @@ class ClassTests                (unittest.TestCase):
         self.tr,self.th = gett(self)
         self.tr.r_class_(model.Class(name      ='Foo', 
                                      access    =model.AccessModifiers.PUBLIC, 
-                                     subclass  ={model.InheritanceTypes.EXTENDS   : {'Bar'},
-                                                 model.InheritanceTypes.IMPLEMENTS: {'Tim', 'Tom'}}))
+                                     subclass  ={model.InheritanceTypes.EXTENDS   : {model.Type(name='Bar')},
+                                                 model.InheritanceTypes.IMPLEMENTS: {model.Type(name='Tim'), model.Type(name='Tom', generics='<Tum>')}}))
         self.tr.r_class_end()
 
-    def test(self, access=model.AccessModifiers.PUBLIC, static=False, type=model.ClassTypes.CLASS, name='Foo', extends=['Bar'], implements=['Tim','Tom',], end='{}'):
+    def test(self, access=model.AccessModifiers.PUBLIC, static=False, type=model.ClassTypes.CLASS, name='Foo', extends:list[model.Type]=[model.Type(name='Bar')], implements:list[model.Type]=[model.Type(name='Tim'),model.Type(name='Tom', generics='<Tum>'),], end='{}'):
 
         self.th.test(' '.join(filter(bool, (_ACCESS_MOD_MAP_RE[access], 
                                             'static' if static else '', 
                                             _CLASS_TYPE_MAP_RE[type], 
                                             name, 
-                                            'extends'   , ', '.join(extends), 
-                                            'implements', ', '.join(implements), end))))
+                                            'extends'   , ', '.join(f'{t.name}{t.generics}' for t in extends), 
+                                            'implements', ', '.join(f'{t.name}{t.generics}' for t in implements), end))))
 
     def test_correct            (self): self.test()
     @to_fail
@@ -132,13 +132,13 @@ class ClassTests                (unittest.TestCase):
     @to_fail
     def test_wrong_name         (self): self.test(name='Fuu')
     @to_fail
-    def test_wrong_extends      (self): self.test(extends   =['Baz'])
+    def test_wrong_extends      (self): self.test(extends   =[model.Type(name='Baz')])
     @to_fail
-    def test_wrong_implements   (self): self.test(implements={'Tim', 'Tam'})
+    def test_wrong_implements   (self): self.test(implements={model.Type(name='Tim'), model.Type(name='Tam', generics='<Tum>')})
     @to_fail
-    def test_wrong_implements_2 (self): self.test(implements={'Tim'})
+    def test_wrong_implements_2 (self): self.test(implements={model.Type(name='Tim')})
     @to_fail
-    def test_wrong_implements_3 (self): self.test(implements={'Tom'})
+    def test_wrong_implements_3 (self): self.test(implements={model.Type(name='Tom', generics='<Tum>')})
     @to_explode
     def test_no_closer          (self): self.test(end='{')
     @to_explode
