@@ -67,8 +67,7 @@ class Handler(handlers.PartsHandler):
             elif part == words.SQUARE_OPEN:
                 
                 if not self._can_be_array: raise exc.ArrayNotAllowedException(line)
-                self._is_array = True
-                self._state    = state.States.ARRAY_OPEN
+                self._state = state.States.ARRAY_OPEN
 
             elif part == words.DOT:
 
