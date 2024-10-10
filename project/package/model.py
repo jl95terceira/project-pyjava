@@ -113,15 +113,16 @@ class Attribute:
 @dataclasses.dataclass(frozen=True)
 class Method:
 
-    name     :str                = dataclasses.field()
-    type     :Type               = dataclasses.field()
-    static   :bool               = dataclasses.field(default=False)
-    access   :AccessModifier     = dataclasses.field(default=AccessModifiers.DEFAULT)
-    finality :FinalityType       = dataclasses.field(default=FinalityTypes  .DEFAULT)
-    generics :str                = dataclasses.field(default='')
-    args     :dict[str,Argument] = dataclasses.field(default_factory=dict)
-    throws   :list[Type]         = dataclasses.field(default_factory=list)
-    body     :str|None           = dataclasses.field(default=None)
+    name        :str                = dataclasses.field()
+    type        :Type               = dataclasses.field()
+    static      :bool               = dataclasses.field(default        =False)
+    access      :AccessModifier     = dataclasses.field(default        =AccessModifiers.DEFAULT)
+    finality    :FinalityType       = dataclasses.field(default        =FinalityTypes  .DEFAULT)
+    synchronized:bool               = dataclasses.field(default        =False)
+    generics    :str                = dataclasses.field(default        ='')
+    args        :dict[str,Argument] = dataclasses.field(default_factory=dict)
+    throws      :list[Type]         = dataclasses.field(default_factory=list)
+    body        :str|None           = dataclasses.field(default        =None)
 
 @dataclasses.dataclass(frozen=True)
 class EnumValue:

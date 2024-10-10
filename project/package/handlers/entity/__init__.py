@@ -43,6 +43,7 @@ class L1Handler(handlers.PartsHandler):
         self._imported         :str                         |None = None
         self._access           :model.AccessModifier        |None = None
         self._finality         :model.FinalityType          |None = None
+        self._synchronized     :bool                        |None = False
         self._class_type       :model.ClassType             |None = None
         self._class_name       :str                         |None = None
         self._class_generics   :str                         |None = None
@@ -67,6 +68,7 @@ class L1Handler(handlers.PartsHandler):
 
         if _DEBUG_HANDLERS: print(f'STACK HANDLER: {handler.__class__.__module__}::{handler.__class__.__name__}')
         self._subhandler = handler
+        self._subhandler.handle_line(self._line)
 
     def _unstack_handler            (self):
 
@@ -160,18 +162,20 @@ class L1Handler(handlers.PartsHandler):
 
     def _flush_method               (self, body:str|None): 
         
-        self._NEXT.handle_method(model.Method(name      =self._attr_name,
-                                              static    =self._static,
-                                              access    =self._coerce_access(self._access),
-                                              finality  =self._coerce_finality(self._finality),
-                                              generics  =self._method_generics,
-                                              type      =self._attr_type,
-                                              args      =self._method_sign,
-                                              throws    =self._throws if self._throws is not None else list(),
-                                              body      =body))
+        self._NEXT.handle_method(model.Method(name        =self._attr_name,
+                                              static      =self._static,
+                                              access      =self._coerce_access(self._access),
+                                              finality    =self._coerce_finality(self._finality),
+                                              synchronized=self._synchronized,
+                                              generics    =self._method_generics,
+                                              type        =self._attr_type,
+                                              args        =self._method_sign,
+                                              throws      =self._throws if self._throws is not None else list(),
+                                              body        =body))
         self._state           = state.States.DEFAULT
         self._attr_name       = None
         self._static          = False
+        self._synchronized    = False
         self._access          = None
         self._finality        = None
         self._method_generics = None
@@ -285,6 +289,11 @@ class L1Handler(handlers.PartsHandler):
                 self._class_type = _CLASS_TYPE_MAP_BY_KEYWORD[part]
                 self._state      = state.States.CLASS_BEGIN
                 self._stack_handler(handlers.type.Handler(after=self._unstacking(self._store_class_name), part_rehandler=self.handle_part, can_be_array=False))
+
+            elif part == words.SYNCHRONIZED:
+
+                if self._synchronized: raise exc.SynchronizedDuplicateException(line)
+                self._synchronized = True
 
             elif part == words.STATIC    :
 
