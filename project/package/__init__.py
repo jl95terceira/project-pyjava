@@ -1,15 +1,13 @@
-from .             import handlers
-from .handlers._l0 import L0Handler
-from .handlers._l2 import L2Handler
+from . import handlers
 
 class StreamParser:
 
     def __init__(self, handler:handlers.StreamHandler|None=None):
 
-        self._h  = handler if handler is not None else L2Handler()
+        self._h  = handler if handler is not None else handlers.l2.L2Handler()
         self._l0 = self._make_l0()
 
-    def _make_l0   (self): return L0Handler(stream_handler=self._h)
+    def _make_l0   (self): return handlers.part.Handler(stream_handler=self._h)
 
     def parse_whole(self, source:str): 
 

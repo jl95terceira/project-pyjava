@@ -45,4 +45,4 @@ class StreamHandler(abc.ABC):
     @abc.abstractmethod
     def handle_comment           (self, comment:model.Comment): ...
 
-from . import body, callargs, generics, signature, type, annotation
+from . import body, callargs, generics, signature, type, annotation, part, l2, entity

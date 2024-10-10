@@ -2,12 +2,12 @@ import re
 import typing
 
 from .     import exc, state
-from .._l1 import L1Handler
+from ..entity import L1Handler
 from ...   import handlers
 
 PATTERN  = re.compile(f'((?:\\w+)|(?:/\\*)|(?:\\*/)|(?://)|(?:\\\\.)|\\s+|.)')
 
-class L0Handler(handlers.LineHandler):
+class Handler(handlers.LineHandler):
 
     def __init__(self, stream_handler:handlers.StreamHandler):
 
