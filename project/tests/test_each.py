@@ -110,10 +110,10 @@ class ClassTests                (unittest.TestCase):
         self.tr.r_class_(model.Class(name      ='Foo', 
                                      access    =model.AccessModifiers.PUBLIC, 
                                      subclass  ={model.InheritanceTypes.EXTENDS   : {model.Type(name='Bar')},
-                                                 model.InheritanceTypes.IMPLEMENTS: {model.Type(name='Tim'), model.Type(name='Tom', generics='<Tum>')}}))
+                                                 model.InheritanceTypes.IMPLEMENTS: {model.Type(name='Tim'), model.Type(name='Tom', generics=[model.Type(name='Tum')])}}))
         self.tr.r_class_end()
 
-    def test(self, access=model.AccessModifiers.PUBLIC, static=False, type=model.ClassTypes.CLASS, name='Foo', extends:list[model.Type]=[model.Type(name='Bar')], implements:list[model.Type]=[model.Type(name='Tim'),model.Type(name='Tom', generics='<Tum>'),], end='{}'):
+    def test(self, access=model.AccessModifiers.PUBLIC, static=False, type=model.ClassTypes.CLASS, name='Foo', extends:list[model.Type]=[model.Type(name='Bar')], implements:list[model.Type]=[model.Type(name='Tim'),model.Type(name='Tom', generics=[model.Type(name='Tum')]),], end='{}'):
 
         self.th.test(' '.join(filter(bool, (_ACCESS_MOD_MAP_RE[access], 
                                             'static' if static else '', 
@@ -134,7 +134,7 @@ class ClassTests                (unittest.TestCase):
     @to_fail
     def test_wrong_extends      (self): self.test(extends   =[model.Type(name='Baz')])
     @to_fail
-    def test_wrong_implements   (self): self.test(implements={model.Type(name='Tim'), model.Type(name='Tam', generics='<Tum>')})
+    def test_wrong_implements   (self): self.test(implements={model.Type(name='Tim'), model.Type(name='Tam', generics=[model.Type(name='Tum')])})
     @to_fail
     def test_wrong_implements_2 (self): self.test(implements={model.Type(name='Tim')})
     @to_fail
