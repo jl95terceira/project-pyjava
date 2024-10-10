@@ -48,7 +48,7 @@ class Parser(handlers.part.PartsHandler):
         self._class_type       :model.ClassType             |None = None
         self._class_name       :str                         |None = None
         self._class_generics   :str                         |None = None
-        self._class_subc       :dict[model.InheritanceType, set[model.Type]]\
+        self._class_subc       :dict[model.InheritanceType, list[model.Type]]\
                                                             |None = None
         self._class_subc_cur   :model.InheritanceType       |None = None
         self._attr_type        :model.Type                  |None = None
@@ -203,13 +203,12 @@ class Parser(handlers.part.PartsHandler):
         self._class_name     = type.name
         self._class_generics = type.generics
         self._state          = state.States.CLASS_AFTER_NAME
-        self._class_subc     = defaultdict(set)
+        self._class_subc     = defaultdict(list)
 
     def _store_superclass           (self, type:model.Type): 
         
         line = self._line
-        if type in self._class_subc[self._class_subc_cur]: raise exc.ClassException(line) # repeated super-class name
-        self._class_subc[self._class_subc_cur].add(type)
+        self._class_subc[self._class_subc_cur].append(type)
         self._state = state.States.CLASS_SUPERCLASS_NAMED
 
     def _store_constructor_declared (self, signature:dict[str,model.Argument]):

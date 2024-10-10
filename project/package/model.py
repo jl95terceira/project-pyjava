@@ -43,65 +43,83 @@ class AccessModifiers:
     @staticmethod
     def values(): yield from AccessModifiers._e
 
-@dataclasses.dataclass(frozen=True)
+@dataclasses.dataclass
 class Package:
 
     name:str = dataclasses.field()
 
-@dataclasses.dataclass(frozen=True)
+    def source(self): return f'package {self.name};'
+
+@dataclasses.dataclass
 class Import:
 
     name  :str  = dataclasses.field()
     static:bool = dataclasses.field(default=False)
 
-@dataclasses.dataclass(frozen=True)
+    def source(self): return f'import {'' if not self.static else f'static '}{self.name};'
+
+@dataclasses.dataclass
 class Annotation:
 
     name:str       = dataclasses.field()
     args:list[str] = dataclasses.field(default_factory=list)
 
-@dataclasses.dataclass(frozen=True)
+    def source(self): return f'@{self.name}{'' if not self.args else f'({', '.join(self.args)})'}'
+
+@dataclasses.dataclass
 class Type:
 
-    name     :str = dataclasses.field()
-    generics :str = dataclasses.field(default='')
-    array_dim:int = dataclasses.field(default=False)
+    name     :str               = dataclasses.field()
+    generics :list['Type']|None = dataclasses.field(default=None)
+    array_dim:int               = dataclasses.field(default=0)
 
-@dataclasses.dataclass(frozen=True)
+    def source(self): return f'{self.name}{'' if self.generics is None else f'<{', '.join(map(lambda t: t.source(), self.generics))}>'}'
+
+@dataclasses.dataclass
 class Class:
 
     name      :str
-    generics  :str            = dataclasses.field(default='')
-    type      :ClassType      = dataclasses.field(default=ClassTypes     .CLASS)
-    static    :bool           = dataclasses.field(default=False)
-    access    :AccessModifier = dataclasses.field(default=AccessModifiers.DEFAULT)
-    finality  :FinalityType   = dataclasses.field(default=FinalityTypes  .DEFAULT)
-    subclass  :dict[InheritanceType,set[Type]] \
-                              = dataclasses.field(default_factory=dict)
+    generics  :list[Type]|None = dataclasses.field(default        =None)
+    type      :ClassType       = dataclasses.field(default        =ClassTypes     .CLASS)
+    static    :bool            = dataclasses.field(default        =False)
+    access    :AccessModifier  = dataclasses.field(default        =AccessModifiers.DEFAULT)
+    finality  :FinalityType    = dataclasses.field(default        =FinalityTypes  .DEFAULT)
+    subclass  :dict[InheritanceType,list[Type]] \
+                               = dataclasses.field(default_factory=dict)
 
-@dataclasses.dataclass(frozen=True)
-class ClassEnd: pass
+    def source(self): raise NotImplementedError()
 
-@dataclasses.dataclass(frozen=True)
+@dataclasses.dataclass
+class ClassEnd: 
+    
+    def source(self): raise NotImplementedError()
+
+@dataclasses.dataclass
 class Argument:
 
     type      :Type            = dataclasses.field()
     final     :bool            = dataclasses.field(default=False)
     annotation:Annotation|None = dataclasses.field(default=None)
 
-@dataclasses.dataclass(frozen=True)
+    def source(self): return f'{'' if self.annotation is None else f'{self.annotation} '}{'' if not self.final else 'final '}{self.type}'
+
+@dataclasses.dataclass
 class StaticConstructor:
 
     body:str = dataclasses.field()
 
-@dataclasses.dataclass(frozen=True)
+    def source(self): raise NotImplementedError()
+
+@dataclasses.dataclass
 class Constructor:
 
     args  :dict[str,Argument] = dataclasses.field()
     body  :str                = dataclasses.field()
     access:AccessModifier     = dataclasses.field(default=AccessModifiers.DEFAULT)
 
-@dataclasses.dataclass(frozen=True)
+    def source(self): raise NotImplementedError()
+
+@dataclasses.dataclass
 class Attribute:
 
     name     :str            = dataclasses.field()
@@ -112,7 +130,9 @@ class Attribute:
     final    :bool           = dataclasses.field(default=False)
     value    :str|None       = dataclasses.field(default=None)
 
-@dataclasses.dataclass(frozen=True)
+    def source(self): raise NotImplementedError()
+
+@dataclasses.dataclass
 class Method:
 
     name        :str                = dataclasses.field()
@@ -121,18 +141,24 @@ class Method:
     access      :AccessModifier     = dataclasses.field(default        =AccessModifiers.DEFAULT)
     finality    :FinalityType       = dataclasses.field(default        =FinalityTypes  .DEFAULT)
     synchronized:bool               = dataclasses.field(default        =False)
-    generics    :str                = dataclasses.field(default        ='')
+    generics    :list[Type]         = dataclasses.field(default_factory=list)
     args        :dict[str,Argument] = dataclasses.field(default_factory=dict)
     throws      :list[Type]         = dataclasses.field(default_factory=list)
     body        :str|None           = dataclasses.field(default        =None)
 
-@dataclasses.dataclass(frozen=True)
+    def source(self): raise NotImplementedError()
+
+@dataclasses.dataclass
 class EnumValue:
 
     name:str       = dataclasses.field()
     args:list[str] = dataclasses.field(default_factory=list)
 
-@dataclasses.dataclass(frozen=True)
+    def source(self): raise NotImplementedError()
+
+@dataclasses.dataclass
 class Comment:
 
     text:str = dataclasses.field()
+
+    def source(self): raise NotImplementedError()

@@ -161,7 +161,7 @@ class Parser(handlers.part.PartsHandler):
 
         self._state = state.States.END
         self._after(model.Type(name     =''.join(self._parts), 
-                               generics =self._generics if self._generics is not None else list(), 
+                               generics =self._generics, 
                                array_dim=self._array_dim))
         if part_to_rehandle is not None:
 
