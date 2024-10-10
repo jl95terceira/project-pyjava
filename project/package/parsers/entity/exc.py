@@ -13,6 +13,7 @@ class MethodCallArgsException           (Exception): pass
 class PackageException                  (Exception): pass
 class StaticDuplicateException          (Exception): pass
 class SynchronizedDuplicateException    (Exception): pass
+class VolatileDuplicateException        (Exception): pass
 class TypeArrayNotAllowedException      (Exception): pass
 class TypeException                     (Exception): pass
 class TypeOrNameMissingException        (Exception): pass

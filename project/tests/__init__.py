@@ -5,7 +5,7 @@ import os.path
 import typing
 import unittest
 
-from ..package import handlers
+from ..package.handlers import entity
 
 from ..package import model, StreamParser
 
@@ -89,7 +89,7 @@ class TestRegistrator:
 
         return _TestHandler(tr=self._tr, tc=tc)
 
-class _TestHandler(handlers.StreamHandler): 
+class _TestHandler(entity.EntityHandler): 
 
     def __init__(self, tr:_TestsRegistry, tc:unittest.TestCase):
 

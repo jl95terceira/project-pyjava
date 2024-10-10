@@ -1,24 +1,27 @@
 import typing
 
 from .            import exc, state
-from ...          import handlers, model, words
+from ...          import handlers, parsers, model, words
 from ...batteries import *
 
-class Handler(handlers.PartsHandler):
+class Parser(handlers.part.PartsHandler):
 
     def __init__(self, after         :typing.Callable[[model.Annotation],None],
                        part_rehandler:typing.Callable[[str],None]):
 
         self._part_rehandler       = part_rehandler
         self._state                = state.States.BEGIN
-        self._subhandler:handlers.PartsHandler|None \
+        self._subhandler:handlers.part.PartsHandler|None \
                                    = None
         self._line :str      |None = None
         self._name :str      |None = ''
         self._args :list[str]|None = list()
         self._after                = after
 
-    def _stack_handler              (self, handler:handlers.PartsHandler): self._subhandler = handler
+    def _stack_handler              (self, handler:handlers.part.PartsHandler): 
+        
+        self._subhandler = handler
+        self._subhandler.handle_line(self._line)
 
     def _unstack_handler            (self): self._subhandler = None
 
@@ -67,7 +70,7 @@ class Handler(handlers.PartsHandler):
 
             else:
 
-                self._stack_handler(handlers.callargs.Handler(after=self._unstacking(self._store_args)))
+                self._stack_handler(parsers.callargs.Parser(after=self._unstacking(self._store_args)))
                 self.handle_part(part)
             
         elif self._state is state.States.END:

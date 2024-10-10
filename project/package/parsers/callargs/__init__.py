@@ -11,7 +11,7 @@ _ACREMENTERS  = {words.PARENTH_OPEN: words.PARENTH_CLOSE,
                  words.ANGLE_OPEN  : words.ANGLE_CLOSE,
                  words.SQUARE_OPEN : words.SQUARE_CLOSED}
 
-class Handler(handlers.PartsHandler):
+class Parser(handlers.part.PartsHandler):
 
     def __init__(self, after:typing.Callable[[list[str]],None]):
 

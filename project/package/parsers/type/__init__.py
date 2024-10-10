@@ -2,19 +2,19 @@ import re
 import typing
 
 from .            import exc, state
-from ...          import handlers, model, util, words
+from ...          import handlers, parsers, model, util, words
 from ...batteries import *
 
 _WORD_PATTERN                = re.compile('^\\w+$')
 
-class Handler(handlers.PartsHandler):
+class Parser(handlers.part.PartsHandler):
 
     def __init__(self, after   :typing.Callable[[model.Type],None], 
                  part_rehandler:typing.Callable[[str],None], 
                  can_be_array  :bool=True):
 
         self._state             = state.States.BEGIN
-        self._subhandler:handlers.PartsHandler|None \
+        self._subhandler:handlers.part.PartsHandler|None \
                                 = None
         self._line :str|None    = None
         self._parts:list[str]   = list()
@@ -24,7 +24,7 @@ class Handler(handlers.PartsHandler):
         self._after             = after
         self._part_rehandler    = part_rehandler
 
-    def _stack_handler              (self, handler:handlers.PartsHandler): self._subhandler = handler
+    def _stack_handler              (self, handler:handlers.part.PartsHandler): self._subhandler = handler
 
     def _unstack_handler            (self): self._subhandler = None
 
@@ -61,7 +61,7 @@ class Handler(handlers.PartsHandler):
             if   part in words.ANGLE_OPEN: # generic type - nest
 
                 self._state = state.States.GENERICS
-                self._stack_handler(handlers.generics.Handler(after=self._store_type_generics))
+                self._stack_handler(parsers.generics.Parser(after=self._store_type_generics))
                 self.handle_part(part)
 
             elif part == words.SQUARE_OPEN:

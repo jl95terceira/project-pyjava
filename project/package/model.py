@@ -85,8 +85,9 @@ class ClassEnd: pass
 @dataclasses.dataclass(frozen=True)
 class Argument:
 
-    type :Type = dataclasses.field()
-    final:bool = dataclasses.field(default=False)
+    type      :Type            = dataclasses.field()
+    final     :bool            = dataclasses.field(default=False)
+    annotation:Annotation|None = dataclasses.field(default=None)
 
 @dataclasses.dataclass(frozen=True)
 class StaticConstructor:
@@ -106,6 +107,7 @@ class Attribute:
     name     :str            = dataclasses.field()
     type     :Type           = dataclasses.field()
     static   :bool           = dataclasses.field(default=False)
+    volatile :bool           = dataclasses.field(default=False)
     access   :AccessModifier = dataclasses.field(default=AccessModifiers.DEFAULT)
     final    :bool           = dataclasses.field(default=False)
     value    :str|None       = dataclasses.field(default=None)

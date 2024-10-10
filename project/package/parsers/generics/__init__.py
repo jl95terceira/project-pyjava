@@ -1,9 +1,9 @@
 import typing
 
-from .   import exc, state
-from ... import handlers, words
+from .    import exc, state
+from ...  import handlers, words
 
-class Handler(handlers.PartsHandler):
+class Parser(handlers.part.PartsHandler):
 
     def __init__(self, after:typing.Callable[[str],None]):
 

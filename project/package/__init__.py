@@ -1,13 +1,13 @@
-from . import handlers
+from . import handlers, parsers
 
 class StreamParser:
 
-    def __init__(self, handler:handlers.StreamHandler|None=None):
+    def __init__(self, handler:handlers.entity.EntityHandler|None=None):
 
-        self._h  = handler if handler is not None else handlers.PrintStreamHandler()
+        self._h  = handler if handler is not None else parsers.StreamPrinter()
         self._l0 = self._make_l0()
 
-    def _make_l0   (self): return handlers.part.Handler(stream_handler=self._h)
+    def _make_l0   (self): return parsers.part.Parser(stream_handler=self._h)
 
     def parse_whole(self, source:str): 
 
