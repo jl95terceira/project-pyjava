@@ -4,7 +4,7 @@ class StreamParser:
 
     def __init__(self, handler:handlers.StreamHandler|None=None):
 
-        self._h  = handler if handler is not None else handlers.l2.L2Handler()
+        self._h  = handler if handler is not None else handlers.PrintStreamHandler()
         self._l0 = self._make_l0()
 
     def _make_l0   (self): return handlers.part.Handler(stream_handler=self._h)
