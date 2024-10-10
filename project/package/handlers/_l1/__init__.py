@@ -525,7 +525,8 @@ class L1Handler(handlers.PartsHandler):
         elif self._state is state.States.ENUM_NAMED:
 
             if   part in {words.SEMICOLON,
-                          words.COMMA}:
+                          words.COMMA,
+                          words.CURLY_CLOSE}:
 
                 self._flush_enumv()
                 self.handle_part(part) # re-handle part (either semicolon or comma), as it was used only for look-ahead
@@ -542,6 +543,11 @@ class L1Handler(handlers.PartsHandler):
             if part == words.SEMICOLON:
 
                 self._state = state.States.DEFAULT
+
+            elif part is words.CURLY_CLOSE:
+
+                self._state = state.States.DEFAULT
+                self.handle_part(part)
 
             elif part is words.COMMA:
 

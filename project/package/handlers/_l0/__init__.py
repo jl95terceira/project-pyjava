@@ -1,9 +1,9 @@
 import re
 import typing
 
-from .    import exc, state
-from ..l1 import L1Handler
-from ...  import handlers
+from .     import exc, state
+from .._l1 import L1Handler
+from ...   import handlers
 
 PATTERN  = re.compile(f'((?:\\w+)|(?:/\\*)|(?:\\*/)|(?://)|(?:\\\\.)|\\s+|.)')
 
@@ -15,6 +15,7 @@ class L0Handler(handlers.LineHandler):
         self._state                        = state.States.DEFAULT
         self._line         :str      |None = None
         self._comment_parts:list[str]|None = None
+        self._string_delim :str      |None = None
         self._string_parts :list[str]|None = None
         self._first_line                   = True
 
@@ -45,7 +46,7 @@ class L0Handler(handlers.LineHandler):
             part = match.group(1)
             if   self._state is state.States.IN_STRING: # "..."
 
-                if part != '"':
+                if part != self._string_delim:
 
                     self._string_parts.append(part)
 
@@ -78,9 +79,10 @@ class L0Handler(handlers.LineHandler):
                     
                     self._next_handler.handle_spacing(spacing=part)
 
-                elif part == '"' : 
+                elif part in {'"', '\''} : 
                     
                     self._state = state.States.IN_STRING
+                    self._string_delim = part
                     self._string_parts = list()
 
                 elif part == '/*': 

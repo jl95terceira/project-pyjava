@@ -4,9 +4,9 @@ import unittest
 from . import *
 # re-use keyword maps - not pretty (since they are an implementation detail, suggested by the 
 # leading '_') but very useful to construct strings to be used in tests as Java source
-from ..package.handlers.l1 import _ACCESS_MOD_MAP_BY_KEYWORD, \
-                                  _FINALITY_TYPE_MAP_BY_KEYWORD, \
-                                  _CLASS_TYPE_MAP_BY_KEYWORD
+from ..package.handlers._l1 import _ACCESS_MOD_MAP_BY_KEYWORD, \
+                                   _FINALITY_TYPE_MAP_BY_KEYWORD, \
+                                   _CLASS_TYPE_MAP_BY_KEYWORD
 
 _ACCESS_MOD_MAP_RE    = dict((v,k) for k,v in _ACCESS_MOD_MAP_BY_KEYWORD   .items())
 _FINALITY_TYPE_MAP_RE = dict((v,k) for k,v in _FINALITY_TYPE_MAP_BY_KEYWORD.items())
