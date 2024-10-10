@@ -48,7 +48,7 @@ class StreamHandler(abc.ABC):
     @abc.abstractmethod
     def handle_comment           (self, comment:model.Comment): ...
 
-from . import body, callargs, generics, signature, type, annotation, part, l2, entity
+from . import body, callargs, generics, signature, type, annotation, part, entity
 
 
 # For now, all we do is print the events of the parsing process.
