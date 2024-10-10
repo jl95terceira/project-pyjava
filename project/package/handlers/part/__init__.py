@@ -1,9 +1,8 @@
 import re
 import typing
 
-from .     import exc, state
-from ..entity import L1Handler
-from ...   import handlers
+from .   import exc, state
+from ... import handlers
 
 PATTERN  = re.compile(f'((?:\\w+)|(?:/\\*)|(?:\\*/)|(?://)|(?:\\\\.)|\\s+|.)')
 
@@ -11,7 +10,7 @@ class Handler(handlers.LineHandler):
 
     def __init__(self, stream_handler:handlers.StreamHandler):
 
-        self._next_handler                 = L1Handler(stream_handler=stream_handler)
+        self._next_handler                 = handlers.entity.Handler(stream_handler=stream_handler)
         self._state                        = state.States.DEFAULT
         self._line         :str      |None = None
         self._comment_parts:list[str]|None = None

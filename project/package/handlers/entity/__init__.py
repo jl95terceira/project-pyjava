@@ -27,7 +27,7 @@ _CLASS_TYPE_MAP_BY_KEYWORD   = {'class'     :model.ClassTypes.CLASS,
 _CLASS_TYPE_NAMES_SET        = set(_CLASS_TYPE_MAP_BY_KEYWORD)
 _WORD_PATTERN                = re.compile('^\\w+$')
 
-class L1Handler(handlers.PartsHandler):
+class Handler(handlers.PartsHandler):
 
     def __init__                    (self, stream_handler:handlers.StreamHandler):
 
