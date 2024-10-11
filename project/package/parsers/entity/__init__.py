@@ -147,11 +147,6 @@ class Parser(StackingSemiParser):
 
         return finality if finality is not None else model.FinalityTypes.DEFAULT
 
-    def _flush_annotation           (self, annot:model.Annotation):
-
-        self._NEXT.handle_annotation(annot)
-        self._state = state.States.DEFAULT
-
     def _flush_class                (self):
 
         self._NEXT.handle_class(model.Class(name      =self._class_name, 
@@ -352,8 +347,7 @@ class Parser(StackingSemiParser):
 
             elif part == words.ATSIGN    : 
                 
-                self._state = state.States.ANNOTATION
-                self._stack_handler(parsers.annotation.Parser(after=self._unstacking(self._flush_annotation), part_rehandler=self.handle_part))
+                self._stack_handler(parsers.annotation.Parser(after=self._unstacking(self._NEXT.handle_annotation), part_rehandler=self.handle_part))
                 self.handle_part(part)
 
             elif part == words.ANGLE_OPEN:
