@@ -7,14 +7,14 @@ from ...batteries import *
 
 _WORD_PATTERN                = re.compile('^\\w+$')
 
-class Parser(handlers.part.PartsHandler):
+class Parser(handlers.part.Handler):
 
     def __init__(self, after   :typing.Callable[[model.Type],None], 
                  part_rehandler:typing.Callable[[str],None], 
                  can_be_array  :bool=True):
 
         self._state             = state.States.BEGIN
-        self._subhandler:handlers.part.PartsHandler|None \
+        self._subhandler:handlers.part.Handler|None \
                                 = None
         self._line :str|None    = None
         self._parts       :list[str]   = list()
@@ -25,7 +25,7 @@ class Parser(handlers.part.PartsHandler):
         self._after             = after
         self._part_rehandler    = part_rehandler
 
-    def _stack_handler  (self, handler:handlers.part.PartsHandler): 
+    def _stack_handler  (self, handler:handlers.part.Handler): 
         
         self._subhandler = handler
         self._subhandler.handle_line(self._line)

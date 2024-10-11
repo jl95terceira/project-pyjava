@@ -2,7 +2,7 @@ import abc
 
 from ... import handlers
 
-class PartsHandler(handlers.line.LineHandler):
+class Handler(handlers.line.Handler):
 
     @abc.abstractmethod
     def handle_part                 (self, part:str): ...

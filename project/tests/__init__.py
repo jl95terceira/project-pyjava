@@ -89,7 +89,7 @@ class TestRegistrator:
 
         return _TestHandler(tr=self._tr, tc=tc)
 
-class _TestHandler(entity.EntityHandler): 
+class _TestHandler(entity.Handler): 
 
     def __init__(self, tr:_TestsRegistry, tc:unittest.TestCase):
 

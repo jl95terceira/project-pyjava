@@ -27,12 +27,12 @@ _CLASS_TYPE_MAP_BY_KEYWORD   = {words.CLASS     :model.ClassTypes.CLASS,
 _CLASS_TYPE_KEYWORDS         = set(_CLASS_TYPE_MAP_BY_KEYWORD)
 _WORD_PATTERN                = re.compile('^\\w+$')
 
-class Parser(handlers.part.PartsHandler):
+class Parser(handlers.part.Handler):
 
-    def __init__                    (self, stream_handler:handlers.entity.EntityHandler):
+    def __init__                    (self, stream_handler:handlers.entity.Handler):
 
         self._NEXT                                                = stream_handler
-        self._subhandler       :handlers.part.PartsHandler  |None = None
+        self._subhandler       :handlers.part.Handler  |None = None
         self._line             :str                         |None = None
         self._part             :str                               = ''
         self._class_name_stack :list[str]                         = list()
@@ -65,7 +65,7 @@ class Parser(handlers.part.PartsHandler):
         self._enumv_name       :str                         |None = None
         self._throws           :list[model.Type]            |None = None
 
-    def _stack_handler              (self, handler:handlers.part.PartsHandler):
+    def _stack_handler              (self, handler:handlers.part.Handler):
 
         if _DEBUG_HANDLERS: print(f'STACK HANDLER: {handler.__class__.__module__}::{handler.__class__.__name__}')
         self._subhandler = handler

@@ -2,7 +2,7 @@ from . import handlers, parsers
 
 class StreamParser:
 
-    def __init__(self, handler:handlers.entity.EntityHandler):
+    def __init__(self, handler:handlers.entity.Handler):
 
         self._p = parsers.part.Parser(stream_handler=handler)
 

@@ -3,7 +3,7 @@ import typing
 from .   import body, callargs, generics, signature, type, annotation, part, entity
 from ..  import model, handlers
 
-class StreamPrinter(handlers.entity.EntityHandler):
+class StreamPrinter(handlers.entity.Handler):
 
     @typing.override
     def handle_package           (self, package:model.Package):

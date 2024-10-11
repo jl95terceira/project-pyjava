@@ -3,7 +3,7 @@ import typing
 from .   import exc, state
 from ... import handlers, words
 
-class Parser(handlers.part.PartsHandler):
+class Parser(handlers.part.Handler):
 
     def __init__(self, after:typing.Callable[[str],None]):
 

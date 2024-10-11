@@ -10,12 +10,12 @@ _CONSTRAINT_TYPE_MAP_BY_KEYWORD = {words.EXTENDS: model.TypeConstraints.EXTENDS,
 _CONSTRAINT_TYPE_KEYWORDS       = set(_CONSTRAINT_TYPE_MAP_BY_KEYWORD)
 _WORD_PATTERN = re.compile('^\\w+$')
 
-class Parser(handlers.part.PartsHandler):
+class Parser(handlers.part.Handler):
 
     def __init__(self, after:typing.Callable[[list[model.GenericType]],None]):
 
         self._state                                         = state.States.BEGIN
-        self._subhandler   :handlers.part.PartsHandler|None = None
+        self._subhandler   :handlers.part.Handler|None = None
         self._line         :str                       |None = None
         self._depth                                         = 0
         self._parts_backlog:list[str]                       = list()
@@ -25,7 +25,7 @@ class Parser(handlers.part.PartsHandler):
         self._constraint   :model.TypeConstraint      |None = None
         self._after                                         = after
 
-    def _stack_handler              (self, handler:handlers.part.PartsHandler):
+    def _stack_handler              (self, handler:handlers.part.Handler):
 
         self._subhandler = handler
         self._subhandler.handle_line(self._line)

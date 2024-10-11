@@ -7,12 +7,12 @@ from ...batteries import *
 
 _WORD_PATTERN = re.compile('^\\w+$')
 
-class Parser(handlers.part.PartsHandler):
+class Parser(handlers.part.Handler):
 
     def __init__(self, after:typing.Callable[[dict[str,model.Argument]],None]):
 
         self._line      :str             |None = None
-        self._subhandler:handlers.part.PartsHandler\
+        self._subhandler:handlers.part.Handler\
                                          |None = None
         self._sign                             = dict()
         self._sign_state                       = state.States.BEGIN
@@ -22,7 +22,7 @@ class Parser(handlers.part.PartsHandler):
         self._arg_annot :model.Annotation|None = None
         self._finality                         = model.FinalityTypes.DEFAULT
 
-    def _stack_handler              (self, handler:handlers.part.PartsHandler): self._subhandler = handler
+    def _stack_handler              (self, handler:handlers.part.Handler): self._subhandler = handler
 
     def _unstack_handler            (self): self._subhandler = None
 

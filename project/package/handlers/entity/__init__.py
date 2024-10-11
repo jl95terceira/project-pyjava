@@ -2,7 +2,7 @@ from ... import model
 
 import abc
 
-class EntityHandler(abc.ABC):
+class Handler(abc.ABC):
 
     @abc.abstractmethod
     def handle_package           (self, package:model.Package):  ...

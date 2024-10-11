@@ -1,6 +1,6 @@
 import abc
 
-class LineHandler(abc.ABC):
+class Handler(abc.ABC):
 
     @abc.abstractmethod
     def handle_line                 (self, line:str): ...

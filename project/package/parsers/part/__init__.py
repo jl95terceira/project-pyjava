@@ -6,9 +6,9 @@ from ... import handlers, parsers
 
 PATTERN  = re.compile(f'((?:\\w+)|(?:/\\*)|(?:\\*/)|(?://)|(?:\\\\.)|\\s+|.)')
 
-class Parser(handlers.line.LineHandler):
+class Parser(handlers.line.Handler):
 
-    def __init__(self, stream_handler:handlers.entity.EntityHandler):
+    def __init__(self, stream_handler:handlers.entity.Handler):
 
         self._next_handler                 = parsers.entity.Parser(stream_handler=stream_handler)
         self._state                        = state.States.DEFAULT
