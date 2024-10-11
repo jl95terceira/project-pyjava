@@ -20,7 +20,7 @@ class Parser(handlers.part.PartsHandler):
         self._parts       :list[str]   = list()
         self._can_be_array      = can_be_array
         self._array_dim         = 0
-        self._generics    :list[model.Type]|None \
+        self._generics    :list[model.GenericType]|None \
                                 = None
         self._after             = after
         self._part_rehandler    = part_rehandler
@@ -36,7 +36,7 @@ class Parser(handlers.part.PartsHandler):
 
     def _unstacking     (self, f): return ChainedCall(lambda *a, **ka: self._unstack_handler(), f)
 
-    def _store_generics (self, generics:list[model.Type]):
+    def _store_generics (self, generics:list[model.GenericType]):
 
         self._generics = generics
         self._stop(part_to_rehandle=None)

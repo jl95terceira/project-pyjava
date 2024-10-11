@@ -5,19 +5,23 @@ from .            import exc, state
 from ...          import handlers, model, parsers, words
 from ...batteries import *
 
+_CONSTRAINT_TYPE_MAP_BY_KEYWORD = {words.EXTENDS: model.TypeConstraints.EXTENDS,
+                                   words.SUPER  : model.TypeConstraints.SUPER}
+_CONSTRAINT_TYPE_KEYWORDS       = set(_CONSTRAINT_TYPE_MAP_BY_KEYWORD)
 _WORD_PATTERN = re.compile('^\\w+$')
 
 class Parser(handlers.part.PartsHandler):
 
-    def __init__(self, after:typing.Callable[[list[model.Type]],None]):
+    def __init__(self, after:typing.Callable[[list[model.GenericType]],None]):
 
-        self._state                       = state.States.BEGIN
-        self._subhandler:handlers.part.PartsHandler\
-                            |None         = None
-        self._line      :str|None         = None
-        self._depth                       = 0
-        self._types     :list[model.Type] = list()
-        self._after                       = after
+        self._state                                         = state.States.BEGIN
+        self._subhandler   :handlers.part.PartsHandler|None = None
+        self._line         :str                       |None = None
+        self._depth                                         = 0
+        self._parts_backlog:list[str]                 |None = None
+        self._types        :list[model.GenericType]         = list()
+        self._constraint   :model.TypeConstraint      |None = None
+        self._after                                         = after
 
     def _stack_handler              (self, handler:handlers.part.PartsHandler):
 
@@ -33,6 +37,12 @@ class Parser(handlers.part.PartsHandler):
     def _store_type                 (self, type:model.Type): 
 
         self._types.append(type)
+        self._state = state.States.AFTER
+
+    def _store_constraining_type    (self, type:model.Type):
+
+        self._types.append(model.ConstrainedType(target    =type,
+                                                 constraint=self._constraint if self._constraint is not None else model.TypeConstraints.NONE))
         self._state = state.States.AFTER
 
     @typing.override
@@ -61,15 +71,25 @@ class Parser(handlers.part.PartsHandler):
 
         elif self._state is state.States.DEFAULT:
 
-            if part == words.ANGLE_CLOSE:
+            if   part == words.ANGLE_CLOSE:
 
                 self._stop()
+
+            elif part == words.QUESTIONMARK:
+
+                self._state = state.States.CONSTRAINT
 
             else:
 
                 self._stack_handler(parsers.type.Parser(after=self._unstacking(self._store_type), part_rehandler=self.handle_part, can_be_array=True))
                 self.handle_part(part)
             
+        elif self._state is state.States.CONSTRAINT:
+
+            if part not in _CONSTRAINT_TYPE_KEYWORDS: raise exc.Exception(line)
+            self._constraint = _CONSTRAINT_TYPE_MAP_BY_KEYWORD[part]
+            self._state      = self._stack_handler(parsers.type.Parser(after=self._unstacking(self._store_constraining_type), part_rehandler=self.handle_part, can_be_array=False))
+
         elif self._state is state.States.AFTER:
 
             if part == words.ANGLE_CLOSE: 

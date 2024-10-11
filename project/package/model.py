@@ -1,5 +1,6 @@
 from   collections import defaultdict
 import dataclasses
+import typing
 
 from .batteries import Enumerator
 from .util      import Named
@@ -66,26 +67,42 @@ class Annotation:
 
     def source(self): return f'@{self.name}{'' if not self.args else f'({', '.join(self.args)})'}'
 
+GenericType = typing.Union['Type','ConstrainedType']
+
 @dataclasses.dataclass
 class Type:
 
-    name     :str               = dataclasses.field()
-    generics :list['Type']|None = dataclasses.field(default=None)
-    array_dim:int               = dataclasses.field(default=0)
+    name     :str                    = dataclasses.field()
+    generics :list[GenericType]|None = dataclasses.field(default=None)
+    array_dim:int                    = dataclasses.field(default=0)
 
     def source(self): return f'{self.name}{'' if self.generics is None else f'<{', '.join(map(lambda t: t.source(), self.generics))}>'}'
+
+class TypeConstraint (Named): pass
+class TypeConstraints:
+
+    _e:Enumerator[TypeConstraint] = Enumerator()
+    NONE    = _e(TypeConstraint(name=''))
+    EXTENDS = _e(TypeConstraint(name='EXTENDS'))
+    SUPER   = _e(TypeConstraint(name='SUPER'))
+
+@dataclasses.dataclass
+class ConstrainedType:
+
+    target    :Type           = dataclasses.field()
+    constraint:TypeConstraint = dataclasses.field(default=TypeConstraints.NONE)
 
 @dataclasses.dataclass
 class Class:
 
     name      :str
-    generics  :list[Type]|None = dataclasses.field(default        =None)
-    type      :ClassType       = dataclasses.field(default        =ClassTypes     .CLASS)
-    static    :bool            = dataclasses.field(default        =False)
-    access    :AccessModifier  = dataclasses.field(default        =AccessModifiers.DEFAULT)
-    finality  :FinalityType    = dataclasses.field(default        =FinalityTypes  .DEFAULT)
+    generics  :list[GenericType]|None = dataclasses.field(default        =None)
+    type      :ClassType              = dataclasses.field(default        =ClassTypes     .CLASS)
+    static    :bool                   = dataclasses.field(default        =False)
+    access    :AccessModifier         = dataclasses.field(default        =AccessModifiers.DEFAULT)
+    finality  :FinalityType           = dataclasses.field(default        =FinalityTypes  .DEFAULT)
     subclass  :dict[InheritanceType,list[Type]] \
-                               = dataclasses.field(default_factory=dict)
+                                      = dataclasses.field(default_factory=dict)
 
     def source(self): raise NotImplementedError()
 
@@ -135,16 +152,16 @@ class Attribute:
 @dataclasses.dataclass
 class Method:
 
-    name        :str                = dataclasses.field()
-    type        :Type               = dataclasses.field()
-    static      :bool               = dataclasses.field(default        =False)
-    access      :AccessModifier     = dataclasses.field(default        =AccessModifiers.DEFAULT)
-    finality    :FinalityType       = dataclasses.field(default        =FinalityTypes  .DEFAULT)
-    synchronized:bool               = dataclasses.field(default        =False)
-    generics    :list[Type]         = dataclasses.field(default_factory=list)
-    args        :dict[str,Argument] = dataclasses.field(default_factory=dict)
-    throws      :list[Type]         = dataclasses.field(default_factory=list)
-    body        :str|None           = dataclasses.field(default        =None)
+    name        :str                    = dataclasses.field()
+    type        :Type                   = dataclasses.field()
+    static      :bool                   = dataclasses.field(default        =False)
+    access      :AccessModifier         = dataclasses.field(default        =AccessModifiers.DEFAULT)
+    finality    :FinalityType           = dataclasses.field(default        =FinalityTypes  .DEFAULT)
+    synchronized:bool                   = dataclasses.field(default        =False)
+    generics    :list[GenericType]|None = dataclasses.field(default        =None)
+    args        :dict[str,Argument]     = dataclasses.field(default_factory=dict)
+    throws      :list[Type]             = dataclasses.field(default_factory=list)
+    body        :str|None               = dataclasses.field(default        =None)
 
     def source(self): raise NotImplementedError()
 

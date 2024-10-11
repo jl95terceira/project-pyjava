@@ -15,6 +15,7 @@ class StaticDuplicateException          (Exception): pass
 class SynchronizedDuplicateException    (Exception): pass
 class VolatileDuplicateException        (Exception): pass
 class TypeArrayNotAllowedException      (Exception): pass
+class GenericsDuplicateException        (Exception): pass
 class TypeException                     (Exception): pass
 class TypeOrNameMissingException        (Exception): pass
 class NotConstructorException           (Exception): pass

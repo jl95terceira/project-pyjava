@@ -8,23 +8,23 @@ from .            import exc, state
 from ...          import handlers, model, util, words, parsers
 from ...batteries import *
 
-_INHERIT_TYPE_MAP_BY_KEYWORD = {'extends'   :model.InheritanceTypes.EXTENDS,
-                                'implements':model.InheritanceTypes.IMPLEMENTS}
+_INHERIT_TYPE_MAP_BY_KEYWORD = {words.EXTENDS   :model.InheritanceTypes.EXTENDS,
+                                words.IMPLEMENTS:model.InheritanceTypes.IMPLEMENTS}
 
-_INHERIT_TYPE_NAMES_SET      = set(_INHERIT_TYPE_MAP_BY_KEYWORD)
-_ACCESS_MOD_MAP_BY_KEYWORD   = {'public'    :model.AccessModifiers.PUBLIC,
-                                ''          :model.AccessModifiers.DEFAULT,
-                                'protected' :model.AccessModifiers.PROTECTED,
-                                'private'   :model.AccessModifiers.PRIVATE}
-_ACCESS_MOD_NAMES_SET        = set(_ACCESS_MOD_MAP_BY_KEYWORD)
-_FINALITY_TYPE_MAP_BY_KEYWORD= {''          :model.FinalityTypes.DEFAULT,
-                                'abstract'  :model.FinalityTypes.ABSTRACT,
-                                'final'     :model.FinalityTypes.FINAL}
-_FINALITY_TYPE_NAMES_SET     = set(_FINALITY_TYPE_MAP_BY_KEYWORD)
-_CLASS_TYPE_MAP_BY_KEYWORD   = {'class'     :model.ClassTypes.CLASS,
-                                'interface' :model.ClassTypes.INTERFACE,
-                                'enum'      :model.ClassTypes.ENUM}
-_CLASS_TYPE_NAMES_SET        = set(_CLASS_TYPE_MAP_BY_KEYWORD)
+_INHERIT_TYPE_KEYWORDS       = set(_INHERIT_TYPE_MAP_BY_KEYWORD)
+_ACCESS_MOD_MAP_BY_KEYWORD   = {words.PUBLIC    :model.AccessModifiers.PUBLIC,
+                                ''              :model.AccessModifiers.DEFAULT,
+                                words.PROTECTED :model.AccessModifiers.PROTECTED,
+                                words.PRIVATE   :model.AccessModifiers.PRIVATE}
+_ACCESS_MOD_KEYWORDS         = set(_ACCESS_MOD_MAP_BY_KEYWORD)
+_FINALITY_TYPE_MAP_BY_KEYWORD= {''              :model.FinalityTypes.DEFAULT,
+                                words.ABSTRACT  :model.FinalityTypes.ABSTRACT,
+                                words.FINAL     :model.FinalityTypes.FINAL}
+_FINALITY_TYPE_KEYWORDS      = set(_FINALITY_TYPE_MAP_BY_KEYWORD)
+_CLASS_TYPE_MAP_BY_KEYWORD   = {words.CLASS     :model.ClassTypes.CLASS,
+                                words.INTERFACE :model.ClassTypes.INTERFACE,
+                                words.ENUM      :model.ClassTypes.ENUM}
+_CLASS_TYPE_KEYWORDS         = set(_CLASS_TYPE_MAP_BY_KEYWORD)
 _WORD_PATTERN                = re.compile('^\\w+$')
 
 class Parser(handlers.part.PartsHandler):
@@ -61,7 +61,7 @@ class Parser(handlers.part.PartsHandler):
                                                             |None = None
         self._constructor_sign :dict[str,model.Argument]    |None = None
         self._method_sign      :dict[str,model.Argument]    |None = None
-        self._method_generics  :str                         |None = None
+        self._method_generics  :list[model.GenericType]     |None = None
         self._enumv_name       :str                         |None = None
         self._throws           :list[model.Type]            |None = None
 
@@ -221,7 +221,7 @@ class Parser(handlers.part.PartsHandler):
         self._attr_type = type
         self._state     = state.States.DECL_1
 
-    def _store_method_generics      (self, generics:str):
+    def _store_method_generics      (self, generics:list[model.GenericType]):
 
         self._method_generics = generics
         self._state = state.States.DEFAULT
@@ -275,17 +275,17 @@ class Parser(handlers.part.PartsHandler):
 
             elif part == words.PACKAGE    : self._state = state.States.PACKAGE
 
-            elif part in _FINALITY_TYPE_NAMES_SET: 
+            elif part in _FINALITY_TYPE_KEYWORDS: 
                 
                 if self._finality is not None: raise exc.FinalityDuplicateException(line)
                 self._finality = _FINALITY_TYPE_MAP_BY_KEYWORD[part]
 
-            elif part in _ACCESS_MOD_NAMES_SET:
+            elif part in _ACCESS_MOD_KEYWORDS:
 
                 if self._access is not None: raise exc.AccessModifierDuplicateException(line)
                 self._access = _ACCESS_MOD_MAP_BY_KEYWORD[part]
 
-            elif part in _CLASS_TYPE_NAMES_SET:
+            elif part in _CLASS_TYPE_KEYWORDS:
 
                 if self._class_type is not None: raise exc.ClassException(line)
                 self._class_type = _CLASS_TYPE_MAP_BY_KEYWORD[part]
@@ -315,7 +315,7 @@ class Parser(handlers.part.PartsHandler):
 
             elif part == words.ANGLE_OPEN:
 
-                if self._method_generics is not None: raise exc.DuplicateGenericsException(line)
+                if self._method_generics is not None: raise exc.GenericsDuplicateException(line)
                 self._stack_handler(parsers.generics.Parser(after=self._unstacking(self._store_method_generics)))
                 self.handle_part(part)
 
@@ -373,7 +373,7 @@ class Parser(handlers.part.PartsHandler):
         
         elif self._state is state.States.CLASS_AFTER_NAME:
 
-            if   part in _INHERIT_TYPE_NAMES_SET:
+            if   part in _INHERIT_TYPE_KEYWORDS:
 
                 it = _INHERIT_TYPE_MAP_BY_KEYWORD[part]
                 if it in self._class_subc: raise exc.ClassException(line) # repeated extends or implements
@@ -398,7 +398,7 @@ class Parser(handlers.part.PartsHandler):
 
                 self._flush_class()
 
-            elif part in _INHERIT_TYPE_NAMES_SET: 
+            elif part in _INHERIT_TYPE_KEYWORDS: 
                 
                 self._state = state.States.CLASS_AFTER_NAME
                 self.handle_part(part)
