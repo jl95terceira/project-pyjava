@@ -68,8 +68,9 @@ class Parser(parsers.entity.StackingSemiParser):
             if part not in _CONSTRAINT_TYPE_KEYWORDS:
 
                 self._stack_handler(parsers.type.Parser(after=self._unstacking(self._store_type), part_rehandler=self.handle_part, can_be_array=True))
-                self.handle_part(self._parts_backlog[0])
-                self.handle_part(part)
+                for part_ in self._parts_backlog:
+
+                    self.handle_part(part_)
 
             else:
 
