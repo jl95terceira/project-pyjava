@@ -208,7 +208,7 @@ class Parser(StackingSemiParser):
         self._access           = None
         self._constructor_sign = None
 
-    def _flush_attr                 (self, decl_only=False):
+    def _flush_attribute            (self, decl_only=False):
 
         self._NEXT.handle_attr(model.Attribute(name     =self._attr_name, 
                                                static   =self._static,
@@ -253,7 +253,7 @@ class Parser(StackingSemiParser):
         self._state       = state.States.METHOD_DECLARED
         self._method_sign = signature
 
-    def _flush_enumv                (self, callargs:list[str]|None=None):
+    def _flush_enum_value           (self, callargs:list[str]|None=None):
 
         self._NEXT.handle_enum_value(model.EnumValue(name=self._enumv_name, 
                                                      args=callargs if callargs is not None else list()))
@@ -273,12 +273,12 @@ class Parser(StackingSemiParser):
         self._class_subc[self._class_subc_cur].append(type)
         self._state = state.States.CLASS_SUPERCLASS_NAMED
 
-    def _store_constructor_declared (self, signature:dict[str,model.Argument]):
+    def _store_constructor_signature(self, signature:dict[str,model.Argument]):
 
         self._state            = state.States.CONSTRUCTOR_DECLARED
         self._constructor_sign = signature
 
-    def _store_attr_type            (self, type:model.Type):
+    def _store_attribute_type       (self, type:model.Type):
 
         self._attr_type = type
         self._state     = state.States.DECL_1
@@ -288,7 +288,7 @@ class Parser(StackingSemiParser):
         self._method_generics = generics
         self._state = state.States.DEFAULT
 
-    def _store_throws               (self, type:model.Type):
+    def _store_method_throws        (self, type:model.Type):
 
         self._throws.append(type)
         self._state = state.States.METHOD_THROWS_AFTER
@@ -374,7 +374,7 @@ class Parser(StackingSemiParser):
             else: 
                 
                 self._state = state.States.ATTR_BEGIN
-                self._stack_handler(parsers.type.Parser(after=self._unstacking(self._store_attr_type), part_rehandler=self.handle_part))
+                self._stack_handler(parsers.type.Parser(after=self._unstacking(self._store_attribute_type), part_rehandler=self.handle_part))
                 self.handle_part(part)
 
             return
@@ -471,7 +471,7 @@ class Parser(StackingSemiParser):
                 if (self._attr_type.name == self._class_name_stack[-1]): # constructor, since previously we got a word equal to the class' name
 
                     self._state = state.States.CONSTRUCTOR_SIGNATURE
-                    self._stack_handler(parsers.signature.Parser(after=self._unstacking(self._store_constructor_declared)))
+                    self._stack_handler(parsers.signature.Parser(after=self._unstacking(self._store_constructor_signature)))
                     self.handle_part(part) # re-handle part ('('), since it was used only for look-ahead
 
                 else:
@@ -489,7 +489,7 @@ class Parser(StackingSemiParser):
 
             if   part == words.SEMICOLON:
 
-                self._flush_attr(decl_only=True)
+                self._flush_attribute(decl_only=True)
             
             elif part == words.EQUALSIGN:
 
@@ -520,7 +520,7 @@ class Parser(StackingSemiParser):
                self._attr_scope_depth == 0 and \
                part                   == words.SEMICOLON: 
                 
-                self._flush_attr()
+                self._flush_attribute()
                 self._attr_nest_depth  = None
                 self._attr_scope_depth = None
                 return
@@ -545,7 +545,7 @@ class Parser(StackingSemiParser):
                 if self._throws is not None: raise exc.MethodException(line)
                 self._state  = state.States.METHOD_THROWS
                 self._throws = list()
-                self._stack_handler(parsers.type.Parser(after=self._unstacking(self._store_throws), part_rehandler=self.handle_part, can_be_array=False))
+                self._stack_handler(parsers.type.Parser(after=self._unstacking(self._store_method_throws), part_rehandler=self.handle_part, can_be_array=False))
 
             else:
 
@@ -559,7 +559,7 @@ class Parser(StackingSemiParser):
 
             if part == words.COMMA:
 
-                self._stack_handler(parsers.type.Parser(after=self._unstacking(self._store_throws), part_rehandler=self.handle_part, can_be_array=False))
+                self._stack_handler(parsers.type.Parser(after=self._unstacking(self._store_method_throws), part_rehandler=self.handle_part, can_be_array=False))
 
             else:
 
@@ -596,12 +596,12 @@ class Parser(StackingSemiParser):
                           words.COMMA,
                           words.CURLY_CLOSE}:
 
-                self._flush_enumv()
+                self._flush_enum_value()
                 self.handle_part(part) # re-handle part (either semicolon or comma), as it was used only for look-ahead
 
             else:
                 
-                self._stack_handler(parsers.callargs.Parser(after=self._unstacking(self._flush_enumv)))
+                self._stack_handler(parsers.callargs.Parser(after=self._unstacking(self._flush_enum_value)))
                 self.handle_part(part) # re-handle part ('('), since it was used only for look-ahead
 
             return
