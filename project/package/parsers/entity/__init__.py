@@ -33,6 +33,8 @@ class StackingSemiParser(handlers.part.Handler, abc.ABC):
     def __init__(self):
 
         self._subhandler:handlers.part.Handler|None = None
+        self._line      :str                  |None = None
+        self._part      :str                  |None = None
 
     def _stack_handler              (self, handler:handlers.part.Handler):
 
@@ -57,6 +59,7 @@ class StackingSemiParser(handlers.part.Handler, abc.ABC):
     @typing.override
     def handle_part                 (self, part:str): 
         
+        self._part = part
         if self._subhandler is not None: self._subhandler.handle_part(part)
         else                           : self.   _default_handle_part(part)
 
@@ -108,10 +111,7 @@ class Parser(StackingSemiParser):
 
         super().__init__()
         self._NEXT                                                = stream_handler
-        self._line             :str                         |None = None
-        self._part             :str                               = ''
         self._class_name_stack :list[str]                         = list()
-        # resettable state
         self._state                                               = state.States.DEFAULT
         self._package          :str                         |None = None
         self._static           :bool                              = False

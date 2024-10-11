@@ -12,7 +12,6 @@ class Parser(parsers.entity.StackingSemiParser):
         super().__init__()
         self._part_rehandler       = part_rehandler
         self._state                = state.States.BEGIN
-        self._line :str      |None = None
         self._name :str      |None = ''
         self._args :list[str]|None = list()
         self._after                = after

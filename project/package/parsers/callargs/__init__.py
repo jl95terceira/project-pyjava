@@ -2,7 +2,7 @@ import re
 import typing
 
 from .            import exc, state
-from ...          import handlers, words
+from ...          import handlers, parsers, words
 from ...batteries import *
 
 _WORD_PATTERN = re.compile('^\\w+$')
@@ -11,17 +11,17 @@ _ACREMENTERS  = {words.PARENTH_OPEN: words.PARENTH_CLOSE,
                  words.ANGLE_OPEN  : words.ANGLE_CLOSE,
                  words.SQUARE_OPEN : words.SQUARE_CLOSED}
 
-class Parser(handlers.part.Handler):
+class Parser(parsers.entity.StackingSemiParser):
 
     def __init__(self, after:typing.Callable[[list[str]],None]):
 
-        self._line          :str      |None = None
-        self._callargs      :list[str]      = list()
-        self._callargs_state                = state.CallArgsStates.BEGIN
-        self._callarg_value                 = ''
-        self._callarg_depth                 = 0
-        self._callarg_depth_incrementer:str = None
-        self._callargs_after                = after
+        super().__init__()
+        self._callargs                 :list[str] = list()
+        self._callargs_state                      = state.CallArgsStates.BEGIN
+        self._callarg_value                       = ''
+        self._callarg_depth                       = 0
+        self._callarg_depth_incrementer:str       = None
+        self._callargs_after                      = after
 
     def _store_callarg(self):
 
@@ -30,10 +30,10 @@ class Parser(handlers.part.Handler):
         self._callarg_depth = 0
 
     @typing.override
-    def handle_line   (self, line: str): self._line = line
+    def _default_handle_line   (self, line: str): pass
 
     @typing.override
-    def handle_part   (self, part:str):
+    def _default_handle_part   (self, part:str):
 
         line = self._line
         if   self._callargs_state is state.CallArgsStates.BEGIN:
@@ -94,16 +94,16 @@ class Parser(handlers.part.Handler):
         else: raise AssertionError(f'{self._callargs_state=}')
 
     @typing.override
-    def handle_comment(self, text: str): pass #TO-DO
+    def _default_handle_comment(self, text: str): pass #TO-DO
 
     @typing.override
-    def handle_spacing(self, spacing: str): self._callarg_value += spacing
+    def _default_handle_spacing(self, spacing: str): self._callarg_value += spacing
 
     @typing.override
-    def handle_newline(self): pass #TO-DO
+    def _default_handle_newline(self): pass #TO-DO
 
     @typing.override
-    def handle_eof(self):
+    def _default_handle_eof(self):
         
         line = self._line
         raise exc.EOFException(line) # there should not be an EOF at all, before closing the arguments comprehension

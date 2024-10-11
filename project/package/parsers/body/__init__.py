@@ -1,26 +1,25 @@
 import typing
 
 from .   import exc, state
-from ... import handlers, words
+from ... import handlers, parsers, words
 
-class Parser(handlers.part.Handler):
+class Parser(parsers.entity.StackingSemiParser):
 
     def __init__(self, after:typing.Callable[[str],None]):
 
+        super().__init__()
         self._state         = state.States.BEGIN
-        self._line:str|None = None
         self._parts         = list()
         self._depth         = 0
         self._after         = after
 
     @typing.override
-    def handle_line(self, line: str): self._line = line
+    def _default_handle_line(self, line: str): pass
 
     @typing.override
-    def handle_part   (self, part:str):
+    def _default_handle_part   (self, part:str):
 
         line = self._line
-        #print(self._state.name, part)
         if   self._state is state.States.END:
 
             raise exc.StopException(line)
@@ -65,25 +64,24 @@ class Parser(handlers.part.Handler):
         else: raise AssertionError(f'{self._state=}')
 
     @typing.override
-    def handle_comment(self, text: str):
+    def _default_handle_comment(self, text: str):
         
         self._parts.append(text)
 
     @typing.override
-    def handle_spacing(self, spacing:str):
+    def _default_handle_spacing(self, spacing:str):
 
         self._parts.append(spacing)
 
     @typing.override
-    def handle_newline(self):
+    def _default_handle_newline(self):
 
         self.handle_spacing(spacing='\n')
 
     @typing.override
-    def handle_eof(self):
+    def _default_handle_eof(self):
         
-        line = self._line
-        raise exc.EOFException(line) # there should not be an EOF at all, before closing the body
+        raise exc.EOFException(self._line) # there should not be an EOF at all, before closing the body
 
     def _stop(self):
 
