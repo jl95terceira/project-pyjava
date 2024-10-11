@@ -113,7 +113,6 @@ class Parser(StackingSemiParser):
         self._NEXT                                                = stream_handler
         self._class_name_stack :list[str]                         = list()
         self._state                                               = state.States.DEFAULT
-        self._package          :str                         |None = None
         self._static           :bool                              = False
         self._access           :model.AccessModifier        |None = None
         self._finality         :model.FinalityType          |None = None
@@ -166,12 +165,6 @@ class Parser(StackingSemiParser):
         self._finality       = None
         self._class_type     = None
         self._class_subc     = None
-
-    def _flush_class_end            (self):
-
-        self._NEXT.handle_class_end(model.ClassEnd())
-        self._state = state.States.DEFAULT
-        self._class_name_stack.pop()
 
     def _flush_static_constructor   (self, body:str): 
         
@@ -301,7 +294,8 @@ class Parser(StackingSemiParser):
 
             elif part == words.CURLY_CLOSE: 
                 
-                self._flush_class_end()
+                self._NEXT.handle_class_end(model.ClassEnd())
+                self._class_name_stack.pop()
 
             elif part == words.IMPORT     : 
                 
