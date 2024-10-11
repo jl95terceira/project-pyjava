@@ -2,9 +2,9 @@ from . import handlers, parsers
 
 class StreamParser:
 
-    def __init__(self, handler:handlers.entity.EntityHandler|None=None):
+    def __init__(self, handler:handlers.entity.EntityHandler):
 
-        self._p = parsers.part.Parser(stream_handler=handler if handler is not None else parsers.StreamPrinter())
+        self._p = parsers.part.Parser(stream_handler=handler)
 
     def parse_whole(self, source:str): 
 

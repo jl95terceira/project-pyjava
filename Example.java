@@ -7,8 +7,8 @@ import static java.util.logging.Level.*;
 /**
  * This is a multi-line comment.
  */
-@DataClass
-public abstract class FooBar<A,B> extends Object implements Foo,Bar {
+@Log4j2
+public abstract class Example<A,B> extends Object implements Foo,Bar {
 
     private static       Object   ab;
     private              long     cde     = 123L;
@@ -25,18 +25,18 @@ public abstract class FooBar<A,B> extends Object implements Foo,Bar {
         System.out.println("Hello, static constructor");
     }
 
-    public FooBar() {
+    public Example() {
         
         System.out.println("Hello, constructor");
     }
-    public FooBar(String something, byte b, byte[] bb) {
+    public Example(String something, byte b, byte[] bb) {
         
         System.out.println(String.format("Hello, %s", something));
     }
 
     protected       Boolean myMethod(String  x,
-                               Integer y,
-                               final Long z) {
+                                     Integer y,
+                                     final Long z) {
 
         return (new Thingy() {
             {
@@ -46,10 +46,13 @@ public abstract class FooBar<A,B> extends Object implements Foo,Bar {
             }
         }).get();
     }
-    private         int[]            ayoh    (String[] aa, String a) {}
-    public          void             coiso   () {}
-    public abstract Optional<String> coisa   ();
-    public <T>      T                coisi   () {return null;}
+    private         int[]                  ayoh    (String[] aa, String a) {}
+    public          void                   coiso   () {}
+    public abstract Optional<String>       coisa   ();
+    public <T>      T                      coisi   () {return null;}
+    @Override(123,456)
+    @Deprecated
+    public <U extends Object> List<? extends Set<U>> coisee(@Special(one="yes") final int x) {throw new RuntimeException(" ");}
 
     public interface YelloPink {
 
