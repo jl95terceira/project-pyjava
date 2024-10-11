@@ -7,34 +7,21 @@ from ...batteries import *
 
 _WORD_PATTERN                = re.compile('^\\w+$')
 
-class Parser(handlers.part.Handler):
+class Parser(parsers.entity.StackingSemiParser):
 
     def __init__(self, after   :typing.Callable[[model.Type],None], 
                  part_rehandler:typing.Callable[[str],None], 
                  can_be_array  :bool=True):
 
-        self._state             = state.States.BEGIN
-        self._subhandler:handlers.part.Handler|None \
-                                = None
-        self._line :str|None    = None
-        self._parts       :list[str]   = list()
-        self._can_be_array      = can_be_array
-        self._array_dim         = 0
-        self._generics    :list[model.GenericType]|None \
-                                = None
-        self._after             = after
-        self._part_rehandler    = part_rehandler
-
-    def _stack_handler  (self, handler:handlers.part.Handler): 
-        
-        self._subhandler = handler
-        self._subhandler.handle_line(self._line)
-
-    def _unstack_handler(self): 
-        
-        self._subhandler = None
-
-    def _unstacking     (self, f): return ChainedCall(lambda *a, **ka: self._unstack_handler(), f)
+        super().__init__()
+        self._state                                     = state.States.BEGIN
+        self._line        :str                    |None = None
+        self._parts       :list[str]                    = list()
+        self._can_be_array                              = can_be_array
+        self._array_dim                                 = 0
+        self._generics    :list[model.GenericType]|None = None
+        self._after                                     = after
+        self._part_rehandler                            = part_rehandler
 
     def _store_generics (self, generics:list[model.GenericType]):
 
@@ -42,17 +29,12 @@ class Parser(handlers.part.Handler):
         self._stop(part_to_rehandle=None)
 
     @typing.override
-    def handle_line     (self, line: str): self._line = line
+    def _default_handle_line     (self, line: str): pass
 
     @typing.override
-    def handle_part     (self, part:str): 
+    def _default_handle_part     (self, part:str): 
         
         line = self._line
-        if self._subhandler is not None:
-
-            self._subhandler.handle_part(part)
-            return
-
         if self._state   is state.States.BEGIN:
 
             if not _WORD_PATTERN.match(part):
@@ -113,48 +95,18 @@ class Parser(handlers.part.Handler):
         else: raise AssertionError(f'{self._state=}')
 
     @typing.override
-    def handle_comment  (self, text: str): 
-        
-        line = self._line
-        if self._subhandler is not None:
-
-            self._subhandler.handle_comment(text)
-            return
-
-        pass #TO-DO
+    def _default_handle_comment  (self, text: str): pass #TO-DO
 
     @typing.override
-    def handle_spacing  (self, spacing:str): 
-
-        line = self._line
-        if self._subhandler is not None:
-
-            self._subhandler.handle_spacing(spacing)
-            return
-
-        pass #TO-DO
+    def _default_handle_spacing  (self, spacing:str): pass #TO-DO
 
     @typing.override
-    def handle_newline  (self): 
-
-        line = self._line
-        if self._subhandler is not None:
-
-            self._subhandler.handle_newline()
-            return
-
-        pass #TO-DO
+    def _default_handle_newline  (self): pass #TO-DO
 
     @typing.override
-    def handle_eof      (self):
+    def _default_handle_eof      (self):
 
-        line = self._line
-        if self._subhandler is not None:
-
-            self._subhandler.handle_eof()
-            return
-
-        if self._state != state.States.DEFAULT: raise exc.EOFExcpetion(line)
+        if self._state != state.States.DEFAULT: raise exc.EOFExcpetion(self._line)
         self._stop(None)
 
     def _stop(self, part_to_rehandle:str|None): 

@@ -7,13 +7,11 @@ from ...batteries import *
 
 _WORD_PATTERN = re.compile('^\\w+$')
 
-class Parser(handlers.part.Handler):
+class Parser(parsers.entity.StackingSemiParser):
 
     def __init__(self, after:typing.Callable[[dict[str,model.Argument]],None]):
 
-        self._line      :str             |None = None
-        self._subhandler:handlers.part.Handler\
-                                         |None = None
+        super().__init__()
         self._sign                             = dict()
         self._sign_state                       = state.States.BEGIN
         self._sign_after                       = after
@@ -21,12 +19,6 @@ class Parser(handlers.part.Handler):
         self._arg_type  :model.Type      |None = None
         self._arg_annot :model.Annotation|None = None
         self._finality                         = model.FinalityTypes.DEFAULT
-
-    def _stack_handler              (self, handler:handlers.part.Handler): self._subhandler = handler
-
-    def _unstack_handler            (self): self._subhandler = None
-
-    def _unstacking                 (self, f): return ChainedCall(lambda *a, **ka: self._unstack_handler(), f)
 
     def _store_arg                  (self):
 
@@ -48,21 +40,11 @@ class Parser(handlers.part.Handler):
         self._sign_state = state.States.DEFAULT
 
     @typing.override
-    def handle_line(self, line: str): 
-        
-        self._line = line
-        if self._subhandler is not None:
-
-            self._subhandler.handle_line(line)
+    def _default_handle_line(self, line: str): pass
 
     @typing.override
-    def handle_part(self, part:str): 
+    def _default_handle_part(self, part:str): 
         
-        if self._subhandler is not None:
-
-            self._subhandler.handle_part(part)
-            return
-
         line = self._line
         if   self._sign_state is state.States.BEGIN:
 
@@ -127,37 +109,15 @@ class Parser(handlers.part.Handler):
         self._sign_after(self._sign)
 
     @typing.override
-    def handle_comment(self, text: str): 
-        
-        if self._subhandler is not None:
-
-            self._subhandler.handle_part(text)
-            return
-
-        pass #TO-DO
+    def _default_handle_comment(self, text: str): pass #TO-DO
 
     @typing.override
-    def handle_spacing(self, spacing: str): 
-        
-        if self._subhandler is not None:
-
-            self._subhandler.handle_spacing(spacing)
-            return
-
-        pass #TO-DO
+    def _default_handle_spacing(self, spacing: str): pass #TO-DO
 
     @typing.override
-    def handle_newline(self): 
-        
-        if self._subhandler is not None:
-
-            self._subhandler.handle_newline()
-            return
-
-        pass #TO-DO
+    def _default_handle_newline(self): pass #TO-DO
 
     @typing.override
-    def handle_eof(self):
+    def _default_handle_eof(self):
         
-        line = self._line
-        raise exc.EOFException(line) # there should not be an EOF at all, before closing the signature
+        raise exc.EOFException(self._line) # there should not be an EOF at all, before closing the signature
