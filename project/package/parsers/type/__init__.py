@@ -15,7 +15,6 @@ class Parser(parsers.entity.StackingSemiParser):
 
         super().__init__()
         self._state                                     = state.States.BEGIN
-        self._line        :str                    |None = None
         self._parts       :list[str]                    = list()
         self._can_be_array                              = can_be_array
         self._array_dim                                 = 0
@@ -106,7 +105,7 @@ class Parser(parsers.entity.StackingSemiParser):
     @typing.override
     def _default_handle_eof      (self):
 
-        if self._state != state.States.DEFAULT: raise exc.EOFExcpetion(self._line)
+        if self._state != state.States.DEFAULT: raise exc.EOFException(self._line)
         self._stop(None)
 
     def _stop(self, part_to_rehandle:str|None): 
