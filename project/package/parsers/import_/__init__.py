@@ -9,13 +9,15 @@ _WORD_PATTERN                = re.compile('^\\w+$')
 
 class Parser(parsers.entity.StackingSemiParser):
 
-    def __init__(self, after   :typing.Callable[[model.Import],None]):
+    def __init__(self, after     :typing.Callable[[model.Import],None],
+                       skip_begin=False):
 
         super().__init__()
-        self._after             = after
-        self._state             = state.States.BEGIN
-        self._static            = False
-        self._imported:str|None = None
+        self._after           = after
+        self._state           = state.States.BEGIN        if not skip_begin else \
+                                state.States.AFTER_IMPORT
+        self._static          = False
+        self._name  :str|None = None
 
     @typing.override
     def _default_handle_line     (self, line: str): pass
@@ -29,9 +31,9 @@ class Parser(parsers.entity.StackingSemiParser):
         elif self._state is state.States.BEGIN:
 
             if part != words.IMPORT: raise exc.Exception(line)
-            self._state = state.States.DEFAULT
+            self._state = state.States.AFTER_IMPORT
 
-        elif self._state is state.States.DEFAULT:
+        elif self._state is state.States.AFTER_IMPORT:
 
             if part == words.STATIC: 
                 
@@ -39,10 +41,10 @@ class Parser(parsers.entity.StackingSemiParser):
 
             else:
                             
-                self._imported = part
-                self._state    = state.States.DEFAULT_2 
+                self._name = part
+                self._state    = state.States.AFTER_NAME 
 
-        elif self._state is state.States.DEFAULT_2:
+        elif self._state is state.States.AFTER_NAME:
 
             if part == words.SEMICOLON:
 
@@ -53,11 +55,11 @@ class Parser(parsers.entity.StackingSemiParser):
                  part == words.ASTERISK     or \
                  not words.is_reserved(part):
 
-                self._imported += part
+                self._name += part
 
             else: raise exc.Exception(line)
 
-        elif self._state is state.States.DEFAULT_2:
+        elif self._state is state.States.AFTER_NAME:
 
             if part == words.SEMICOLON:
 
@@ -88,5 +90,5 @@ class Parser(parsers.entity.StackingSemiParser):
     def _stop(self): 
         
         self._state = state.States.END
-        self._after(model.Import(name  =self._imported,
+        self._after(model.Import(name  =self._name,
                                  static=self._static))

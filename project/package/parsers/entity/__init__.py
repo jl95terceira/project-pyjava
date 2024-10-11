@@ -254,7 +254,7 @@ class Parser(StackingSemiParser):
     def _store_attribute_type       (self, type:model.Type):
 
         self._attr_type = type
-        self._state     = state.States.DECL_1
+        self._state     = state.States.UNKNOWN_1
 
     def _store_method_generics      (self, generics:list[model.GenericType]):
 
@@ -283,8 +283,7 @@ class Parser(StackingSemiParser):
                 if self._static and (self._attr_type is None): 
                     
                     self._state = state.States.STATIC_CONSTRUCTOR_BODY
-                    self._stack_handler(parsers.body.Parser(after=self._unstacking(self._flush_static_constructor)))
-                    self.handle_part(part) # re-handle part ('{'), since it was used only for look-ahead
+                    self._stack_handler(parsers.body.Parser(after=self._unstacking(self._flush_static_constructor), skip_begin=True))
                     
                 elif self._class_name is not None:
 
@@ -299,13 +298,11 @@ class Parser(StackingSemiParser):
 
             elif part == words.IMPORT     : 
                 
-                self._stack_handler(parsers.import_.Parser(after=self._unstacking(self._NEXT.handle_import)))
-                self.handle_part(part)
+                self._stack_handler(parsers.import_.Parser(after=self._unstacking(self._NEXT.handle_import), skip_begin=True))
 
             elif part == words.PACKAGE    : 
                 
-                self._stack_handler(parsers.package.Parser(after=self._unstacking(self._NEXT.handle_package)))
-                self.handle_part(part)
+                self._stack_handler(parsers.package.Parser(after=self._unstacking(self._NEXT.handle_package), skip_begin=True))
 
             elif part in _FINALITY_TYPE_KEYWORDS: 
                 
@@ -341,14 +338,12 @@ class Parser(StackingSemiParser):
 
             elif part == words.ATSIGN    : 
                 
-                self._stack_handler(parsers.annotation.Parser(after=self._unstacking(self._NEXT.handle_annotation), part_rehandler=self.handle_part))
-                self.handle_part(part)
+                self._stack_handler(parsers.annotation.Parser(after=self._unstacking(self._NEXT.handle_annotation), skip_begin=True, part_rehandler=self.handle_part))
 
             elif part == words.ANGLE_OPEN:
 
                 if self._method_generics is not None: raise exc.GenericsDuplicateException(line)
-                self._stack_handler(parsers.generics.Parser(after=self._unstacking(self._store_method_generics)))
-                self.handle_part(part)
+                self._stack_handler(parsers.generics.Parser(after=self._unstacking(self._store_method_generics), skip_begin=True))
 
             else: 
                 
@@ -379,7 +374,7 @@ class Parser(StackingSemiParser):
 
             if   part == words.COMMA:
 
-                self._state = state.States.CLASS_SUPERCLASS_SEP
+                self._stack_handler(parsers.type.Parser(after=self._unstacking(self._store_superclass), part_rehandler=self.handle_part, can_be_array=False))
 
             elif part == words.CURLY_OPEN:
 
@@ -393,34 +388,25 @@ class Parser(StackingSemiParser):
             else: raise exc.ClassException(line)
             return
         
-        elif self._state is state.States.CLASS_SUPERCLASS_SEP:
-
-            self._stack_handler(parsers.type.Parser(after=self._unstacking(self._store_superclass), part_rehandler=self.handle_part, can_be_array=False))
-            self.handle_part(part)
-            return
-
-        elif self._state is state.States.DECL_1:
+        elif self._state is state.States.UNKNOWN_1:
 
             if part == words.PARENTH_OPEN:
                 
                 if (self._attr_type.name == self._class_name_stack[-1]): # constructor, since previously we got a word equal to the class' name
 
                     self._state = state.States.CONSTRUCTOR_SIGNATURE
-                    self._stack_handler(parsers.signature.Parser(after=self._unstacking(self._store_constructor_signature)))
-                    self.handle_part(part) # re-handle part ('('), since it was used only for look-ahead
+                    self._stack_handler(parsers.signature.Parser(after=self._unstacking(self._store_constructor_signature), skip_begin=True))
 
-                else:
-
-                    raise exc.MethodException(line)
+                else: raise exc.MethodException(line)
 
             else:
 
                 self._attr_name  = part
-                self._state = state.States.DECL_2
+                self._state = state.States.UNKNOWN_2
 
             return
         
-        elif self._state is state.States.DECL_2:
+        elif self._state is state.States.UNKNOWN_2:
 
             if   part == words.SEMICOLON:
 

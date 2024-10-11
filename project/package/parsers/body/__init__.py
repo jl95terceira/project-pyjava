@@ -5,12 +5,15 @@ from ... import handlers, parsers, words
 
 class Parser(parsers.entity.StackingSemiParser):
 
-    def __init__(self, after:typing.Callable[[str],None]):
+    def __init__(self, after     :typing.Callable[[str],None],
+                       skip_begin=False):
 
         super().__init__()
-        self._state         = state.States.BEGIN
+        self._state         = state.States.BEGIN   if not skip_begin else \
+                              state.States.DEFAULT
+        self._depth         = 0                    if not skip_begin else \
+                              1
         self._parts         = list()
-        self._depth         = 0
         self._after         = after
 
     @typing.override

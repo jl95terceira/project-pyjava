@@ -12,10 +12,12 @@ _WORD_PATTERN = re.compile('^\\w+$')
 
 class Parser(parsers.entity.StackingSemiParser):
 
-    def __init__(self, after:typing.Callable[[list[model.GenericType]],None]):
+    def __init__(self, after     :typing.Callable[[list[model.GenericType]],None],
+                       skip_begin=False):
 
         super().__init__()
-        self._state                                         = state.States.BEGIN
+        self._state                                         = state.States.BEGIN   if not skip_begin else \
+                                                              state.States.DEFAULT
         self._depth                                         = 0
         self._parts_backlog:list[str]                       = list()
         self._constrained_type_name\

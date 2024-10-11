@@ -9,12 +9,14 @@ _WORD_PATTERN                = re.compile('^\\w+$')
 
 class Parser(parsers.entity.StackingSemiParser):
 
-    def __init__(self, after   :typing.Callable[[model.Package],None]):
+    def __init__(self, after     :typing.Callable[[model.Package],None],
+                       skip_begin=False):
 
         super().__init__()
-        self._after            = after
-        self._state            = state.States.BEGIN
-        self._package:str|None = None
+        self._after          = after
+        self._state          = state.States.BEGIN         if not skip_begin else \
+                               state.States.AFTER_PACKAGE
+        self._name :str|None = None
 
     @typing.override
     def _default_handle_line     (self, line: str): pass
@@ -28,14 +30,14 @@ class Parser(parsers.entity.StackingSemiParser):
         elif self._state is state.States.BEGIN:
 
             if part != words.PACKAGE: raise exc.Exception(line)
-            self._state = state.States.DEFAULT
+            self._state = state.States.AFTER_PACKAGE
 
-        elif self._state is state.States.DEFAULT:
+        elif self._state is state.States.AFTER_PACKAGE:
 
-            self._package = part
-            self._state = state.States.DEFAULT_2
+            self._name = part
+            self._state = state.States.AFTER_NAME
 
-        elif self._state is state.States.DEFAULT_2:
+        elif self._state is state.States.AFTER_NAME:
 
             if part == words.SEMICOLON:
 
@@ -45,7 +47,7 @@ class Parser(parsers.entity.StackingSemiParser):
                  part == words.ASTERISK     or \
                  not words.is_reserved(part):
 
-                self._package += part
+                self._name += part
 
             else: raise exc.Exception(line)
 
@@ -66,4 +68,4 @@ class Parser(parsers.entity.StackingSemiParser):
     def _stop(self): 
         
         self._state = state.States.END
-        self._after(model.Package(name=self._package))
+        self._after(model.Package(name=self._name))

@@ -7,11 +7,13 @@ from ...batteries import *
 class Parser(parsers.entity.StackingSemiParser):
 
     def __init__(self, after         :typing.Callable[[model.Annotation],None],
-                       part_rehandler:typing.Callable[[str],None]):
+                       part_rehandler:typing.Callable[[str],None],
+                       skip_begin    =False):
 
         super().__init__()
         self._part_rehandler       = part_rehandler
-        self._state                = state.States.BEGIN
+        self._state                = state.States.BEGIN   if not skip_begin else \
+                                     state.States.DEFAULT
         self._name :str      |None = ''
         self._args :list[str]|None = list()
         self._after                = after

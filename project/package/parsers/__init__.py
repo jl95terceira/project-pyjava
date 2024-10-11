@@ -59,3 +59,28 @@ class StreamPrinter(handlers.entity.Handler):
     def handle_comment           (self, comment:model.Comment):
 
         print(f'Handling comment:               {comment}')
+
+class SilentPrinter(handlers.entity.Handler):
+
+    @typing.override
+    def handle_package           (self, package:model.Package): pass
+    @typing.override
+    def handle_import            (self, import_:model.Import): pass
+    @typing.override
+    def handle_annotation        (self, annot:model.Annotation): pass
+    @typing.override
+    def handle_class             (self, class_:model.Class): pass
+    @typing.override
+    def handle_class_end         (self, class_end:model.ClassEnd=model.ClassEnd()): pass
+    @typing.override
+    def handle_static_constructor(self, sconstr:model.StaticConstructor): pass
+    @typing.override
+    def handle_constructor       (self, constr:model.Constructor): pass
+    @typing.override
+    def handle_attr              (self, attr:model.Attribute): pass
+    @typing.override
+    def handle_method            (self, method:model.Method): pass
+    @typing.override
+    def handle_enum_value        (self, enum:model.EnumValue): pass
+    @typing.override
+    def handle_comment           (self, comment:model.Comment): pass

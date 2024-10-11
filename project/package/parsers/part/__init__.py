@@ -4,7 +4,7 @@ import typing
 from .   import exc, state
 from ... import handlers, parsers
 
-PATTERN  = re.compile(f'((?:\\w+)|(?:/\\*)|(?:\\*/)|(?://)|(?:\\\\.)|\\s+|.)')
+PATTERN  = re.compile(f'((?:\\w+)|(?:/\\*)|(?:\\*/)|(?://)|(?:\\\\.\\\\.\\\\.)|(?:\\\\.)|\\s+|.)')
 
 class Parser(handlers.line.Handler):
 

@@ -9,11 +9,13 @@ _WORD_PATTERN = re.compile('^\\w+$')
 
 class Parser(parsers.entity.StackingSemiParser):
 
-    def __init__(self, after:typing.Callable[[dict[str,model.Argument]],None]):
+    def __init__(self, after     :typing.Callable[[dict[str,model.Argument]],None],
+                       skip_begin=False):
 
         super().__init__()
         self._sign                             = dict()
-        self._sign_state                       = state.States.BEGIN
+        self._sign_state                       = state.States.BEGIN   if not skip_begin else \
+                                                 state.States.DEFAULT
         self._sign_after                       = after
         self._arg_name  :str             |None = None
         self._arg_type  :model.Type      |None = None
@@ -28,6 +30,7 @@ class Parser(parsers.entity.StackingSemiParser):
         self._arg_name  = None
         self._arg_type  = None
         self._arg_annot = None
+        self._finality  = model.FinalityTypes.DEFAULT
 
     def _store_arg_type             (self, type:model.Type):
 
@@ -48,10 +51,7 @@ class Parser(parsers.entity.StackingSemiParser):
         line = self._line
         if   self._sign_state is state.States.BEGIN:
 
-            if  part != words.PARENTH_OPEN:
-
-                raise exc.Exception(line)
-            
+            if  part != words.PARENTH_OPEN: raise exc.Exception(line)
             self._sign_state = state.States.DEFAULT
 
         elif self._sign_state is state.States.DEFAULT:
