@@ -1,5 +1,6 @@
 _DEBUG_HANDLERS = 0
 
+import abc
 from   collections import defaultdict
 import re
 import typing
@@ -27,12 +28,86 @@ _CLASS_TYPE_MAP_BY_KEYWORD   = {words.CLASS     :model.ClassTypes.CLASS,
 _CLASS_TYPE_KEYWORDS         = set(_CLASS_TYPE_MAP_BY_KEYWORD)
 _WORD_PATTERN                = re.compile('^\\w+$')
 
-class Parser(handlers.part.Handler):
+class StackingSemiParser(handlers.part.Handler, abc.ABC):
+
+    def __init__(self):
+
+        self._subhandler:handlers.part.Handler|None = None
+
+    def _stack_handler              (self, handler:handlers.part.Handler):
+
+        if _DEBUG_HANDLERS: print(f'STACK HANDLER: {handler.__class__.__module__}::{handler.__class__.__name__}')
+        self._subhandler = handler
+        self._subhandler.handle_line(self._line)
+
+    def _unstack_handler            (self):
+
+        if _DEBUG_HANDLERS: print(f'UNSTACK HANDLER: {self._subhandler.__class__.__module__}::{self._subhandler.__class__.__name__}')
+        self._subhandler = None
+
+    def _unstacking                 (self, f): return ChainedCall(lambda *a, **ka: self._unstack_handler(), f)
+
+    @typing.override
+    def handle_line                 (self, line:str):
+
+        self._line = line
+        if self._subhandler is not None: self._subhandler.handle_line(line)
+        else                           : self.   _default_handle_line(line)
+
+    @typing.override
+    def handle_part                 (self, part:str): 
+        
+        if self._subhandler is not None: self._subhandler.handle_part(part)
+        else                           : self.   _default_handle_part(part)
+
+    @typing.override
+    def handle_comment              (self, text:str):
+
+        if self._subhandler is not None: self._subhandler.handle_comment(text)
+        else                           : self.   _default_handle_comment(text)
+
+    @typing.override
+    def handle_spacing              (self, spacing:str):
+
+        if self._subhandler is not None: self._subhandler.handle_spacing(spacing)
+        else                           : self.   _default_handle_spacing(spacing)
+
+    @typing.override
+    def handle_newline              (self):
+
+        if self._subhandler is not None: self._subhandler.handle_newline()
+        else                           : self.   _default_handle_newline()
+
+    @typing.override
+    def handle_eof                  (self):
+        
+        if self._subhandler is not None: self._subhandler.handle_eof()
+        else                           : self.   _default_handle_eof()
+
+    @abc.abstractmethod
+    def _default_handle_line        (self, line:str): ...
+
+    @abc.abstractmethod
+    def _default_handle_part        (self, part:str): ...
+
+    @abc.abstractmethod
+    def _default_handle_comment     (self, text:str): ...
+
+    @abc.abstractmethod
+    def _default_handle_spacing     (self, spacing:str): ...
+
+    @abc.abstractmethod
+    def _default_handle_newline     (self): ...
+
+    @abc.abstractmethod
+    def _default_handle_eof         (self): ...
+
+class Parser(StackingSemiParser):
 
     def __init__                    (self, stream_handler:handlers.entity.Handler):
 
+        super().__init__()
         self._NEXT                                                = stream_handler
-        self._subhandler       :handlers.part.Handler  |None = None
         self._line             :str                         |None = None
         self._part             :str                               = ''
         self._class_name_stack :list[str]                         = list()
@@ -64,19 +139,6 @@ class Parser(handlers.part.Handler):
         self._method_generics  :list[model.GenericType]     |None = None
         self._enumv_name       :str                         |None = None
         self._throws           :list[model.Type]            |None = None
-
-    def _stack_handler              (self, handler:handlers.part.Handler):
-
-        if _DEBUG_HANDLERS: print(f'STACK HANDLER: {handler.__class__.__module__}::{handler.__class__.__name__}')
-        self._subhandler = handler
-        self._subhandler.handle_line(self._line)
-
-    def _unstack_handler            (self):
-
-        if _DEBUG_HANDLERS: print(f'UNSTACK HANDLER: {self._subhandler.__class__.__module__}::{self._subhandler.__class__.__name__}')
-        self._subhandler = None
-
-    def _unstacking                 (self, f): return ChainedCall(lambda *a, **ka: self._unstack_handler(), f)
 
     def _coerce_access              (self, access:model.AccessModifier|None):
 
@@ -232,20 +294,10 @@ class Parser(handlers.part.Handler):
         self._state = state.States.METHOD_THROWS_AFTER
 
     @typing.override
-    def handle_line                 (self, line:str):
-
-        self._line = line
-        if self._subhandler is not None:
-
-            self._subhandler.handle_line(line)
+    def _default_handle_line        (self, line:str): pass
 
     @typing.override
-    def handle_part                 (self, part:str): 
-        
-        if self._subhandler is not None:
-
-            self._subhandler.handle_part(part)
-            return
+    def _default_handle_part        (self, part:str): 
         
         self._part = part
         line = self._line
@@ -575,23 +627,12 @@ class Parser(handlers.part.Handler):
         raise NotImplementedError(f'{line} (state = {self._state.name})')
         
     @typing.override
-    def handle_comment              (self, text:str):
-
-        if self._subhandler is not None:
-
-            self._subhandler.handle_comment(text=text)
-            return
+    def _default_handle_comment     (self, text:str):
 
         self._NEXT.handle_comment(comment=model.Comment(text=text))
 
     @typing.override
-    def handle_spacing              (self, spacing:str):
-
-        line = self._line
-        if self._subhandler is not None:
-
-            self._subhandler.handle_spacing(spacing=spacing)
-            return
+    def _default_handle_spacing     (self, spacing:str):
 
         if self._state is state.States.ATTR_INITIALIZE:
 
@@ -600,24 +641,13 @@ class Parser(handlers.part.Handler):
         else: pass
 
     @typing.override
-    def handle_newline              (self):
-
-        line = self._line
-        if self._subhandler is not None:
-
-            self._subhandler.handle_newline()
-            return
+    def _default_handle_newline     (self):
 
         self.handle_spacing(spacing='\n')
 
     @typing.override
-    def handle_eof                  (self):
+    def _default_handle_eof         (self):
         
-        if self._subhandler is not None:
-
-            self._subhandler.handle_eof()
-            return
-
         line = self._line
         if self._state            != state.States.DEFAULT or \
            self._class_name_stack                        : raise exc.EOFException(line)

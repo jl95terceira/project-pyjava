@@ -4,28 +4,18 @@ from .            import exc, state
 from ...          import handlers, parsers, model, words
 from ...batteries import *
 
-class Parser(handlers.part.Handler):
+class Parser(parsers.entity.StackingSemiParser):
 
     def __init__(self, after         :typing.Callable[[model.Annotation],None],
                        part_rehandler:typing.Callable[[str],None]):
 
+        super().__init__()
         self._part_rehandler       = part_rehandler
         self._state                = state.States.BEGIN
-        self._subhandler:handlers.part.Handler|None \
-                                   = None
         self._line :str      |None = None
         self._name :str      |None = ''
         self._args :list[str]|None = list()
         self._after                = after
-
-    def _stack_handler              (self, handler:handlers.part.Handler): 
-        
-        self._subhandler = handler
-        self._subhandler.handle_line(self._line)
-
-    def _unstack_handler            (self): self._subhandler = None
-
-    def _unstacking                 (self, f): return ChainedCall(lambda *a, **ka: self._unstack_handler(), f)
 
     def _store_args                 (self, args:list[str]): 
         
@@ -33,23 +23,11 @@ class Parser(handlers.part.Handler):
         self._stop(None)
 
     @typing.override
-    def handle_line(self, line: str): 
-        
-        if self._subhandler is not None:
-
-            self._subhandler.handle_line(line)
-            return
-
-        self._line = line
+    def _default_handle_line   (self, line: str): pass
 
     @typing.override
-    def handle_part   (self, part:str):
+    def _default_handle_part   (self, part:str):
         
-        if self._subhandler is not None:
-
-            self._subhandler.handle_part(part)
-            return
-
         line = self._line
         if   self._state is state.States.BEGIN:
 
@@ -80,31 +58,16 @@ class Parser(handlers.part.Handler):
         else: raise AssertionError(f'{self._state=}')
 
     @typing.override
-    def handle_comment(self, text: str):
-        
-        if self._subhandler is not None:
-
-            self._subhandler.handle_comment(text)
-            return
+    def _default_handle_comment(self, text: str): pass
 
     @typing.override
-    def handle_spacing(self, spacing:str):
-
-        if self._subhandler is not None:
-
-            self._subhandler.handle_spacing(spacing)
-            return
+    def _default_handle_spacing(self, spacing:str): pass
 
     @typing.override
-    def handle_newline(self):
-
-        if self._subhandler is not None:
-
-            self._subhandler.handle_newline(self)
-            return
-
+    def _default_handle_newline(self): pass
+    
     @typing.override
-    def handle_eof    (self):
+    def _default_handle_eof    (self):
 
         line = self._line
         if self._state != state.States.NAMED: raise exc.Exception(line)
