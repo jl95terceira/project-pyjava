@@ -18,7 +18,9 @@ class Parser(handlers.part.PartsHandler):
         self._subhandler   :handlers.part.PartsHandler|None = None
         self._line         :str                       |None = None
         self._depth                                         = 0
-        self._parts_backlog:list[str]                 |None = None
+        self._parts_backlog:list[str]                       = list()
+        self._constrained_type_name\
+                           :str                       |None = None
         self._types        :list[model.GenericType]         = list()
         self._constraint   :model.TypeConstraint      |None = None
         self._after                                         = after
@@ -41,7 +43,8 @@ class Parser(handlers.part.PartsHandler):
 
     def _store_constraining_type    (self, type:model.Type):
 
-        self._types.append(model.ConstrainedType(target    =type,
+        self._types.append(model.ConstrainedType(name      =self._constrained_type_name,
+                                                 target    =type,
                                                  constraint=self._constraint if self._constraint is not None else model.TypeConstraints.NONE))
         self._state = state.States.AFTER
 
@@ -71,22 +74,33 @@ class Parser(handlers.part.PartsHandler):
 
         elif self._state is state.States.DEFAULT:
 
+            self._parts_backlog.clear()
             if   part == words.ANGLE_CLOSE:
 
                 self._stop()
 
-            elif part == words.QUESTIONMARK:
+            else:
 
-                self._state = state.States.CONSTRAINT
+                self._parts_backlog.append(part)
+                self._state = state.States.DEFAULT_2
+            
+        elif self._state is state.States.DEFAULT_2:
+
+            self._parts_backlog.append(part)
+            if part not in _CONSTRAINT_TYPE_KEYWORDS:
+
+                self._stack_handler(parsers.type.Parser(after=self._unstacking(self._store_type), part_rehandler=self.handle_part, can_be_array=True))
+                self.handle_part(self._parts_backlog[0])
+                self.handle_part(part)
 
             else:
 
-                self._stack_handler(parsers.type.Parser(after=self._unstacking(self._store_type), part_rehandler=self.handle_part, can_be_array=True))
+                self._constrained_type_name = self._parts_backlog[0]
+                self._state = state.States.CONSTRAINT
                 self.handle_part(part)
             
         elif self._state is state.States.CONSTRAINT:
 
-            if part not in _CONSTRAINT_TYPE_KEYWORDS: raise exc.Exception(line)
             self._constraint = _CONSTRAINT_TYPE_MAP_BY_KEYWORD[part]
             self._state      = self._stack_handler(parsers.type.Parser(after=self._unstacking(self._store_constraining_type), part_rehandler=self.handle_part, can_be_array=False))
 

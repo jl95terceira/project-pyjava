@@ -89,6 +89,7 @@ class TypeConstraints:
 @dataclasses.dataclass
 class ConstrainedType:
 
+    name      :str            = dataclasses.field()
     target    :Type           = dataclasses.field()
     constraint:TypeConstraint = dataclasses.field(default=TypeConstraints.NONE)
 
