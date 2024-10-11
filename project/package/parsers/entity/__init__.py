@@ -325,7 +325,10 @@ class Parser(StackingSemiParser):
 
             elif part == words.IMPORT     : self._state = state.States.IMPORT
 
-            elif part == words.PACKAGE    : self._state = state.States.PACKAGE
+            elif part == words.PACKAGE    : 
+                
+                self._stack_handler(parsers.package.Parser(after=self._unstacking(self._NEXT.handle_package)))
+                self.handle_part(part)
 
             elif part in _FINALITY_TYPE_KEYWORDS: 
                 
@@ -377,25 +380,6 @@ class Parser(StackingSemiParser):
                 self._stack_handler(parsers.type.Parser(after=self._unstacking(self._store_attribute_type), part_rehandler=self.handle_part))
                 self.handle_part(part)
 
-            return
-        
-        elif self._state is state.States.PACKAGE:
-
-            if self._package is None: 
-
-                self._package = part
-            
-            elif part == words.SEMICOLON:
-
-                self._flush_package()
-
-            elif part == words.DOT          or \
-                 part == words.ASTERISK     or \
-                 not words.is_reserved(part):
-
-                self._package += part
-
-            else: raise exc.PackageException(line)
             return
         
         elif self._state is state.States.IMPORT:
