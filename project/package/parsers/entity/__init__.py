@@ -115,7 +115,6 @@ class Parser(StackingSemiParser):
         self._state                                               = state.States.DEFAULT
         self._package          :str                         |None = None
         self._static           :bool                              = False
-        self._imported         :str                         |None = None
         self._access           :model.AccessModifier        |None = None
         self._finality         :model.FinalityType          |None = None
         self._synchronized     :bool                        |None = False
@@ -147,20 +146,6 @@ class Parser(StackingSemiParser):
     def _coerce_finality            (self, finality:model.FinalityType|None):
 
         return finality if finality is not None else model.FinalityTypes.DEFAULT
-
-    def _flush_import               (self):
-
-        self._NEXT.handle_import(model.Import(name  =self._imported,
-                                              static=self._static))
-        self._state = state.States.DEFAULT
-        self._imported = None
-        self._static   = False
-
-    def _flush_package              (self):
-
-        self._NEXT.handle_package(model.Package(name=self._package))
-        self._state = state.States.DEFAULT
-        self._package  = None
 
     def _flush_annotation           (self, annot:model.Annotation):
 
@@ -323,7 +308,10 @@ class Parser(StackingSemiParser):
                 
                 self._flush_class_end()
 
-            elif part == words.IMPORT     : self._state = state.States.IMPORT
+            elif part == words.IMPORT     : 
+                
+                self._stack_handler(parsers.import_.Parser(after=self._unstacking(self._NEXT.handle_import)))
+                self.handle_part(part)
 
             elif part == words.PACKAGE    : 
                 
@@ -380,31 +368,6 @@ class Parser(StackingSemiParser):
                 self._stack_handler(parsers.type.Parser(after=self._unstacking(self._store_attribute_type), part_rehandler=self.handle_part))
                 self.handle_part(part)
 
-            return
-        
-        elif self._state is state.States.IMPORT:
-
-            if self._imported is None: 
-
-                if part == words.STATIC: 
-                    
-                    self._static = True
-                    return
-                
-                self._imported = part
-
-            elif part == words.SEMICOLON:
-
-                self._flush_import()
-                return
-
-            elif part == words.DOT          or \
-                 part == words.ASTERISK     or \
-                 not words.is_reserved(part):
-
-                self._imported += part
-
-            else: raise exc.ImportException(line)
             return
         
         elif self._state is state.States.CLASS_AFTER_NAME:
