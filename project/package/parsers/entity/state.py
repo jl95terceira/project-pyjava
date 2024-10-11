@@ -4,7 +4,6 @@ class State(util.Named): pass
 class States:
 
     DEFAULT                     = State('')
-    ANNOTATION                  = State('Annotation')
     CLASS_BEGIN                 = State('Class')
     CLASS_AFTER_NAME            = State('Class After-Name')
     CLASS_EXTENDS               = State('Class Ext.')
