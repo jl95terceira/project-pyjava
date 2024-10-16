@@ -5,13 +5,13 @@ from .            import exc, state
 from ...          import handlers, parsers, model, util, words
 from ...batteries import *
 
-_WORD_PATTERN                = re.compile('^\\w+$')
+_WORD_PATTERN = re.compile('^\\w+$')
 
 class Parser(parsers.entity.StackingSemiParser):
 
     def __init__(self, after   :typing.Callable[[model.Type],None], 
                  part_rehandler:typing.Callable[[str],None], 
-                 can_be_array  :bool=True):
+                 can_be_array  =True):
 
         super().__init__()
         self._state                                     = state.States.BEGIN
@@ -21,6 +21,13 @@ class Parser(parsers.entity.StackingSemiParser):
         self._generics    :list[model.GenericType]|None = None
         self._after                                     = after
         self._part_rehandler                            = part_rehandler
+        # ...
+        self._stack_handler(parsers.name.Parser(after=self._unstacking(self._store_name), part_rehandler=self.handle_part))
+
+    def _store_name     (self, name:str):
+
+        self._parts.append(name)
+        self._state = state.States.AFTER_NAME
 
     def _store_generics (self, generics:list[model.GenericType]):
 
@@ -35,15 +42,10 @@ class Parser(parsers.entity.StackingSemiParser):
         
         line = self._line
         if self._state   is state.States.BEGIN:
-
-            if not _WORD_PATTERN.match(part):
-
-                raise exc.InvalidNameException(line)
             
-            self._parts.append(part)
-            self._state  = state.States.DEFAULT
+            raise AssertionError()
 
-        elif self._state is state.States.DEFAULT:
+        elif self._state is state.States.AFTER_NAME:
 
             if   part in words.ANGLE_OPEN: # generic type - nest
 
@@ -55,11 +57,6 @@ class Parser(parsers.entity.StackingSemiParser):
                 
                 if not self._can_be_array: raise exc.ArrayNotAllowedException(line)
                 self._state = state.States.ARRAY_OPEN
-
-            elif part == words.DOT:
-
-                self._parts.append(part)
-                self._state  = state.States.AFTERDOT
 
             else:
 
@@ -78,18 +75,12 @@ class Parser(parsers.entity.StackingSemiParser):
 
             if part == words.SQUARE_OPEN:
 
-                self._state = state.States.DEFAULT
+                self._state = state.States.AFTER_NAME
                 self.handle_part(part)
 
             else:
 
                 self._stop(part)
-
-        elif self._state is state.States.AFTERDOT:
-
-            if not _WORD_PATTERN.match(part): raise exc.Exception(line)
-            self._parts.append(part)
-            self._state = state.States.DEFAULT
 
         else: raise AssertionError(f'{self._state=}')
 
@@ -105,7 +96,7 @@ class Parser(parsers.entity.StackingSemiParser):
     @typing.override
     def _default_handle_eof      (self):
 
-        if self._state != state.States.DEFAULT: raise exc.EOFException(self._line)
+        if self._state != state.States.AFTER_NAME: raise exc.EOFException(self._line)
         self._stop(None)
 
     def _stop(self, part_to_rehandle:str|None): 

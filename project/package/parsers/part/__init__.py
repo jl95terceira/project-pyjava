@@ -4,7 +4,7 @@ import typing
 from .   import exc, state
 from ... import handlers, parsers
 
-PATTERN  = re.compile(f'((?:\\w+)|(?:/\\*)|(?:\\*/)|(?://)|(?:\\\\.\\\\.\\\\.)|(?:\\\\.)|\\s+|.)')
+PATTERN  = re.compile(f'((?:(?:\\w|\\$)+)|(?:/\\*)|(?:\\*/)|(?://)|(?:\\\\.)|(?:\\.{{3}})|\\s+|.)')
 
 class Parser(handlers.line.Handler):
 
@@ -20,7 +20,7 @@ class Parser(handlers.line.Handler):
 
     @typing.override
     def handle_line(self, line:str):
-
+        
         self._next_handler.handle_line(line)
         if   self._state is state.States.IN_COMMENT_ONELINE: # // ...
 
@@ -43,6 +43,7 @@ class Parser(handlers.line.Handler):
         for match in re.finditer(pattern=PATTERN, string=line):
 
             part = match.group(1)
+            #print(self._state, self._string_delim, repr(part))
             if   self._state is state.States.IN_STRING: # "..."
 
                 if part != self._string_delim:
@@ -51,8 +52,9 @@ class Parser(handlers.line.Handler):
 
                 else:
 
-                    self._next_handler.handle_part(part=f'"{''.join(self._string_parts)}"')
+                    self._next_handler.handle_part(part=f'{self._string_delim}{''.join(self._string_parts)}{self._string_delim}')
                     self._string_parts = None
+                    self._string_delim = None
                     self._state = state.States.DEFAULT
 
             elif self._state is state.States.IN_COMMENT_ONELINE: # // ...

@@ -69,10 +69,17 @@ class Parser(parsers.entity.StackingSemiParser):
             self._parts_backlog.append(part)
             if part not in _CONSTRAINT_TYPE_KEYWORDS:
 
-                self._stack_handler(parsers.type.Parser(after=self._unstacking(self._store_type), part_rehandler=self.handle_part, can_be_array=True))
-                for part_ in self._parts_backlog:
+                part0 = self._parts_backlog[0]
+                if part0 == words.QUESTIONMARK:
 
-                    self.handle_part(part_)
+                    self._store_type(model.UnboundedType())
+
+                else:
+
+                    self._stack_handler(parsers.type.Parser(after=self._unstacking(self._store_type), part_rehandler=self.handle_part, can_be_array=True))
+                    self.handle_part(part0)
+
+                self.handle_part(self._parts_backlog[1])
 
             else:
 

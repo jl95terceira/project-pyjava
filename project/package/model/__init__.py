@@ -68,14 +68,12 @@ class Annotation:
     @typing.override
     def source(self): return f'@{self.name}{'' if not self.args else f'({', '.join(self.args)})'}'
 
-GenericType = typing.Union['Type','ConstrainedType']
-
 @dataclasses.dataclass
 class Type:
 
-    name     :str                    = dataclasses.field()
-    generics :list[GenericType]|None = dataclasses.field(default=None)
-    array_dim:int                    = dataclasses.field(default=0)
+    name     :str                      = dataclasses.field()
+    generics :list['GenericType']|None = dataclasses.field(default=None)
+    array_dim:int                      = dataclasses.field(default=0)
 
     @typing.override
     def source(self): return f'{self.name}{'' if self.generics is None else f'<{', '.join(map(lambda t: t.source(), self.generics))}>'}'
@@ -100,6 +98,11 @@ class ConstrainedType:
     def source(self) : return f'{self.name}{'' if self.constraint is TypeConstraints.NONE else f' {self.constraint.source()} {self.target.source()}'}'
 
 @dataclasses.dataclass
+class UnboundedType: pass
+
+GenericType = typing.Union[Type, ConstrainedType, UnboundedType]
+
+@dataclasses.dataclass
 class Class:
 
     name      :str
@@ -119,6 +122,7 @@ class Argument:
 
     type      :Type            = dataclasses.field()
     final     :bool            = dataclasses.field(default=False)
+    varargs   :bool            = dataclasses.field(default=False)
     annotation:Annotation|None = dataclasses.field(default=None)
 
 @dataclasses.dataclass

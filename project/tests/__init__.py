@@ -9,12 +9,13 @@ from ..package.handlers import entity
 
 from ..package import model, StreamParser
 
-DEBUG = 0
+_DEBUG = 0
+_JAVA_FILES_PATH = 'java_files'
 
 @functools.wraps(builtins.print)
 def print(*aa,**kaa):
 
-    if not DEBUG: return
+    if not _DEBUG: return
     builtins.print(*aa,**kaa)
 
 @dataclasses.dataclass
@@ -96,23 +97,26 @@ class _TestHandler(entity.Handler):
         self._tr         = tr
         self._tc         = tc
         self._i:int|None = None
-        self._parser          = StreamParser(self)
+        self._parser     = StreamParser(self)
         self.reset()
 
     def _test[T](self, registry_getter:typing.Callable[[_TestsRegistry],dict[int,T]], got:T):
 
         i   = self._i
-        MSG = lambda: f'no more entities expected at position {i} and beyond\n  Got: {got}'
+        MSG = lambda: f'No more entities expected at position {i} and beyond\n  Got: {got}'
         self._tc.assertLess (i  , len(self._tr.a), msg=MSG())
+        self._i += 1
         exo = self._tr.a[i]
-        print(f'Expected object: {exo}')
         reg = registry_getter(self._tr)
-        MSG = lambda: f'unexpected type of entity at position {i}\n  Expected: {self._tr.a[i]}\n  Got     : {got}'
+        MSG = lambda: '\n'.join((f'Unexpected type of entity at position {i}',
+                                 f'  Expected: {self._tr.a[i]}',
+                                 f'  Got     : {got}',))
         self._tc.assertIn   (i  , reg            , msg=MSG())
         exo = reg[i]
-        MSG = lambda: f'attributes different than expected for entity at position {i}\n  Expected: {exo}\n  Got     : {got}'
+        MSG = lambda: '\n'.join((f'Attributes different than expected for entity at position {i}',
+                                 f'  Expected: {exo}',
+                                 f'  Got     : {got}',))
         self._tc.assertEqual(exo, got            , msg=MSG())
-        self._i += 1
 
     def reset(self):
 
@@ -123,7 +127,7 @@ class _TestHandler(entity.Handler):
 
         print(f'Testing file   : {repr(fn)}', flush=True)
         if pre_reset: self.reset()
-        with open(os.path.join(os.path.split(__file__)[0], 'java_files', fn), mode='r', encoding='utf-8') as f:
+        with open(os.path.join(os.path.split(__file__)[0], _JAVA_FILES_PATH, fn), mode='r', encoding='utf-8') as f:
 
             self._parser.parse_whole(f.read())
 
@@ -140,7 +144,7 @@ class _TestHandler(entity.Handler):
 
     def end(self):
 
-        self._tc.assertEqual(self._i, len(self._tr.a), msg=f'expected no more entities to be process but there are {len(self._tr.a) - self._i} remaining')
+        self._tc.assertEqual(self._i, len(self._tr.a), msg=f'Expected no more entities to be process but there are {len(self._tr.a) - self._i} remaining')
 
     @typing.override
     def handle_package           (self, package         :model.Package)             : self._test(lambda tr: tr.packages             , package)

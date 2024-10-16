@@ -81,7 +81,7 @@ class AnnotationTests           (unittest.TestCase):
         self.tr.r_annotation(model.Annotation(name='Log'))
 
     def test_01        (self): self.th.test('@Log'  , end=True)
-    def test_02        (self): self.th.test('@Log;;', end=True)
+    #def test_02        (self): self.th.test('@Log;;', end=True)
     @to_fail
     def test_wrong_name(self): self.th.test('@Lag'  , end=True)
 

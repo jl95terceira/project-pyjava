@@ -1,6 +1,6 @@
 import typing
 
-from .   import part, entity, package, import_, body, callargs, generics, signature, type, annotation
+from .   import part, entity, name, package, import_, body, callargs, generics, signature, type, annotation
 from ..  import model, handlers
 
 class StreamPrinter(handlers.entity.Handler):

@@ -5,8 +5,6 @@ from .            import exc, state
 from ...          import handlers, parsers, model, util, words
 from ...batteries import *
 
-_WORD_PATTERN                = re.compile('^\\w+$')
-
 class Parser(parsers.entity.StackingSemiParser):
 
     def __init__(self, after     :typing.Callable[[model.Package],None],
@@ -17,6 +15,11 @@ class Parser(parsers.entity.StackingSemiParser):
         self._state          = state.States.BEGIN         if not skip_begin else \
                                state.States.AFTER_PACKAGE
         self._name :str|None = None
+
+    def _store_name(self, name:str):
+
+        self._name = name
+        self._state = state.States.AFTER_NAME
 
     @typing.override
     def _default_handle_line     (self, line: str): pass
@@ -34,22 +37,13 @@ class Parser(parsers.entity.StackingSemiParser):
 
         elif self._state is state.States.AFTER_PACKAGE:
 
-            self._name = part
-            self._state = state.States.AFTER_NAME
+            self._stack_handler(parsers.name.Parser(after=self._unstacking(self._store_name), part_rehandler=self.handle_part))
+            self.handle_part(part)
 
         elif self._state is state.States.AFTER_NAME:
 
-            if part == words.SEMICOLON:
-
-                self._stop()
-
-            elif part == words.DOT          or \
-                 part == words.ASTERISK     or \
-                 not words.is_reserved(part):
-
-                self._name += part
-
-            else: raise exc.Exception(line)
+            if part != words.SEMICOLON: raise exc.Exception(line)
+            self._stop()
 
         else: raise AssertionError(f'{self._state=}')
 

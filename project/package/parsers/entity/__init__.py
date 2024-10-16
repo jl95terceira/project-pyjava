@@ -58,7 +58,8 @@ class StackingSemiParser(handlers.part.Handler, abc.ABC):
 
     @typing.override
     def handle_part                 (self, part:str): 
-        
+
+        #print(part)
         self._part = part
         if self._subhandler is not None: self._subhandler.handle_part(part)
         else                           : self.   _default_handle_part(part)
@@ -85,7 +86,7 @@ class StackingSemiParser(handlers.part.Handler, abc.ABC):
     def handle_eof                  (self):
         
         if self._subhandler is not None: self._subhandler.handle_eof()
-        else                           : self.   _default_handle_eof()
+        self._default_handle_eof()
 
     @abc.abstractmethod
     def _default_handle_line        (self, line:str): ...

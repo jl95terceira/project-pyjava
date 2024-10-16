@@ -18,6 +18,11 @@ class Parser(parsers.entity.StackingSemiParser):
         self._args :list[str]|None = list()
         self._after                = after
 
+    def _store_name                 (self, name:str):
+
+        self._name  = name
+        self._state = state.States.NAMED
+
     def _store_args                 (self, args:list[str]): 
         
         self._args = args
@@ -37,9 +42,8 @@ class Parser(parsers.entity.StackingSemiParser):
 
         elif self._state is state.States.DEFAULT:
 
-            if words.is_reserved(part): raise exc.Exception(line)
-            self._name  = part
-            self._state = state.States.NAMED
+            self._stack_handler(parsers.name.Parser(after=self._unstacking(self._store_name), part_rehandler=self.handle_part))
+            self.handle_part(part)
 
         elif self._state is state.States.NAMED:
 
@@ -54,7 +58,7 @@ class Parser(parsers.entity.StackingSemiParser):
             
         elif self._state is state.States.END:
 
-            raise exc.StopException(line)  
+            raise exc.StopException(line)
 
         else: raise AssertionError(f'{self._state=}')
 
@@ -70,8 +74,7 @@ class Parser(parsers.entity.StackingSemiParser):
     @typing.override
     def _default_handle_eof    (self):
 
-        line = self._line
-        if self._state != state.States.NAMED: raise exc.Exception(line)
+        if self._state != state.States.NAMED: raise exc.Exception(self._line)
         self._stop(None)
 
     def _stop(self, part_to_rehandle:str|None):

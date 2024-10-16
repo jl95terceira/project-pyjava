@@ -13,23 +13,26 @@ class Parser(parsers.entity.StackingSemiParser):
                        skip_begin=False):
 
         super().__init__()
-        self._sign                             = dict()
-        self._sign_state                       = state.States.BEGIN   if not skip_begin else \
-                                                 state.States.DEFAULT
-        self._sign_after                       = after
-        self._arg_name  :str             |None = None
-        self._arg_type  :model.Type      |None = None
-        self._arg_annot :model.Annotation|None = None
-        self._finality                         = model.FinalityTypes.DEFAULT
+        self._sign                              = dict()
+        self._sign_state                        = state.States.BEGIN   if not skip_begin else \
+                                                  state.States.DEFAULT
+        self._sign_after                        = after
+        self._arg_name   :str             |None = None
+        self._arg_type   :model.Type      |None = None
+        self._arg_annot  :model.Annotation|None = None
+        self._arg_varargs                       = False
+        self._finality                          = model.FinalityTypes.DEFAULT
 
     def _store_arg                  (self):
 
         self._sign[self._arg_name] = model.Argument(type      =self._arg_type, 
                                                     final     =self._finality is model.FinalityTypes.FINAL,
-                                                    annotation=self._arg_annot)
-        self._arg_name  = None
-        self._arg_type  = None
-        self._arg_annot = None
+                                                    annotation=self._arg_annot,
+                                                    varargs   =self._arg_varargs)
+        self._arg_name    = None
+        self._arg_type    = None
+        self._arg_annot   = None
+        self._arg_varargs = False
         self._finality  = model.FinalityTypes.DEFAULT
 
     def _store_arg_type             (self, type:model.Type):
@@ -79,8 +82,15 @@ class Parser(parsers.entity.StackingSemiParser):
 
         elif self._sign_state is state.States.ARG_TYPED:
 
-            self._arg_name   = part
-            self._sign_state = state.States.ARG_NAMED
+            if part == words.ELLIPSIS:
+
+                if self._arg_varargs: raise exc.Exception(line)
+                self._arg_varargs = True
+
+            else:
+
+                self._arg_name   = part
+                self._sign_state = state.States.ARG_NAMED
         
         elif self._sign_state is state.States.ARG_NAMED:
 
