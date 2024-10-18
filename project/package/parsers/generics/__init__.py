@@ -34,7 +34,7 @@ class Parser(parsers.entity.StackingSemiParser):
     def _store_constraining_type    (self, type:model.Type):
 
         self._types.append(model.ConstrainedType(name      =self._constrained_type_name,
-                                                 targets    =type,
+                                                 target    =type,
                                                  constraint=self._constraint if self._constraint is not None else model.TypeConstraints.NONE))
         self._state = state.States.AFTER
 
