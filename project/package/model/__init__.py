@@ -87,15 +87,18 @@ class TypeConstraints:
     EXTENDS = _e(TypeConstraint(name='EXTENDS'))
     SUPER   = _e(TypeConstraint(name='SUPER'))
 
+    @typing.override
+    def source(self): raise NotImplementedError()
+
 @dataclass
 class ConstrainedType:
 
     name      :str            = field()
-    target    :Type           = field()
+    targets   :list[Type]     = field()
     constraint:TypeConstraint = field(default=TypeConstraints.NONE)
 
     @typing.override
-    def source(self) : return f'{self.name}{'' if self.constraint is TypeConstraints.NONE else f' {self.constraint.source()} {self.target.source()}'}'
+    def source(self) : return f'{self.name}{'' if self.constraint is TypeConstraints.NONE else f' {self.constraint.source()} {' & '.join(target.source() for target in self.targets)}'}'
 
 @dataclass
 class UnboundedType: pass

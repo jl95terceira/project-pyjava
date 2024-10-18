@@ -22,6 +22,7 @@ class Parser(parsers.entity.StackingSemiParser):
         self._parts_backlog:list[str]                       = list()
         self._constrained_type_name\
                            :str                       |None = None
+        self._targets      :list[model.Type]                = list()
         self._types        :list[model.GenericType]         = list()
         self._constraint   :model.TypeConstraint      |None = None
         self._after                                         = after
@@ -31,12 +32,17 @@ class Parser(parsers.entity.StackingSemiParser):
         self._types.append(type)
         self._state = state.States.AFTER
 
-    def _store_constraining_type    (self, type:model.Type):
+    def _store_constrained_type     (self):
 
         self._types.append(model.ConstrainedType(name      =self._constrained_type_name,
-                                                 target    =type,
+                                                 targets   =self._types,
                                                  constraint=self._constraint if self._constraint is not None else model.TypeConstraints.NONE))
         self._state = state.States.AFTER
+
+    def _store_target_type          (self, type:model.Type):
+
+        self._types.append(type)
+        self._state = state.States.CONSTRAINT_LOOKAHEAD
 
     @typing.override
     def _default_handle_line(self, line: str): pass
@@ -90,7 +96,18 @@ class Parser(parsers.entity.StackingSemiParser):
         elif self._state is state.States.CONSTRAINT:
 
             self._constraint = _CONSTRAINT_TYPE_MAP_BY_KEYWORD[part]
-            self._state      = self._stack_handler(parsers.type.Parser(after=self._unstacking(self._store_constraining_type), part_rehandler=self.handle_part, can_be_array=False))
+            self._stack_handler(parsers.type.Parser(after=self._unstacking(self._store_target_type), part_rehandler=self.handle_part, can_be_array=False))
+
+        elif self._state is state.States.CONSTRAINT_LOOKAHEAD:
+
+            if part != words.AMPERSAND:
+
+                self._store_constrained_type()
+                self.handle_part(part)
+
+            else:
+
+                self._stack_handler(parsers.type.Parser(after=self._unstacking(self._store_target_type), part_rehandler=self.handle_part, can_be_array=False))
 
         elif self._state is state.States.AFTER:
 

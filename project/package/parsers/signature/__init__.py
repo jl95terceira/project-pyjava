@@ -101,7 +101,7 @@ class Parser(parsers.entity.StackingSemiParser):
             
             elif part == words.PARENTH_CLOSE:
 
-                self._store_arg ()
+                self._store_arg()
                 self._stop()
 
             else: raise exc.Exception(line)
