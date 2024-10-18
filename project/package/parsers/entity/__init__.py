@@ -1,5 +1,3 @@
-_DEBUG_HANDLERS = 0
-
 import abc
 from   collections import defaultdict
 import re
@@ -11,7 +9,6 @@ from ...batteries import *
 
 _INHERIT_TYPE_MAP_BY_KEYWORD = {words.EXTENDS   :model.InheritanceTypes.EXTENDS,
                                 words.IMPLEMENTS:model.InheritanceTypes.IMPLEMENTS}
-
 _INHERIT_TYPE_KEYWORDS       = set(_INHERIT_TYPE_MAP_BY_KEYWORD)
 _ACCESS_MOD_MAP_BY_KEYWORD   = {words.PUBLIC    :model.AccessModifiers.PUBLIC,
                                 ''              :model.AccessModifiers.DEFAULT,
@@ -38,13 +35,11 @@ class StackingSemiParser(handlers.part.Handler, abc.ABC):
 
     def _stack_handler              (self, handler:handlers.part.Handler):
 
-        if _DEBUG_HANDLERS: print(f'STACK HANDLER: {handler.__class__.__module__}::{handler.__class__.__name__}')
         self._subhandler = handler
         self._subhandler.handle_line(self._line)
 
     def _unstack_handler            (self):
 
-        if _DEBUG_HANDLERS: print(f'UNSTACK HANDLER: {self._subhandler.__class__.__module__}::{self._subhandler.__class__.__name__}')
         self._subhandler = None
 
     def _unstacking                 (self, f): return ChainedCall(lambda *a, **ka: self._unstack_handler(), f)
@@ -59,7 +54,6 @@ class StackingSemiParser(handlers.part.Handler, abc.ABC):
     @typing.override
     def handle_part                 (self, part:str): 
 
-        #print(part)
         self._part = part
         if self._subhandler is not None: self._subhandler.handle_part(part)
         else                           : self.   _default_handle_part(part)
@@ -106,38 +100,54 @@ class StackingSemiParser(handlers.part.Handler, abc.ABC):
     @abc.abstractmethod
     def _default_handle_eof         (self): ...
 
+class ParserResettableVariables:
+
+    def __init__(self):
+
+        self.state                                               = state.States.DEFAULT
+        self.static           :bool                              = False
+        self.default          :bool                              = False
+        self.access           :model.AccessModifier        |None = None
+        self.finality         :model.FinalityType          |None = None
+        self.synchronized                                        = False
+        self.volatile                                            = False
+        self.transient        :bool                              = False
+        self.annotations      :list[model.Annotation]            = list()
+        self.class_type       :model.ClassType             |None = None
+        self.class_name       :str                         |None = None
+        self.class_generics   :str                         |None = None
+        self.class_subc       :dict[model.InheritanceType, list[model.Type]]\
+                                                           |None = None
+        self.class_subc_cur   :model.InheritanceType       |None = None
+        self.attr_type        :model.Type                  |None = None
+        self.attr_name        :str                         |None = None
+        self.attr_value_parts :list[str]                   |None = None
+        self.attr_nest_depth  :int                         |None = None
+        self.attr_scope_depth :int                         |None = None
+        self.sign             :dict[str,model.Argument]    |None = None
+        self.sign_after       :typing.Callable[[dict[str,model.Argument]],None]\
+                                                           |None = None
+        self.constructor_sign :dict[str,model.Argument]    |None = None
+        self.method_sign      :dict[str,model.Argument]    |None = None
+        self.method_generics  :list[model.GenericType]     |None = None
+        self.enumv_name       :str                         |None = None
+        self.throws           :list[model.Type]            |None = None
+
 class Parser(StackingSemiParser):
 
     def __init__                    (self, stream_handler:handlers.entity.Handler):
 
         super().__init__()
-        self._NEXT                                                = stream_handler
-        self._class_name_stack :list[str]                         = list()
-        self._state                                               = state.States.DEFAULT
-        self._static           :bool                              = False
-        self._access           :model.AccessModifier        |None = None
-        self._finality         :model.FinalityType          |None = None
-        self._synchronized     :bool                        |None = False
-        self._volatile         :bool                        |None = False
-        self._class_type       :model.ClassType             |None = None
-        self._class_name       :str                         |None = None
-        self._class_generics   :str                         |None = None
-        self._class_subc       :dict[model.InheritanceType, list[model.Type]]\
-                                                            |None = None
-        self._class_subc_cur   :model.InheritanceType       |None = None
-        self._attr_type        :model.Type                  |None = None
-        self._attr_name        :str                         |None = None
-        self._attr_value_parts :list[str]                   |None = None
-        self._attr_nest_depth  :int                         |None = None
-        self._attr_scope_depth :int                         |None = None
-        self._sign             :dict[str,model.Argument]    |None = None
-        self._sign_after       :typing.Callable[[dict[str,model.Argument]],None]\
-                                                            |None = None
-        self._constructor_sign :dict[str,model.Argument]    |None = None
-        self._method_sign      :dict[str,model.Argument]    |None = None
-        self._method_generics  :list[model.GenericType]     |None = None
-        self._enumv_name       :str                         |None = None
-        self._throws           :list[model.Type]            |None = None
+        self._NEXT                        = stream_handler
+        self._vars                        = ParserResettableVariables()
+        self._class_name_stack :list[str] = list()
+
+    def _reset_vars(self, state:state.State|None=None):
+
+        self._vars = ParserResettableVariables()
+        if state is not None:
+
+            self._vars.state = state
 
     def _coerce_access              (self, access:model.AccessModifier|None):
 
@@ -149,123 +159,120 @@ class Parser(StackingSemiParser):
 
     def _flush_class                (self):
 
-        self._NEXT.handle_class(model.Class(name      =self._class_name, 
-                                            generics  =self._class_generics,
-                                            static    =self._static,
-                                            access    =self._coerce_access(self._access),
-                                            finality  =self._coerce_finality(self._finality),
-                                            type      =self._class_type,
-                                            subclass  =dict(self._class_subc)))
-        self._class_name_stack.append(self._class_name)
-        self._state          = state.States.DEFAULT if self._class_type is not model.ClassTypes.ENUM else \
-                               state.States.ENUM
-        self._class_name     = None
-        self._class_generics = None
-        self._static         = False
-        self._access         = None
-        self._finality       = None
-        self._class_type     = None
-        self._class_subc     = None
+        self._NEXT.handle_class(model.Class(name       =self._vars.class_name, 
+                                            annotations=self._vars.annotations,
+                                            generics   =self._vars.class_generics,
+                                            static     =self._vars.static,
+                                            access     =self._coerce_access(self._vars.access),
+                                            finality   =self._coerce_finality(self._vars.finality),
+                                            type       =self._vars.class_type,
+                                            subclass   =dict(self._vars.class_subc)))
+        self._class_name_stack.append(self._vars.class_name)
+        self._reset_vars(state=state.States.DEFAULT if self._vars.class_type is not model.ClassTypes.ENUM else \
+                               state.States.ENUM)
 
     def _flush_static_constructor   (self, body:str): 
         
         self._NEXT.handle_static_constructor(model.StaticConstructor(body=body))
-        self._state  = state.States.DEFAULT
-        self._static = False
+        self._reset_vars()
 
     def _flush_constructor          (self, body:str): 
         
-        self._NEXT.handle_constructor(model.Constructor(access=self._coerce_access(self._access),
-                                                        args  =self._constructor_sign, 
-                                                        body  =body))
-        self._state            = state.States.DEFAULT
-        self._access           = None
-        self._constructor_sign = None
+        self._NEXT.handle_constructor(model.Constructor(access=self._coerce_access(self._vars.access),
+                                                        args  =self._vars.constructor_sign, 
+                                                        body  =body,
+                                                        throws=self._vars.throws if self._vars.throws is not None else list()))
+        self._reset_vars()
 
-    def _flush_attribute            (self, decl_only=False):
+    def _flush_attribute            (self, decl_only=False,
+                                           continued=False):
 
-        self._NEXT.handle_attr(model.Attribute(name     =self._attr_name, 
-                                               static   =self._static,
-                                               volatile =self._volatile,
-                                               final    =self._finality is model.FinalityTypes.FINAL,
-                                               access   =self._coerce_access(self._access), 
-                                               type     =self._attr_type,
-                                               value    =None if decl_only else ''.join(self._attr_value_parts)))
-        self._state = state.States.DEFAULT
-        self._attr_name        = None
-        self._static           = False
-        self._volatile         = False
-        self._finality         = None
-        self._access           = None
-        self._attr_type        = None
+        self._NEXT.handle_attr(model.Attribute(name     =self._vars.attr_name, 
+                                               type     =self._vars.attr_type,
+                                               static   =self._vars.static,
+                                               volatile =self._vars.volatile,
+                                               final    =self._vars.finality is model.FinalityTypes.FINAL,
+                                               access   =self._coerce_access(self._vars.access), 
+                                               transient=self._vars.transient,
+                                               value    =None if decl_only else ''.join(self._vars.attr_value_parts)))
+        if continued: return
+        self._reset_vars()
 
     def _flush_method               (self, body:str|None): 
         
-        self._NEXT.handle_method(model.Method(name        =self._attr_name,
-                                              static      =self._static,
-                                              access      =self._coerce_access(self._access),
-                                              finality    =self._coerce_finality(self._finality),
-                                              synchronized=self._synchronized,
-                                              generics    =self._method_generics,
-                                              type        =self._attr_type,
-                                              args        =self._method_sign,
-                                              throws      =self._throws if self._throws is not None else list(),
+        self._NEXT.handle_method(model.Method(name        =self._vars.attr_name,
+                                              static      =self._vars.static,
+                                              default     =self._vars.default,
+                                              access      =self._coerce_access(self._vars.access),
+                                              finality    =self._coerce_finality(self._vars.finality),
+                                              synchronized=self._vars.synchronized,
+                                              generics    =self._vars.method_generics,
+                                              type        =self._vars.attr_type,
+                                              args        =self._vars.method_sign,
+                                              throws      =self._vars.throws if self._vars.throws is not None else list(),
                                               body        =body))
-        self._state           = state.States.DEFAULT
-        self._attr_name       = None
-        self._static          = False
-        self._synchronized    = False
-        self._access          = None
-        self._finality        = None
-        self._method_generics = None
-        self._attr_type       = None
-        self._throws          = None
-        self._method_sign     = None
-
-    def _store_method_signature     (self, signature:dict[str,model.Argument]):
-
-        self._state       = state.States.METHOD_DECLARED
-        self._method_sign = signature
+        self._reset_vars()
 
     def _flush_enum_value           (self, callargs:list[str]|None=None):
 
-        self._NEXT.handle_enum_value(model.EnumValue(name=self._enumv_name, 
+        self._NEXT.handle_enum_value(model.EnumValue(name=self._vars.enumv_name, 
                                                      args=callargs if callargs is not None else list()))
-        self._state      = state.States.ENUM_DEFINED
-        self._enumv_name = None
+        self._reset_vars()
+        self._vars.state      = state.States.ENUM_DEFINED
+
+    def _store_annotation           (self, annotation: model.Annotation):
+
+        if annotation.name == words.INTERFACE: 
+            
+            if annotation.args: raise exc.Exception(self._line)
+            self._vars.state = state.States.AINTERFACE
+
+        else:
+
+            self._vars.annotations.append(annotation)
+
+    def _store_method_signature     (self, signature:dict[str,model.Argument]):
+
+        self._vars.state       = state.States.METHOD_DECLARED
+        self._vars.method_sign = signature
 
     def _store_class_name           (self, type:model.Type):
 
-        self._class_name     = type.name
-        self._class_generics = type.generics
-        self._state          = state.States.CLASS_AFTER_NAME
-        self._class_subc     = defaultdict(list)
+        self._vars.class_name     = type.name
+        self._vars.class_generics = type.generics
+        self._vars.state          = state.States.CLASS_AFTER_NAME
+        self._vars.class_subc     = defaultdict(list)
 
     def _store_superclass           (self, type:model.Type): 
         
         line = self._line
-        self._class_subc[self._class_subc_cur].append(type)
-        self._state = state.States.CLASS_SUPERCLASS_NAMED
+        self._vars.class_subc[self._vars.class_subc_cur].append(type)
+        self._vars.state = state.States.CLASS_SUPERCLASS_NAMED
 
     def _store_constructor_signature(self, signature:dict[str,model.Argument]):
 
-        self._state            = state.States.CONSTRUCTOR_DECLARED
-        self._constructor_sign = signature
+        self._vars.state            = state.States.CONSTRUCTOR_DECLARED
+        self._vars.constructor_sign = signature
+
+    def _store_constructor_throws   (self, type:model.Type):
+
+        self._vars.throws.append(type)
+        self._vars.state = state.States.CONSTRUCTOR_THROWS_AFTER
 
     def _store_attribute_type       (self, type:model.Type):
 
-        self._attr_type = type
-        self._state     = state.States.UNKNOWN_1
+        self._vars.attr_type = type
+        self._vars.state     = state.States.LOOKAHEAD_1
 
     def _store_method_generics      (self, generics:list[model.GenericType]):
 
-        self._method_generics = generics
-        self._state = state.States.DEFAULT
+        self._vars.method_generics = generics
+        self._vars.state = state.States.DEFAULT
 
     def _store_method_throws        (self, type:model.Type):
 
-        self._throws.append(type)
-        self._state = state.States.METHOD_THROWS_AFTER
+        self._vars.throws.append(type)
+        self._vars.state = state.States.METHOD_THROWS_AFTER
 
     @typing.override
     def _default_handle_line        (self, line:str): pass
@@ -275,18 +282,18 @@ class Parser(StackingSemiParser):
         
         self._part = part
         line = self._line
-        if   self._state is state.States.DEFAULT:
+        if   self._vars.state is state.States.DEFAULT:
 
-            if   part == words.SEMICOLON  : pass
+            if   part == words.SEMICOLON: pass
 
-            elif part == words.CURLY_OPEN : 
+            elif part == words.CURLY_OPEN: 
                 
-                if self._static and (self._attr_type is None): 
+                if self._vars.static and (self._vars.attr_type is None): 
                     
-                    self._state = state.States.STATIC_CONSTRUCTOR_BODY
+                    self._vars.state = state.States.STATIC_CONSTRUCTOR_BODY
                     self._stack_handler(parsers.body.Parser(after=self._unstacking(self._flush_static_constructor), skip_begin=True))
                     
-                elif self._class_name is not None:
+                elif self._vars.class_name is not None:
 
                     self._flush_class()
 
@@ -297,71 +304,81 @@ class Parser(StackingSemiParser):
                 self._NEXT.handle_class_end(model.ClassEnd())
                 self._class_name_stack.pop()
 
-            elif part == words.IMPORT     : 
+            elif part == words.IMPORT: 
                 
                 self._stack_handler(parsers.import_.Parser(after=self._unstacking(self._NEXT.handle_import), skip_begin=True))
 
-            elif part == words.PACKAGE    : 
+            elif part == words.PACKAGE: 
                 
                 self._stack_handler(parsers.package.Parser(after=self._unstacking(self._NEXT.handle_package), skip_begin=True))
 
+            elif part == words.DEFAULT:
+
+                if self._vars.default: raise exc.DefaultDuplicateException(line)
+                self._vars.default = True
+
             elif part in _FINALITY_TYPE_KEYWORDS: 
                 
-                if self._finality is not None: raise exc.FinalityDuplicateException(line)
-                self._finality = _FINALITY_TYPE_MAP_BY_KEYWORD[part]
+                if self._vars.finality is not None: raise exc.FinalityDuplicateException(line)
+                self._vars.finality = _FINALITY_TYPE_MAP_BY_KEYWORD[part]
 
             elif part in _ACCESS_MOD_KEYWORDS:
 
-                if self._access is not None: raise exc.AccessModifierDuplicateException(line)
-                self._access = _ACCESS_MOD_MAP_BY_KEYWORD[part]
+                if self._vars.access is not None: raise exc.AccessModifierDuplicateException(line)
+                self._vars.access = _ACCESS_MOD_MAP_BY_KEYWORD[part]
 
             elif part in _CLASS_TYPE_KEYWORDS:
 
-                if self._class_type is not None: raise exc.ClassException(line)
-                self._class_type = _CLASS_TYPE_MAP_BY_KEYWORD[part]
-                self._state      = state.States.CLASS_BEGIN
+                if self._vars.class_type is not None: raise exc.ClassException(line)
+                self._vars.class_type = _CLASS_TYPE_MAP_BY_KEYWORD[part]
+                self._vars.state      = state.States.CLASS
                 self._stack_handler(parsers.type.Parser(after=self._unstacking(self._store_class_name), part_rehandler=self.handle_part, can_be_array=False))
 
             elif part == words.SYNCHRONIZED:
 
-                if self._synchronized: raise exc.SynchronizedDuplicateException(line)
-                self._synchronized = True
+                if self._vars.synchronized: raise exc.SynchronizedDuplicateException(line)
+                self._vars.synchronized = True
 
             elif part == words.VOLATILE:
 
-                if self._volatile: raise exc.VolatileDuplicateException(line)
-                self._volatile = True
+                if self._vars.volatile: raise exc.VolatileDuplicateException(line)
+                self._vars.volatile = True
 
-            elif part == words.STATIC    :
-
-                if self._static: raise exc.StaticDuplicateException(line)
-                self._static = True
-
-            elif part == words.ATSIGN    : 
+            elif part == words.TRANSIENT: 
                 
-                self._stack_handler(parsers.annotation.Parser(after=self._unstacking(self._NEXT.handle_annotation), skip_begin=True, part_rehandler=self.handle_part))
+                if self._vars.transient: raise exc.TransientDuplicateException(line)
+                self._vars.transient = True
+
+            elif part == words.STATIC:
+
+                if self._vars.static: raise exc.StaticDuplicateException(line)
+                self._vars.static = True
+
+            elif part == words.ATSIGN: 
+                
+                self._stack_handler(parsers.annotation.Parser(after=self._unstacking(self._store_annotation), part_rehandler=self.handle_part, skip_begin=True))
 
             elif part == words.ANGLE_OPEN:
 
-                if self._method_generics is not None: raise exc.GenericsDuplicateException(line)
+                if self._vars.method_generics is not None: raise exc.GenericsDuplicateException(line)
                 self._stack_handler(parsers.generics.Parser(after=self._unstacking(self._store_method_generics), skip_begin=True))
 
             else: 
                 
-                self._state = state.States.ATTR_BEGIN
+                self._vars.state = state.States.ATTR_BEGIN
                 self._stack_handler(parsers.type.Parser(after=self._unstacking(self._store_attribute_type), part_rehandler=self.handle_part))
                 self.handle_part(part)
 
             return
         
-        elif self._state is state.States.CLASS_AFTER_NAME:
+        elif self._vars.state is state.States.CLASS_AFTER_NAME:
 
             if   part in _INHERIT_TYPE_KEYWORDS:
 
                 it = _INHERIT_TYPE_MAP_BY_KEYWORD[part]
-                if it in self._class_subc: raise exc.ClassException(line) # repeated extends or implements
-                self._state          = state.States.CLASS_SUPERCLASS
-                self._class_subc_cur = it
+                if it in self._vars.class_subc: raise exc.ClassException(line) # repeated extends or implements
+                self._vars.state          = state.States.CLASS_SUPERCLASS
+                self._vars.class_subc_cur = it
                 self._stack_handler(parsers.type.Parser(after=self._unstacking(self._store_superclass), part_rehandler=self.handle_part, can_be_array=False))
 
             elif part == words.CURLY_OPEN:
@@ -371,7 +388,7 @@ class Parser(StackingSemiParser):
             else: raise exc.ClassException(line)
             return
 
-        elif self._state is state.States.CLASS_SUPERCLASS_NAMED:
+        elif self._vars.state is state.States.CLASS_SUPERCLASS_NAMED:
 
             if   part == words.COMMA:
 
@@ -383,80 +400,129 @@ class Parser(StackingSemiParser):
 
             elif part in _INHERIT_TYPE_KEYWORDS: 
                 
-                self._state = state.States.CLASS_AFTER_NAME
+                self._vars.state = state.States.CLASS_AFTER_NAME
                 self.handle_part(part)
 
             else: raise exc.ClassException(line)
             return
         
-        elif self._state is state.States.UNKNOWN_1:
+        elif self._vars.state is state.States.LOOKAHEAD_1:
 
             if part == words.PARENTH_OPEN:
                 
-                if (self._attr_type.name == self._class_name_stack[-1]): # constructor, since previously we got a word equal to the class' name
+                if (self._vars.attr_type.name == self._class_name_stack[-1]): # constructor, since previously we got a word equal to the class' name
 
-                    self._state = state.States.CONSTRUCTOR_SIGNATURE
+                    self._vars.state = state.States.CONSTRUCTOR_SIGNATURE
                     self._stack_handler(parsers.signature.Parser(after=self._unstacking(self._store_constructor_signature), skip_begin=True))
 
                 else: raise exc.MethodException(line)
 
             else:
 
-                self._attr_name  = part
-                self._state = state.States.UNKNOWN_2
+                self._vars.attr_name  = part
+                self._vars.state = state.States.LOOKAHEAD_2
 
             return
         
-        elif self._state is state.States.UNKNOWN_2:
+        elif self._vars.state is state.States.LOOKAHEAD_2:
 
             if   part == words.SEMICOLON:
 
                 self._flush_attribute(decl_only=True)
             
+            elif part == words.COMMA:
+
+                self._flush_attribute(decl_only=True, continued=True)
+                self._vars.state = state.States.ATTR_MULTI_SEP
+
             elif part == words.EQUALSIGN:
 
-                self._state = state.States.ATTR_INITIALIZE
-                self._attr_value_parts = list()
-                self._attr_nest_depth  = 0
-                self._attr_scope_depth = 0
+                self._vars.state            = state.States.ATTR_INITIALIZE
+                self._vars.attr_value_parts = list()
+                self._vars.attr_nest_depth  = 0
+                self._vars.attr_scope_depth = 0
             
             elif part == words.PARENTH_OPEN:
 
-                self._state = state.States.METHOD_SIGNATURE
+                self._vars.state = state.States.METHOD_SIGNATURE
                 self._stack_handler(parsers.signature.Parser(after=self._unstacking(self._store_method_signature)))
                 self.handle_part(part) # re-handle part ('('), since it was used only for look-ahead
 
             else: raise exc.AttributeException(line)
             return
             
-        elif self._state is state.States.CONSTRUCTOR_DECLARED:
+        elif self._vars.state is state.States.CONSTRUCTOR_DECLARED:
 
-            self._state = state.States.CONSTRUCTOR_BODY
-            self._stack_handler(parsers.body.Parser(after=self._unstacking(self._flush_constructor)))
-            self.handle_part(part) # re-handle part ('{'), since it was used only for look-ahead
+            if part == words.THROWS:
+
+                if self._vars.throws is not None: raise exc.ThrowsDuplicateException(line)
+                self._vars.state  = state.States.CONSTRUCTOR_THROWS
+                self._vars.throws = list()
+                self._stack_handler(parsers.type.Parser(after=self._unstacking(self._store_constructor_throws), part_rehandler=self.handle_part, can_be_array=False))
+
+            else:
+
+                self._vars.state = state.States.CONSTRUCTOR_BODY
+                self._stack_handler(parsers.body.Parser(after=self._unstacking(self._flush_constructor)))
+                self.handle_part(part) # re-handle part ('{'), since it was used only for look-ahead
+            
             return
 
-        elif self._state is state.States.ATTR_INITIALIZE:
+        elif self._vars.state is state.States.ATTR_MULTI_SEP:
 
-            if self._attr_nest_depth  == 0 and \
-               self._attr_scope_depth == 0 and \
+            if not _WORD_PATTERN.match(part): raise exc.AttributeException(line)
+            self._vars.attr_name = part
+            self._vars.state = state.States.ATTR_MULTI
+            return
+
+        elif self._vars.state is state.States.ATTR_MULTI:
+
+            if   part == words.SEMICOLON:
+
+                self._flush_attribute(decl_only=True)
+            
+            elif part == words.COMMA:
+
+                self._flush_attribute(decl_only=True, continued=True)
+                self._vars.state = state.States.ATTR_MULTI_SEP
+
+            else: raise exc.AttributeException(line)
+            return
+
+        elif self._vars.state is state.States.CONSTRUCTOR_THROWS_AFTER:
+
+            if part == words.COMMA:
+
+                self._stack_handler(parsers.type.Parser(after=self._unstacking(self._store_constructor_throws), part_rehandler=self.handle_part, can_be_array=False))
+
+            else:
+
+                self._vars.state = state.States.CONSTRUCTOR_DECLARED
+                self.handle_part(part)
+
+            return
+
+        elif self._vars.state is state.States.ATTR_INITIALIZE:
+
+            if self._vars.attr_nest_depth  == 0 and \
+               self._vars.attr_scope_depth == 0 and \
                part                   == words.SEMICOLON: 
                 
                 self._flush_attribute()
-                self._attr_nest_depth  = None
-                self._attr_scope_depth = None
+                self._vars.attr_nest_depth  = None
+                self._vars.attr_scope_depth = None
                 return
 
             else:
 
-                self._attr_value_parts.append(part)
-                if   part == words.CURLY_OPEN   : self._attr_scope_depth += 1
-                elif part == words.CURLY_CLOSE  : self._attr_scope_depth -= 1
-                elif part == words.PARENTH_OPEN : self._attr_nest_depth  += 1
-                elif part == words.PARENTH_CLOSE: self._attr_nest_depth  -= 1
+                self._vars.attr_value_parts.append(part)
+                if   part == words.CURLY_OPEN   : self._vars.attr_scope_depth += 1
+                elif part == words.CURLY_CLOSE  : self._vars.attr_scope_depth -= 1
+                elif part == words.PARENTH_OPEN : self._vars.attr_nest_depth  += 1
+                elif part == words.PARENTH_CLOSE: self._vars.attr_nest_depth  -= 1
                 return
 
-        elif self._state is state.States.METHOD_DECLARED:
+        elif self._vars.state is state.States.METHOD_DECLARED:
 
             if   part == words.SEMICOLON:
 
@@ -464,20 +530,20 @@ class Parser(StackingSemiParser):
             
             elif part == words.THROWS:
 
-                if self._throws is not None: raise exc.MethodException(line)
-                self._state  = state.States.METHOD_THROWS
-                self._throws = list()
+                if self._vars.throws is not None: raise exc.ThrowsDuplicateException(line)
+                self._vars.state  = state.States.METHOD_THROWS
+                self._vars.throws = list()
                 self._stack_handler(parsers.type.Parser(after=self._unstacking(self._store_method_throws), part_rehandler=self.handle_part, can_be_array=False))
 
             else:
 
-                self._state = state.States.METHOD_BODY
+                self._vars.state = state.States.METHOD_BODY
                 self._stack_handler(parsers.body.Parser(after=self._unstacking(self._flush_method)))
                 self.handle_part(part) # re-handle part ('{'), since it was used only for look-ahead
 
             return
         
-        elif self._state is state.States.METHOD_THROWS_AFTER:
+        elif self._vars.state is state.States.METHOD_THROWS_AFTER:
 
             if part == words.COMMA:
 
@@ -485,34 +551,38 @@ class Parser(StackingSemiParser):
 
             else:
 
-                self._state = state.States.METHOD_DECLARED
+                self._vars.state = state.States.METHOD_DECLARED
                 self.handle_part(part)
 
             return
 
-        elif self._state is state.States.ENUM:
+        elif self._vars.state is state.States.ENUM:
 
             if   part == words.SEMICOLON:
 
-                self._state = state.States.DEFAULT
+                self._vars.state = state.States.DEFAULT
 
-            if   part == words.CURLY_CLOSE:
+            elif part == words.CURLY_CLOSE:
 
-                self._state = state.States.DEFAULT
+                self._vars.state = state.States.DEFAULT
                 self.handle_part(part)
+
+            elif part == words.ATSIGN:
+
+                self._stack_handler(parsers.annotation.Parser(after=self._unstacking(self._vars.annotations.append), part_rehandler=self.handle_part, skip_begin=True))
 
             elif not _WORD_PATTERN.match(part):
 
-                raise exc.EnumValueException(line)
+                raise exc.EnumValueNameException(line)
             
             else:
 
-                self._enumv_name = part
-                self._state = state.States.ENUM_NAMED
+                self._vars.enumv_name = part
+                self._vars.state      = state.States.ENUM_NAMED
 
             return
 
-        elif self._state is state.States.ENUM_NAMED:
+        elif self._vars.state is state.States.ENUM_NAMED:
 
             if   part in {words.SEMICOLON,
                           words.COMMA,
@@ -528,25 +598,41 @@ class Parser(StackingSemiParser):
 
             return
 
-        elif self._state is state.States.ENUM_DEFINED:
+        elif self._vars.state is state.States.ENUM_DEFINED:
 
             if part == words.SEMICOLON:
 
-                self._state = state.States.DEFAULT
+                self._vars.state = state.States.DEFAULT
 
             elif part is words.CURLY_CLOSE:
 
-                self._state = state.States.DEFAULT
+                self._vars.state = state.States.DEFAULT
                 self.handle_part(part)
 
             elif part is words.COMMA:
 
-                self._state = state.States.ENUM
+                self._vars.state = state.States.ENUM
 
             else: raise exc.EnumValueException(line)
             return
 
-        raise NotImplementedError(f'{line} (state = {self._state.name})')
+        elif self._vars.state is state.States.AINTERFACE:
+
+            self._vars.class_name = part
+            self._vars.state = state.States.AINTERFACE_NAMED
+            return
+
+        elif self._vars.state is state.States.AINTERFACE_NAMED:
+
+            if part != words.CURLY_OPEN: raise exc.Exception(line)
+            self._NEXT.handle_ainterface(model.AInterface(name       =self._vars.class_name,
+                                                          access     =self._vars.access,
+                                                          annotations=self._vars.annotations))
+            self._class_name_stack.append(self._vars.class_name)
+            self._reset_vars()
+            return
+
+        raise NotImplementedError(f'line = {repr(line)}, state = {repr(self._vars.state.name)}')
         
     @typing.override
     def _default_handle_comment     (self, text:str):
@@ -556,9 +642,9 @@ class Parser(StackingSemiParser):
     @typing.override
     def _default_handle_spacing     (self, spacing:str):
 
-        if self._state is state.States.ATTR_INITIALIZE:
+        if self._vars.state is state.States.ATTR_INITIALIZE:
 
-            self._attr_value_parts.append(spacing)
+            self._vars.attr_value_parts.append(spacing)
 
         else: pass
 
@@ -571,5 +657,5 @@ class Parser(StackingSemiParser):
     def _default_handle_eof         (self):
         
         line = self._line
-        if self._state            != state.States.DEFAULT or \
+        if self._vars.state            != state.States.DEFAULT or \
            self._class_name_stack                        : raise exc.EOFException(line)

@@ -46,7 +46,7 @@ class ImportTests               (unittest.TestCase):
     def setUp(self):
 
         self.tr,self.th = gett(self)
-        self.tr.r_import_(model.Import(name='foo.bar'))
+        self.tr.r_import(model.Import(name='foo.bar'))
 
     def test(self, static=False, name='foo.bar', end=';'): self.th.test(' '.join(filter(bool, ('import','static' if static else '',name,end))))
 
@@ -70,7 +70,7 @@ class ImportTestsCombinations   (unittest.TestCase):
 
                 self.tr.clear_registry()
                 self.th.reset         ()
-                self.tr.r_import_     (model.Import(name='hello.world', static=static))
+                self.tr.r_import     (model.Import(name='hello.world', static=static))
                 self.th.test          (' '.join(filter(bool, (f'import','static ' if static else '', 'hello.world;'))))
 
 class AnnotationTests           (unittest.TestCase): 
@@ -78,36 +78,39 @@ class AnnotationTests           (unittest.TestCase):
     def setUp(self):
 
         self.tr,self.th = gett(self)
-        self.tr.r_annotation(model.Annotation(name='Log'))
+        self.tr.r_class   (model.Class(name='Foo', annotations=[model.Annotation(name='Log')]))
+        self.tr.r_class_end()
 
-    def test_01        (self): self.th.test('@Log'  , end=True)
-    #def test_02        (self): self.th.test('@Log;;', end=True)
+    def test_01        (self): self.th.test('@Log class Foo {}'  , end=True)
     @to_fail
-    def test_wrong_name(self): self.th.test('@Lag'  , end=True)
+    def test_wrong_name(self): self.th.test('@Lag class Foo {}'  , end=True)
 
 class AnnotationTests2          (unittest.TestCase): 
 
     def setUp(self):
 
         self.tr,self.th = gett(self)
-        self.tr.r_annotation(model.Annotation(name='DataClass', args=['true', ' 123', ' this.<String, String>get()']))
+        self.tr.r_class    (model.Class('Foo', annotations=[model.Annotation(name='DataClass', args=['true', ' 123', ' this.<String, String>get()'])]))
+        self.tr.r_class_end()
 
-    def test_01          (self): self.th.test('@DataClass(true, 123, this.<String, String>get())', end=True)
+    def test_01          (self): self.th.test('@DataClass(true, 123, this.<String, String>get()) class Foo {}', end=True)
     @to_fail
-    def test_wrong_args  (self): self.th.test('@DataClass(false, 123, this.<String, String>get())', end=True)
+    def test_wrong_args  (self): self.th.test('@DataClass(false, 123, this.<String, String>get()) class Foo {}', end=True)
     @to_fail
-    def test_wrong_args_2(self): self.th.test('@DataClass(true, 456, this.<String, String>get())', end=True)
+    def test_wrong_args  (self): self.th.test('@DataCloss(true, 123, this.<String, String>get()) class Foo {}', end=True)
     @to_fail
-    def test_wrong_args_2(self): self.th.test('@DataClass(true, 456, this.<String, Integer>get())', end=True)
+    def test_wrong_args_2(self): self.th.test('@DataClass(true, 456, this.<String, String>get()) class Foo {}', end=True)
     @to_fail
-    def test_wrong_args_order(self): self.th.test('@DataClass(123, this.<String, String>get(), true)', end=True)
+    def test_wrong_args_2(self): self.th.test('@DataClass(true, 456, this.<String, Integer>get()) class Foo {}', end=True)
+    @to_fail
+    def test_wrong_args_order(self): self.th.test('@DataClass(123, this.<String, String>get(), true) class Foo {}', end=True)
 
 class ClassTests                (unittest.TestCase): 
 
     def setUp(self):
 
         self.tr,self.th = gett(self)
-        self.tr.r_class_(model.Class(name      ='Foo', 
+        self.tr.r_class(model.Class(name      ='Foo', 
                                      access    =model.AccessModifiers.PUBLIC, 
                                      subclass  ={model.InheritanceTypes.EXTENDS   : [model.Type(name='Bar')],
                                                  model.InheritanceTypes.IMPLEMENTS: [model.Type(name='Tim'), model.Type(name='Tom', generics=[model.Type(name='Tum')])]}))
@@ -166,7 +169,7 @@ class ClassTestsCombinations    (unittest.TestCase):
 
                 self.tr.clear_registry()
                 self.th.reset         ()
-                self.tr.r_class_      (model.Class(name='Hello', access=access, static=static, finality=finality, type=type))
+                self.tr.r_class      (model.Class(name='Hello', access=access, static=static, finality=finality, type=type))
                 self.tr.r_class_end   ()
                 self.th.test          (' '.join(filter(bool, (_ACCESS_MOD_MAP_RE[access], 
                                                               'static' if static else '', 

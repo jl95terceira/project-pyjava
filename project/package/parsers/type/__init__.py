@@ -32,7 +32,6 @@ class Parser(parsers.entity.StackingSemiParser):
     def _store_generics (self, generics:list[model.GenericType]):
 
         self._generics = generics
-        self._stop(part_to_rehandle=None)
 
     @typing.override
     def _default_handle_line     (self, line: str): pass
@@ -47,11 +46,10 @@ class Parser(parsers.entity.StackingSemiParser):
 
         elif self._state is state.States.AFTER_NAME:
 
-            if   part in words.ANGLE_OPEN: # generic type - nest
+            if   part == words.ANGLE_OPEN: # generic type - nest
 
-                self._state = state.States.GENERICS
-                self._stack_handler(parsers.generics.Parser(after=self._store_generics))
-                self.handle_part(part)
+                if self._generics is not None: raise exc.GenericsDuplicateException(line)
+                self._stack_handler(parsers.generics.Parser(after=self._unstacking(self._store_generics), skip_begin=True))
 
             elif part == words.SQUARE_OPEN:
                 

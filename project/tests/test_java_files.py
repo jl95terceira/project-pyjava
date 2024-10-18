@@ -12,8 +12,8 @@ class Tests(unittest.TestCase):
     def test_1(self):
 
         self.tr.r_package      (model.Package          (name='project.tests.java_files'))
-        self.tr.r_import_      (model.Import           (name='java.util.Map'))
-        self.tr.r_class_       (model.Class            (name='Test1'                                                        , access=model.AccessModifiers.PUBLIC))
+        self.tr.r_import      (model.Import           (name='java.util.Map'))
+        self.tr.r_class       (model.Class            (name='Test1'                                                        , access=model.AccessModifiers.PUBLIC))
         self.tr.r_attribute    (model.Attribute        (name='a1', type=model.Type('int')                                   , access=model.AccessModifiers.PRIVATE))
         self.tr.r_attribute    (model.Attribute        (name='a2', type=model.Type('boolean')               , static=True))
         self.tr.r_attribute    (model.Attribute        (name='a3', type=model.Type('String', array_dim=1)                   , access=model.AccessModifiers.PROTECTED))

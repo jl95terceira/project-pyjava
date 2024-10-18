@@ -34,7 +34,7 @@ class Parser(parsers.entity.StackingSemiParser):
 
     @typing.override
     def _default_handle_part   (self, part:str):
-
+        
         line = self._line
         if   self._callargs_state is state.CallArgsStates.BEGIN:
 

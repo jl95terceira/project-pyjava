@@ -34,7 +34,7 @@ class Parser(parsers.entity.StackingSemiParser):
     def _store_constraining_type    (self, type:model.Type):
 
         self._types.append(model.ConstrainedType(name      =self._constrained_type_name,
-                                                 target    =type,
+                                                 targets    =type,
                                                  constraint=self._constraint if self._constraint is not None else model.TypeConstraints.NONE))
         self._state = state.States.AFTER
 
@@ -79,7 +79,7 @@ class Parser(parsers.entity.StackingSemiParser):
                     self._stack_handler(parsers.type.Parser(after=self._unstacking(self._store_type), part_rehandler=self.handle_part, can_be_array=True))
                     self.handle_part(part0)
 
-                self.handle_part(self._parts_backlog[1])
+                self.handle_part(part)
 
             else:
 
@@ -106,11 +106,10 @@ class Parser(parsers.entity.StackingSemiParser):
 
         elif self._state is state.States.SEP:
 
-            if not _WORD_PATTERN.match(part): raise exc.Exception(line)
             self._state = state.States.DEFAULT
             self.handle_part(part)
 
-        else: raise exc.Exception(f'{self._state.name}, {repr(part)},')
+        else: raise NotImplementedError(f'{self._state.name}, {repr(part)},')
 
     @typing.override
     def _default_handle_comment(self, text: str): pass #TO-DO save comment somewhere

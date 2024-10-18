@@ -7,5 +7,4 @@ class States:
     AFTER_NAME        = State('After Name')
     ARRAY_OPEN        = State('Array (\'[\')')
     ARRAY_CLOSE       = State('Array (\']\')')
-    GENERICS          = State('Generics')
     END               = State('End')

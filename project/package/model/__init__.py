@@ -1,5 +1,5 @@
 import abc
-import dataclasses
+from   dataclasses import dataclass, field
 import typing
 
 from ..          import words
@@ -45,40 +45,40 @@ class AccessModifiers:
     @staticmethod
     def values(): yield from AccessModifiers._e
 
-@dataclasses.dataclass
+@dataclass
 class Package:
 
-    name:str = dataclasses.field()
+    name:str = field()
 
-@dataclasses.dataclass
+@dataclass
 class Import:
 
-    name  :str  = dataclasses.field()
-    static:bool = dataclasses.field(default=False)
+    name  :str  = field()
+    static:bool = field(default=False)
 
     @typing.override
     def source(self): return f'{words.IMPORT} {'' if not self.static else f'{words.STATIC} '}{self.name};'
 
-@dataclasses.dataclass
+@dataclass
 class Annotation:
 
-    name:str       = dataclasses.field()
-    args:list[str] = dataclasses.field(default_factory=list)
+    name:str       = field()
+    args:list[str] = field(default_factory=list)
 
     @typing.override
     def source(self): return f'@{self.name}{'' if not self.args else f'({', '.join(self.args)})'}'
 
-@dataclasses.dataclass
+@dataclass
 class Type:
 
-    name     :str                      = dataclasses.field()
-    generics :list['GenericType']|None = dataclasses.field(default=None)
-    array_dim:int                      = dataclasses.field(default=0)
+    name     :str                      = field()
+    generics :list['GenericType']|None = field(default=None)
+    array_dim:int                      = field(default=0)
 
     @typing.override
     def source(self): return f'{self.name}{'' if self.generics is None else f'<{', '.join(map(lambda t: t.source(), self.generics))}>'}'
 
-@dataclasses.dataclass(frozen=True)
+@dataclass(frozen=True)
 class TypeConstraint(Named): pass
 class TypeConstraints:
 
@@ -87,88 +87,99 @@ class TypeConstraints:
     EXTENDS = _e(TypeConstraint(name='EXTENDS'))
     SUPER   = _e(TypeConstraint(name='SUPER'))
 
-@dataclasses.dataclass
+@dataclass
 class ConstrainedType:
 
-    name      :str            = dataclasses.field()
-    target    :Type           = dataclasses.field()
-    constraint:TypeConstraint = dataclasses.field(default=TypeConstraints.NONE)
+    name      :str            = field()
+    target    :Type           = field()
+    constraint:TypeConstraint = field(default=TypeConstraints.NONE)
 
     @typing.override
     def source(self) : return f'{self.name}{'' if self.constraint is TypeConstraints.NONE else f' {self.constraint.source()} {self.target.source()}'}'
 
-@dataclasses.dataclass
+@dataclass
 class UnboundedType: pass
 
 GenericType = typing.Union[Type, ConstrainedType, UnboundedType]
 
-@dataclasses.dataclass
+@dataclass
 class Class:
 
-    name      :str
-    generics  :list[GenericType]|None = dataclasses.field(default        =None)
-    type      :ClassType              = dataclasses.field(default        =ClassTypes     .CLASS)
-    static    :bool                   = dataclasses.field(default        =False)
-    access    :AccessModifier         = dataclasses.field(default        =AccessModifiers.DEFAULT)
-    finality  :FinalityType           = dataclasses.field(default        =FinalityTypes  .DEFAULT)
-    subclass  :dict[InheritanceType,list[Type]] \
-                                      = dataclasses.field(default_factory=dict)
+    name       :str                              = field()
+    annotations:list[Annotation]                 = field(default_factory=list)
+    generics   :list[GenericType]|None           = field(default        =None)
+    type       :ClassType                        = field(default        =ClassTypes     .CLASS)
+    static     :bool                             = field(default        =False)
+    access     :AccessModifier                   = field(default        =AccessModifiers.DEFAULT)
+    finality   :FinalityType                     = field(default        =FinalityTypes  .DEFAULT)
+    subclass   :dict[InheritanceType,list[Type]] = field(default_factory=dict)
 
-@dataclasses.dataclass
+@dataclass
+class AInterface:
+
+    name       :str              = field()
+    annotations:list[Annotation] = field(default_factory=list)
+    access     :AccessModifier   = field(default        =AccessModifiers.DEFAULT)
+
+@dataclass
 class ClassEnd: pass
 
-@dataclasses.dataclass
+@dataclass
 class Argument:
 
-    type      :Type            = dataclasses.field()
-    final     :bool            = dataclasses.field(default=False)
-    varargs   :bool            = dataclasses.field(default=False)
-    annotation:Annotation|None = dataclasses.field(default=None)
+    type      :Type            = field()
+    final     :bool            = field(default=False)
+    varargs   :bool            = field(default=False)
+    annotation:Annotation|None = field(default=None)
 
-@dataclasses.dataclass
+@dataclass
 class StaticConstructor:
 
-    body:str = dataclasses.field()
+    body:str = field()
 
-@dataclasses.dataclass
+@dataclass
 class Constructor:
 
-    args  :dict[str,Argument] = dataclasses.field()
-    body  :str                = dataclasses.field()
-    access:AccessModifier     = dataclasses.field(default=AccessModifiers.DEFAULT)
+    body  :str                = field()
+    args  :dict[str,Argument] = field(default_factory=dict)
+    access:AccessModifier     = field(default=AccessModifiers.DEFAULT)
+    throws:list[Type]         = field(default_factory=list)
 
-@dataclasses.dataclass
+@dataclass
 class Attribute:
 
-    name     :str            = dataclasses.field()
-    type     :Type           = dataclasses.field()
-    static   :bool           = dataclasses.field(default=False)
-    volatile :bool           = dataclasses.field(default=False)
-    access   :AccessModifier = dataclasses.field(default=AccessModifiers.DEFAULT)
-    final    :bool           = dataclasses.field(default=False)
-    value    :str|None       = dataclasses.field(default=None)
+    name     :str            = field()
+    type     :Type           = field()
+    static   :bool           = field(default=False)
+    volatile :bool           = field(default=False)
+    access   :AccessModifier = field(default=AccessModifiers.DEFAULT)
+    final    :bool           = field(default=False)
+    transient:bool           = field(default=False)
+    value    :str|None       = field(default=None)
 
-@dataclasses.dataclass
+@dataclass
 class Method:
 
-    name        :str                    = dataclasses.field()
-    type        :Type                   = dataclasses.field()
-    static      :bool                   = dataclasses.field(default        =False)
-    access      :AccessModifier         = dataclasses.field(default        =AccessModifiers.DEFAULT)
-    finality    :FinalityType           = dataclasses.field(default        =FinalityTypes  .DEFAULT)
-    synchronized:bool                   = dataclasses.field(default        =False)
-    generics    :list[GenericType]|None = dataclasses.field(default        =None)
-    args        :dict[str,Argument]     = dataclasses.field(default_factory=dict)
-    throws      :list[Type]             = dataclasses.field(default_factory=list)
-    body        :str|None               = dataclasses.field(default        =None)
+    name        :str                     = field()
+    type        :Type              |None = field()
+    default     :bool                    = field(default        =False)
+    static      :bool                    = field(default        =False)
+    access      :AccessModifier          = field(default        =AccessModifiers.DEFAULT)
+    finality    :FinalityType            = field(default        =FinalityTypes  .DEFAULT)
+    synchronized:bool                    = field(default        =False)
+    generics    :list[GenericType] |None = field(default        =None)
+    args        :dict[str,Argument]      = field(default_factory=dict)
+    throws      :list[Type]              = field(default_factory=list)
+    body        :str               |None = field(default        =None)
 
-@dataclasses.dataclass
+@dataclass
 class EnumValue:
 
-    name:str       = dataclasses.field()
-    args:list[str] = dataclasses.field(default_factory=list)
+    name       :str              = field()
+    annotations:list[Annotation] = field(default_factory=list)
+    args       :list[str]        = field(default_factory=list)
 
-@dataclasses.dataclass
+@dataclass
 class Comment:
 
-    text:str = dataclasses.field()
+    text:str = field()
