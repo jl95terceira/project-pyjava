@@ -131,6 +131,7 @@ class ParserResettableVariables:
         self.constructor_sign :dict[str,model.Argument]    |None = None
         self.method_sign      :dict[str,model.Argument]    |None = None
         self.method_generics  :list[model.GenericType]     |None = None
+        self.method_defaultv  :str                         |None = None
         self.enumv_name       :str                         |None = None
         self.enumv_subclasses                                    = False
         self.throws           :list[model.Type]            |None = None
@@ -189,9 +190,10 @@ class Parser(StackingSemiParser):
             
             self._vars.state = state.States.ENUM_DEFINED
 
-    def _flush_static_constructor   (self, body:str): 
+    def _flush_initializer          (self, body:str): 
         
-        self._NEXT.handle_static_constructor(model.StaticConstructor(body=body))
+        self._NEXT.handle_initializer(model.Initializer(body  =body,
+                                                        static=self._vars.static))
         self._reset_vars()
 
     def _flush_constructor          (self, body:str): 
@@ -218,17 +220,18 @@ class Parser(StackingSemiParser):
 
     def _flush_method               (self, body:str|None): 
         
-        self._NEXT.handle_method(model.Method(name        =self._vars.attr_name,
-                                              static      =self._vars.static,
-                                              default     =self._vars.default,
-                                              access      =self._coerce_access(self._vars.access),
-                                              finality    =self._coerce_finality(self._vars.finality),
-                                              synchronized=self._vars.synchronized,
-                                              generics    =self._vars.method_generics,
-                                              type        =self._vars.attr_type,
-                                              args        =self._vars.method_sign,
-                                              throws      =self._vars.throws if self._vars.throws is not None else list(),
-                                              body        =body))
+        self._NEXT.handle_method(model.Method(name         =self._vars.attr_name,
+                                              static       =self._vars.static,
+                                              default      =self._vars.default,
+                                              access       =self._coerce_access(self._vars.access),
+                                              finality     =self._coerce_finality(self._vars.finality),
+                                              synchronized =self._vars.synchronized,
+                                              generics     =self._vars.method_generics,
+                                              type         =self._vars.attr_type,
+                                              args         =self._vars.method_sign,
+                                              throws       =self._vars.throws if self._vars.throws is not None else list(),
+                                              default_value=self._vars.method_defaultv,
+                                              body         =body))
         self._reset_vars()
 
     def _flush_enum_value           (self, callargs:list[str]|None=None):
@@ -300,6 +303,11 @@ class Parser(StackingSemiParser):
         self._vars.throws.append(type)
         self._vars.state = state.States.METHOD_THROWS_AFTER
 
+    def _store_method_default_value (self, value:str):
+
+        self._vars.method_defaultv = value
+        self._vars.state = state.States.METHOD_DEFAULT_VALUE_AFTER
+
     @typing.override
     def _default_handle_line        (self, line:str): pass
 
@@ -314,10 +322,10 @@ class Parser(StackingSemiParser):
 
             elif part == words.CURLY_OPEN: 
                 
-                if self._vars.static and (self._vars.attr_type is None): 
+                if self._vars.attr_type is None: 
                     
-                    self._vars.state = state.States.STATIC_CONSTRUCTOR_BODY
-                    self._stack_handler(parsers.body.Parser(after=self._unstacking(self._flush_static_constructor), skip_begin=True))
+                    self._vars.state = state.States.INITIALIZER_BODY
+                    self._stack_handler(parsers.body.Parser(after=self._unstacking(self._flush_initializer), skip_begin=True))
                     
                 elif self._vars.class_name is not None:
 
@@ -562,14 +570,29 @@ class Parser(StackingSemiParser):
                 self._vars.throws = list()
                 self._stack_handler(parsers.type.Parser(after=self._unstacking(self._store_method_throws), part_rehandler=self.handle_part, can_be_array=False))
 
-            else:
+            elif part == words.DEFAULT:
+
+                self._vars.state = state.States.METHOD_DEFAULT_VALUE
+
+            elif part == words.CURLY_OPEN:
 
                 self._vars.state = state.States.METHOD_BODY
                 self._stack_handler(parsers.body.Parser(after=self._unstacking(self._flush_method)))
                 self.handle_part(part) # re-handle part ('{'), since it was used only for look-ahead
 
+            else: raise exc.MethodException(line)
             return
         
+        elif self._vars.state is state.States.METHOD_DEFAULT_VALUE:
+
+            self._stack_handler(parsers.expr.raw.Parser(after=self._unstacking(self._store_method_default_value), part_rehandler=self.handle_part))
+            return
+
+        elif self._vars.state is state.States.METHOD_DEFAULT_VALUE_AFTER:
+
+            self._flush_method(None)
+            return
+
         elif self._vars.state is state.States.METHOD_THROWS_AFTER:
 
             if part == words.COMMA:

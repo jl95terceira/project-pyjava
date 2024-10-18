@@ -23,18 +23,18 @@ class _TestsRegistry:
 
     def __init__(self):
 
-        self.packages            :dict[int, model.Package]           = dict()
-        self.imports             :dict[int, model.Import]            = dict()
-        self.classes             :dict[int, model.Class]             = dict()
-        self.class_ends          :dict[int, model.ClassEnd]          = dict()
-        self.static_constructors :dict[int, model.StaticConstructor] = dict()
-        self.constructors        :dict[int, model.Constructor]       = dict()
-        self.attributes          :dict[int, model.Attribute]         = dict()
-        self.methods             :dict[int, model.Method]            = dict()
-        self.enum_values         :dict[int, model.EnumValue]         = dict()
-        self.ainterfaces         :dict[int, model.AInterface]        = dict()
-        self.comments            :dict[int, model.Comment]           = dict()
-        self.a                   :list[typing.Any]                   = list()
+        self.packages           :dict[int, model.Package]           = dict()
+        self.imports            :dict[int, model.Import]            = dict()
+        self.classes            :dict[int, model.Class]             = dict()
+        self.class_ends         :dict[int, model.ClassEnd]          = dict()
+        self.initializers       :dict[int, model.Initializer]       = dict()
+        self.constructors       :dict[int, model.Constructor]       = dict()
+        self.attributes         :dict[int, model.Attribute]         = dict()
+        self.methods            :dict[int, model.Method]            = dict()
+        self.enum_values        :dict[int, model.EnumValue]         = dict()
+        self.ainterfaces        :dict[int, model.AInterface]        = dict()
+        self.comments           :dict[int, model.Comment]           = dict()
+        self.a                  :list[typing.Any]                   = list()
 
     def clear(self): 
         
@@ -42,7 +42,7 @@ class _TestsRegistry:
         self.imports            .clear()
         self.classes            .clear()
         self.class_ends         .clear()
-        self.static_constructors.clear()
+        self.initializers       .clear()
         self.constructors       .clear()
         self.attributes         .clear()
         self.methods            .clear()
@@ -68,17 +68,17 @@ class TestRegistrator:
         registry_getter(self._tr)[self._index()] = x
         self._tr.a.append(x)
 
-    def r_package         (self, package        :model.Package)          : self._register(lambda tr: tr.packages            , package)
-    def r_import          (self, import_        :model.Import)           : self._register(lambda tr: tr.imports             , import_)
-    def r_class           (self, class_         :model.Class)            : self._register(lambda tr: tr.classes             , class_)
-    def r_class_end       (self)                                         : self._register(lambda tr: tr.class_ends          , model.ClassEnd())
-    def r_static_constr   (self, static_constr  :model.StaticConstructor): self._register(lambda tr: tr.static_constructors , static_constr)
-    def r_constructor     (self, constr         :model.Constructor)      : self._register(lambda tr: tr.constructors        , constr)
-    def r_attribute       (self, attr           :model.Attribute)        : self._register(lambda tr: tr.attributes          , attr)
-    def r_method          (self, method         :model.Method)           : self._register(lambda tr: tr.methods             , method)
-    def r_enum_value      (self, enum_value     :model.EnumValue)        : self._register(lambda tr: tr.enum_values         , enum_value)
-    def r_ainterface      (self, ainterface     :model.AInterface)       : self._register(lambda tr: tr.ainterfaces         , ainterface)
-    def r_comment         (self, comment        :model.Comment)          : self._register(lambda tr: tr.comments            , comment)
+    def r_package         (self, package        :model.Package)         : self._register(lambda tr: tr.packages     , package)
+    def r_import          (self, import_        :model.Import)          : self._register(lambda tr: tr.imports      , import_)
+    def r_class           (self, class_         :model.Class)           : self._register(lambda tr: tr.classes      , class_)
+    def r_class_end       (self)                                        : self._register(lambda tr: tr.class_ends   , model.ClassEnd())
+    def r_initializer     (self, initializer    :model.Initializer)     : self._register(lambda tr: tr.initializers , initializer)
+    def r_constructor     (self, constr         :model.Constructor)     : self._register(lambda tr: tr.constructors , constr)
+    def r_attribute       (self, attr           :model.Attribute)       : self._register(lambda tr: tr.attributes   , attr)
+    def r_method          (self, method         :model.Method)          : self._register(lambda tr: tr.methods      , method)
+    def r_enum_value      (self, enum_value     :model.EnumValue)       : self._register(lambda tr: tr.enum_values  , enum_value)
+    def r_ainterface      (self, ainterface     :model.AInterface)      : self._register(lambda tr: tr.ainterfaces  , ainterface)
+    def r_comment         (self, comment        :model.Comment)         : self._register(lambda tr: tr.comments     , comment)
 
     def clear_registry(self): 
         
@@ -146,27 +146,27 @@ class _TestHandler(entity.Handler):
         self._tc.assertEqual(self._i, len(self._tr.a), msg=f'Expected no more entities to be process but there are {len(self._tr.a) - self._i} remaining')
 
     @typing.override
-    def handle_package           (self, package         :model.Package)             : self._test(lambda tr: tr.packages             , package)
+    def handle_package          (self, package         :model.Package)      : self._test(lambda tr: tr.packages     , package)
     @typing.override
-    def handle_import            (self, import_         :model.Import)              : self._test(lambda tr: tr.imports              , import_)
+    def handle_import           (self, import_         :model.Import)       : self._test(lambda tr: tr.imports      , import_)
     @typing.override
-    def handle_class             (self, class_          :model.Class)               : self._test(lambda tr: tr.classes              , class_)
+    def handle_class            (self, class_          :model.Class)        : self._test(lambda tr: tr.classes      , class_)
     @typing.override
-    def handle_class_end         (self, class_end       :model.ClassEnd)            : self._test(lambda tr: tr.class_ends           , class_end)
+    def handle_class_end        (self, class_end       :model.ClassEnd)     : self._test(lambda tr: tr.class_ends   , class_end)
     @typing.override
-    def handle_static_constructor(self, static_constr   :model.StaticConstructor)   : self._test(lambda tr: tr.static_constructors  , static_constr)
+    def handle_initializer      (self, initializer     :model.Initializer)  : self._test(lambda tr: tr.initializers , initializer)
     @typing.override
-    def handle_constructor       (self, constr          :model.Constructor)         : self._test(lambda tr: tr.constructors         , constr)
+    def handle_constructor      (self, constr          :model.Constructor)  : self._test(lambda tr: tr.constructors , constr)
     @typing.override
-    def handle_attr              (self, attr            :model.Attribute)           : self._test(lambda tr: tr.attributes           , attr)
+    def handle_attr             (self, attr            :model.Attribute)    : self._test(lambda tr: tr.attributes   , attr)
     @typing.override
-    def handle_method            (self, method          :model.Method)              : self._test(lambda tr: tr.methods              , method)
+    def handle_method           (self, method          :model.Method)       : self._test(lambda tr: tr.methods      , method)
     @typing.override
-    def handle_enum_value        (self, enum_value      :model.EnumValue)           : self._test(lambda tr: tr.enum_values          , enum_value)
+    def handle_enum_value       (self, enum_value      :model.EnumValue)    : self._test(lambda tr: tr.enum_values  , enum_value)
     @typing.override
-    def handle_ainterface        (self, ainterface      : model.AInterface)         : self._test(lambda tr: tr.ainterfaces          , ainterface)
+    def handle_ainterface       (self, ainterface      : model.AInterface)  : self._test(lambda tr: tr.ainterfaces  , ainterface)
     @typing.override
-    def handle_comment           (self, comment         :model.Comment)             : self._test(lambda tr: tr.comments             , comment)
+    def handle_comment          (self, comment         :model.Comment)      : self._test(lambda tr: tr.comments     , comment)
 
 def to_fail(f):
 

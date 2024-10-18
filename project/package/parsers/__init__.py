@@ -1,6 +1,6 @@
 import typing
 
-from .   import part, entity, name, package, import_, body, callargs, generics, signature, type, annotation
+from .   import part, entity, expr, name, package, import_, body, callargs, generics, signature, type, annotation
 from ..  import model, handlers
 
 class StreamPrinter(handlers.entity.Handler):
@@ -26,9 +26,9 @@ class StreamPrinter(handlers.entity.Handler):
         print(f'Handling end of class')
 
     @typing.override
-    def handle_static_constructor(self, sconstr:model.StaticConstructor):
+    def handle_initializer      (self, initializer:model.Initializer):
 
-        print(F'Handling static constructor:    {sconstr}')
+        print(F'Handling initializer:           {initializer}')
 
     @typing.override
     def handle_constructor       (self, constr:model.Constructor):
@@ -71,7 +71,7 @@ class SilentHandler(handlers.entity.Handler):
     @typing.override
     def handle_class_end         (self, class_end:model.ClassEnd=model.ClassEnd()): pass
     @typing.override
-    def handle_static_constructor(self, sconstr:model.StaticConstructor): pass
+    def handle_initializer(self, sconstr:model.Initializer): pass
     @typing.override
     def handle_constructor       (self, constr:model.Constructor): pass
     @typing.override

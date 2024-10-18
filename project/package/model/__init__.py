@@ -136,9 +136,10 @@ class Argument:
     annotation:Annotation|None = field(default=None)
 
 @dataclass
-class StaticConstructor:
+class Initializer:
 
-    body:str = field()
+    body  :str  = field()
+    static:bool = field(default=False)
 
 @dataclass
 class Constructor:
@@ -163,17 +164,18 @@ class Attribute:
 @dataclass
 class Method:
 
-    name        :str                     = field()
-    type        :Type              |None = field()
-    default     :bool                    = field(default        =False)
-    static      :bool                    = field(default        =False)
-    access      :AccessModifier          = field(default        =AccessModifiers.DEFAULT)
-    finality    :FinalityType            = field(default        =FinalityTypes  .DEFAULT)
-    synchronized:bool                    = field(default        =False)
-    generics    :list[GenericType] |None = field(default        =None)
-    args        :dict[str,Argument]      = field(default_factory=dict)
-    throws      :list[Type]              = field(default_factory=list)
-    body        :str               |None = field(default        =None)
+    name         :str                     = field()
+    type         :Type              |None = field()
+    default      :bool                    = field(default        =False)
+    static       :bool                    = field(default        =False)
+    access       :AccessModifier          = field(default        =AccessModifiers.DEFAULT)
+    finality     :FinalityType            = field(default        =FinalityTypes  .DEFAULT)
+    synchronized :bool                    = field(default        =False)
+    generics     :list[GenericType] |None = field(default        =None)
+    args         :dict[str,Argument]      = field(default_factory=dict)
+    throws       :list[Type]              = field(default_factory=list)
+    body         :str               |None = field(default        =None)
+    default_value:str               |None = field(default        =None)
 
 @dataclass
 class EnumValue:

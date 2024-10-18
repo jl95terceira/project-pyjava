@@ -23,6 +23,7 @@ class States:
     ENUM                        = State('Enum')
     ENUM_NAMED                  = State('Enum Named')
     ENUM_DEFINED                = State('Enum Defined')
+    INITIALIZER_BODY            = State('Initializer Body')
     LOOKAHEAD_1                 = State('Declaration (1)') # 1st word (type? of attribute or of method?)
     LOOKAHEAD_2                 = State('Declaration (2)') # 2nd word (name? of attribute or of method?)
     METHOD_SIGNATURE            = State('Method Signature')
@@ -30,7 +31,8 @@ class States:
     METHOD_THROWS               = State('Method Throws')
     METHOD_THROWS_AFTER         = State('Method Throws After')
     METHOD_BODY                 = State('Method Body')
-    STATIC_CONSTRUCTOR_BODY     = State('Static Constr. Body')
+    METHOD_DEFAULT_VALUE        = State('Method Default Value')
+    METHOD_DEFAULT_VALUE_AFTER  = State('Method Default Value After')
 
 class CallArgsState(util.Named): pass
 class CallArgsStates:
