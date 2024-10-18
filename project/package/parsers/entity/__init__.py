@@ -588,6 +588,7 @@ class Parser(StackingSemiParser):
             if   part == words.SEMICOLON:
 
                 self._vars.state = state.States.DEFAULT
+                self._class_stack[-1].in_enum_values = False
 
             elif part == words.CURLY_CLOSE:
 
@@ -611,42 +612,32 @@ class Parser(StackingSemiParser):
 
         elif self._vars.state is state.States.ENUM_NAMED:
 
-            if   part in {words.SEMICOLON,
-                          words.COMMA,
-                          words.CURLY_CLOSE}:
-
-                self._flush_enum_value()
-                self.handle_part(part) # re-handle part (either semicolon or comma), as it was used only for look-ahead
-
-            elif part in words.CURLY_OPEN:
-
-                self._vars.enumv_subclasses = True
-                self._flush_enum_value()
-
-            else:
+            if part == words.PARENTH_OPEN:
                 
                 self._stack_handler(parsers.callargs.Parser(after=self._unstacking(self._flush_enum_value)))
                 self.handle_part(part) # re-handle part ('('), since it was used only for look-ahead
+
+            else:
+
+                self._flush_enum_value()
+                self.handle_part(part) # re-handle part (either semicolon or comma), as it was used only for look-ahead
 
             return
 
         elif self._vars.state is state.States.ENUM_DEFINED:
 
-            if part == words.SEMICOLON:
+            if   part == words.CURLY_OPEN:
 
-                self._vars.state = state.States.DEFAULT
-                self._class_stack[-1].in_enum_values = False
+                self._vars.enumv_subclasses = True
+                self._flush_enum_value()
 
-            elif part is words.CURLY_CLOSE:
-
-                self._vars.state = state.States.DEFAULT
-                self.handle_part(part)
-
-            elif part is words.COMMA:
+            else:
 
                 self._vars.state = state.States.ENUM
+                if part != words.COMMA:
 
-            else: raise exc.EnumValueException(line)
+                    self.handle_part(part)
+
             return
 
         elif self._vars.state is state.States.AINTERFACE:
