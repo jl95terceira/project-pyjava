@@ -115,7 +115,7 @@ class Class:
     static     :bool                             = field(default        =False)
     access     :AccessModifier                   = field(default        =AccessModifiers.DEFAULT)
     finality   :FinalityType                     = field(default        =FinalityTypes  .DEFAULT)
-    subclass   :dict[InheritanceType,list[Type]] = field(default_factory=dict)
+    inherit    :dict[InheritanceType,list[Type]] = field(default_factory=dict)
 
 @dataclass
 class AInterface:
@@ -181,6 +181,7 @@ class EnumValue:
     name       :str              = field()
     annotations:list[Annotation] = field(default_factory=list)
     args       :list[str]        = field(default_factory=list)
+    subclasses :bool             = field(default        =False)
 
 @dataclass
 class Comment:

@@ -112,7 +112,7 @@ class ClassTests                (unittest.TestCase):
         self.tr,self.th = gett(self)
         self.tr.r_class(model.Class(name      ='Foo', 
                                      access    =model.AccessModifiers.PUBLIC, 
-                                     subclass  ={model.InheritanceTypes.EXTENDS   : [model.Type(name='Bar')],
+                                     inherit  ={model.InheritanceTypes.EXTENDS   : [model.Type(name='Bar')],
                                                  model.InheritanceTypes.IMPLEMENTS: [model.Type(name='Tim'), model.Type(name='Tom', generics=[model.Type(name='Tum')])]}))
         self.tr.r_class_end()
 
