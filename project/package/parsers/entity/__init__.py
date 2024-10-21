@@ -1,3 +1,5 @@
+DEBUG = 0
+
 import abc
 from   collections import defaultdict
 import dataclasses
@@ -54,7 +56,7 @@ class StackingSemiParser(handlers.part.Handler, abc.ABC):
 
     @typing.override
     def handle_part                 (self, part:str): 
-
+        if DEBUG: print(part)
         self._part = part
         if self._subhandler is not None: self._subhandler.handle_part(part)
         else                           : self.   _default_handle_part(part)
@@ -105,36 +107,32 @@ class ParserResettableVariables:
 
     def __init__(self):
 
-        self.state                                               = state.States.DEFAULT
-        self.static           :bool                              = False
-        self.default          :bool                              = False
-        self.access           :model.AccessModifier        |None = None
-        self.finality         :model.FinalityType          |None = None
-        self.synchronized                                        = False
-        self.volatile                                            = False
-        self.transient        :bool                              = False
-        self.annotations      :list[model.Annotation]            = list()
-        self.class_type       :model.ClassType             |None = None
-        self.class_name       :str                         |None = None
-        self.class_generics   :str                         |None = None
+        self.state                                                = state.States.DEFAULT
+        self.static           :bool                               = False
+        self.default          :bool                               = False
+        self.access           :model.AccessModifier         |None = None
+        self.finality         :model.FinalityType           |None = None
+        self.synchronized                                         = False
+        self.volatile                                             = False
+        self.transient        :bool                               = False
+        self.annotations      :list[model.Annotation]             = list()
+        self.class_type       :model.ClassType              |None = None
+        self.class_name       :str                          |None = None
+        self.class_generics   :str                          |None = None
         self.class_subc       :dict[model.InheritanceType, list[model.Type]]\
-                                                           |None = None
-        self.class_subc_cur   :model.InheritanceType       |None = None
-        self.attr_type        :model.Type                  |None = None
-        self.attr_name        :str                         |None = None
-        self.attr_value_parts :list[str]                   |None = None
-        self.attr_nest_depth  :int                         |None = None
-        self.attr_scope_depth :int                         |None = None
-        self.sign             :dict[str,model.Argument]    |None = None
-        self.sign_after       :typing.Callable[[dict[str,model.Argument]],None]\
-                                                           |None = None
-        self.constructor_sign :dict[str,model.Argument]    |None = None
-        self.method_sign      :dict[str,model.Argument]    |None = None
-        self.method_generics  :list[model.GenericType]     |None = None
-        self.method_defaultv  :str                         |None = None
-        self.enumv_name       :str                         |None = None
-        self.enumv_subclasses                                    = False
-        self.throws           :list[model.Type]            |None = None
+                                                                  = defaultdict(list)
+        self.class_subc_cur   :model.InheritanceType        |None = None
+        self.attr_type        :model.Type                   |None = None
+        self.attr_name        :str                          |None = None
+        self.attr_value_parts :list[str]                    |None = None
+        self.attr_nest_depth  :int                          |None = None
+        self.attr_scope_depth :int                          |None = None
+        self.method_signature      :dict[str,model.Argument]|None = None
+        self.method_generics  :list[model.GenericType]      |None = None
+        self.method_defaultv  :str                          |None = None
+        self.enumv_name       :str                          |None = None
+        self.enumv_subclasses                                     = False
+        self.throws           :list[model.Type]             |None = None
 
 @dataclasses.dataclass
 class ParserClassStackElement:
@@ -175,7 +173,8 @@ class Parser(StackingSemiParser):
                              access     =self._coerce_access(self._vars.access),
                              finality   =self._coerce_finality(self._vars.finality),
                              type       =self._vars.class_type,
-                             inherit   =dict(self._vars.class_subc))
+                             inherit    =dict(self._vars.class_subc),
+                             signature  =self._vars.method_signature)
         self._NEXT.handle_class(class_)
         self._class_stack.append(ParserClassStackElement(class_        =class_, 
                                                          in_enum_values=self._vars.class_type is model.ClassTypes.ENUM))
@@ -199,7 +198,7 @@ class Parser(StackingSemiParser):
     def _flush_constructor          (self, body:str): 
         
         self._NEXT.handle_constructor(model.Constructor(access=self._coerce_access(self._vars.access),
-                                                        args  =self._vars.constructor_sign, 
+                                                        args  =self._vars.method_signature, 
                                                         body  =body,
                                                         throws=self._vars.throws if self._vars.throws is not None else list()))
         self._reset_vars()
@@ -228,7 +227,7 @@ class Parser(StackingSemiParser):
                                               synchronized =self._vars.synchronized,
                                               generics     =self._vars.method_generics,
                                               type         =self._vars.attr_type,
-                                              args         =self._vars.method_sign,
+                                              args         =self._vars.method_signature,
                                               throws       =self._vars.throws if self._vars.throws is not None else list(),
                                               default_value=self._vars.method_defaultv,
                                               body         =body))
@@ -263,7 +262,7 @@ class Parser(StackingSemiParser):
     def _store_method_signature     (self, signature:dict[str,model.Argument]):
 
         self._vars.state       = state.States.METHOD_DECLARED
-        self._vars.method_sign = signature
+        self._vars.method_signature = signature
 
     def _store_class_name           (self, type:model.Type):
 
@@ -271,6 +270,18 @@ class Parser(StackingSemiParser):
         self._vars.class_generics = type.generics
         self._vars.state          = state.States.CLASS_AFTER_NAME
         self._vars.class_subc     = defaultdict(list)
+
+    def _store_record_name          (self, type:model.Type):
+
+        self._vars.class_name     = type.name
+        self._vars.class_generics = type.generics
+        self._vars.state          = state.States.RECORD_AFTER_NAME
+        self._stack_handler(parsers.signature.Parser(after=self._unstacking(self._store_record_signature)))
+
+    def _store_record_signature     (self, signature:dict[model.Argument]):
+
+        self._vars.method_signature = signature
+        self._vars.state       = state.States.CLASS_AFTER_NAME
 
     def _store_superclass           (self, type:model.Type): 
         
@@ -281,7 +292,7 @@ class Parser(StackingSemiParser):
     def _store_constructor_signature(self, signature:dict[str,model.Argument]):
 
         self._vars.state            = state.States.CONSTRUCTOR_DECLARED
-        self._vars.constructor_sign = signature
+        self._vars.method_signature = signature
 
     def _store_constructor_throws   (self, type:model.Type):
 
@@ -366,6 +377,11 @@ class Parser(StackingSemiParser):
                 self._vars.class_type = _CLASS_TYPE_MAP_BY_KEYWORD[part]
                 self._vars.state      = state.States.CLASS
                 self._stack_handler(parsers.type.Parser(after=self._unstacking(self._store_class_name), part_rehandler=self.handle_part, can_be_array=False))
+
+            elif part == words.RECORD:
+
+                self._vars.state = state.States.RECORD
+                self._stack_handler(parsers.type.Parser(after=self._unstacking(self._store_record_name), part_rehandler=self.handle_part, can_be_array=False))
 
             elif part == words.SYNCHRONIZED:
 

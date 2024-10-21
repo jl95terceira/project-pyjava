@@ -23,6 +23,8 @@ class States:
     ENUM                        = State('Enum')
     ENUM_NAMED                  = State('Enum Named')
     ENUM_DEFINED                = State('Enum Defined')
+    RECORD                      = State('Record')
+    RECORD_AFTER_NAME           = State('Record After Name')
     INITIALIZER_BODY            = State('Initializer Body')
     LOOKAHEAD_1                 = State('Declaration (1)') # 1st word (type? of attribute or of method?)
     LOOKAHEAD_2                 = State('Declaration (2)') # 2nd word (name? of attribute or of method?)

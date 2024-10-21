@@ -116,6 +116,7 @@ class Class:
     access     :AccessModifier                   = field(default        =AccessModifiers.DEFAULT)
     finality   :FinalityType                     = field(default        =FinalityTypes  .DEFAULT)
     inherit    :dict[InheritanceType,list[Type]] = field(default_factory=dict)
+    signature  :dict[str, 'Argument']|None       = field(default        =None)
 
 @dataclass
 class AInterface:
