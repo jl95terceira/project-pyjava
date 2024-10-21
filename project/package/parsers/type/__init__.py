@@ -9,16 +9,16 @@ _WORD_PATTERN = re.compile('^\\w+$')
 
 class Parser(parsers.entity.StackingSemiParser):
 
-    def __init__(self, after     :typing.Callable[[model.Type],None], 
-                 part_rehandler  :typing.Callable[[str],None], 
-                 can_be_array    =True,
-                 can_be_annotated=False):
+    def __init__(self, after      :typing.Callable[[model.Type],None], 
+                 part_rehandler   :typing.Callable[[str],None], 
+                 allow_array      =True,
+                 allow_annotations=False):
 
         super().__init__()
         self._after                                     = after
         self._part_rehandler                            = part_rehandler
-        self._can_be_array                              = can_be_array
-        self._can_be_annotated                          = can_be_annotated
+        self._can_be_array                              = allow_array
+        self._can_be_annotated                          = allow_annotations
         self._state                                     = state.States.BEGIN
         self._name        :str                    |None = list()
         self._array_dim                                 = 0
@@ -45,7 +45,7 @@ class Parser(parsers.entity.StackingSemiParser):
             
             if part != words.ATSIGN:
 
-                self._stack_handler(parsers.name      .Parser(after=self._unstacking(self._store_name)        , part_rehandler=self.handle_part))
+                self._stack_handler(parsers.name.Parser(after=self._unstacking(self._store_name), part_rehandler=self.handle_part))
 
             else:
 

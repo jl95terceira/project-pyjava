@@ -89,3 +89,9 @@ _SYS_ARGV_ITER = iter(sys.argv[1:])
 def a():
 
     next(_SYS_ARGV_ITER)
+
+class Raiser:
+
+    def __init__(self, ex:Exception): self._ex = ex
+
+    def __call__(self): raise self._ex

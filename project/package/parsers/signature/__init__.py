@@ -45,6 +45,15 @@ class Parser(parsers.entity.StackingSemiParser):
         self._arg_annot  = annot
         self._sign_state = state.States.DEFAULT
 
+    def _store_arg_name             (self, name:str):
+
+        self._arg_name   = name
+        self._sign_state = state.States.ARG_NAMED
+
+    def _if_array_after_name        (self, dim:int):
+
+        self._arg_type.array_dim += dim
+
     @typing.override
     def _default_handle_line(self, line: str): pass
 
@@ -89,8 +98,8 @@ class Parser(parsers.entity.StackingSemiParser):
 
             else:
 
-                self._arg_name   = part
-                self._sign_state = state.States.ARG_NAMED
+                self._stack_handler(parsers.name.Parser(after=self._unstacking(self._store_arg_name), part_rehandler=self.handle_part, if_array=self._if_array_after_name))
+                self.handle_part(part)
         
         elif self._sign_state is state.States.ARG_NAMED:
 

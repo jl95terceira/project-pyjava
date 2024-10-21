@@ -11,13 +11,16 @@ class Parser(parsers.entity.StackingSemiParser):
 
     def __init__(self, after         :typing.Callable[[str],None],
                        part_rehandler:typing.Callable[[str],None],
-                       allow_wildcard=False):
+                       allow_wildcard=False,
+                       if_array      :typing.Callable[[int],None]|None=None):
 
         super().__init__()
         self._after                = after
         self._part_rehandler       = part_rehandler
         self._allow_wildcard       = allow_wildcard
+        self._if_array             = if_array
         self._state                = state.States.BEGIN
+        self._array_dim            = 0
         self._parts:list[str]|None = None
 
     @typing.override
@@ -37,9 +40,13 @@ class Parser(parsers.entity.StackingSemiParser):
 
         elif self._state is state.States.DEFAULT:
 
-            if part == words.DOT:
+            if   part == words.DOT:
 
                 self._state = state.States.AFTER_DOT
+
+            elif part == words.SQUARE_OPEN and self._if_array is not None:
+
+                self._state = state.States.ARRAY_OPEN
 
             else:
 
@@ -59,6 +66,22 @@ class Parser(parsers.entity.StackingSemiParser):
                 if not _WORD_PATTERN.match(part): raise exc.Exception(line)
                 self._parts.append(part)
                 self._state = state.States.DEFAULT
+
+        elif self._state is state.States.ARRAY_OPEN:
+
+            if part != words.SQUARE_CLOSED: raise exc.Exception(line)
+            self._state = state.States.ARRAY_CLOSE
+            self._array_dim += 1
+            self._stop()
+
+        elif self._state is state.States.ARRAY_CLOSE:
+
+            if self._part == words.SQUARE_OPEN:
+
+                self._state = state.States.DEFAULT
+                self.handle_part(part)
+
+            else: raise exc.Exception(line)
 
         else: raise AssertionError(f'{self._state=}')
 
@@ -80,4 +103,8 @@ class Parser(parsers.entity.StackingSemiParser):
     def _stop(self): 
         
         self._state = state.States.END
+        if self._if_array is not None:
+
+            self._if_array(self._array_dim)
+
         self._after('.'.join(self._parts)) # if parts has only 1 element, no dot appears - so, no problem

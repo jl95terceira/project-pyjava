@@ -304,6 +304,15 @@ class Parser(StackingSemiParser):
         self._vars.attr_type = type
         self._vars.state     = state.States.LOOKAHEAD_1
 
+    def _store_attribute_name       (self, name:str): 
+        
+        self._vars.attr_name  = name
+        self._vars.state      = state.States.LOOKAHEAD_2
+
+    def _if_array_after_attr_name   (self, dim:int): 
+        
+        self._vars.attr_type.array_dim += dim
+
     def _store_method_generics      (self, generics:list[model.GenericType]):
 
         self._vars.method_generics = generics
@@ -376,12 +385,12 @@ class Parser(StackingSemiParser):
                 if self._vars.class_type is not None: raise exc.ClassException(line)
                 self._vars.class_type = _CLASS_TYPE_MAP_BY_KEYWORD[part]
                 self._vars.state      = state.States.CLASS
-                self._stack_handler(parsers.type.Parser(after=self._unstacking(self._store_class_name), part_rehandler=self.handle_part, can_be_array=False))
+                self._stack_handler(parsers.type.Parser(after=self._unstacking(self._store_class_name), part_rehandler=self.handle_part, allow_array=False))
 
             elif part == words.RECORD:
 
                 self._vars.state = state.States.RECORD
-                self._stack_handler(parsers.type.Parser(after=self._unstacking(self._store_record_name), part_rehandler=self.handle_part, can_be_array=False))
+                self._stack_handler(parsers.type.Parser(after=self._unstacking(self._store_record_name), part_rehandler=self.handle_part, allow_array=False))
 
             elif part == words.SYNCHRONIZED:
 
@@ -428,7 +437,7 @@ class Parser(StackingSemiParser):
                 if it in self._vars.class_subc: raise exc.ClassException(line) # repeated extends or implements
                 self._vars.state          = state.States.CLASS_SUPERCLASS
                 self._vars.class_subc_cur = it
-                self._stack_handler(parsers.type.Parser(after=self._unstacking(self._store_superclass), part_rehandler=self.handle_part, can_be_array=False))
+                self._stack_handler(parsers.type.Parser(after=self._unstacking(self._store_superclass), part_rehandler=self.handle_part, allow_array=False))
 
             elif part == words.CURLY_OPEN:
 
@@ -441,7 +450,7 @@ class Parser(StackingSemiParser):
 
             if   part == words.COMMA:
 
-                self._stack_handler(parsers.type.Parser(after=self._unstacking(self._store_superclass), part_rehandler=self.handle_part, can_be_array=False))
+                self._stack_handler(parsers.type.Parser(after=self._unstacking(self._store_superclass), part_rehandler=self.handle_part, allow_array=False))
 
             elif part == words.CURLY_OPEN:
 
@@ -470,8 +479,8 @@ class Parser(StackingSemiParser):
 
             else:
 
-                self._vars.attr_name  = part
-                self._vars.state = state.States.LOOKAHEAD_2
+                self._stack_handler(parsers.name.Parser(after=self._unstacking(self._store_attribute_name), part_rehandler=self.handle_part, if_array=self._if_array_after_attr_name))
+                self.handle_part(part)
 
             return
         
@@ -509,7 +518,7 @@ class Parser(StackingSemiParser):
                 if self._vars.throws is not None: raise exc.ThrowsDuplicateException(line)
                 self._vars.state  = state.States.CONSTRUCTOR_THROWS
                 self._vars.throws = list()
-                self._stack_handler(parsers.type.Parser(after=self._unstacking(self._store_constructor_throws), part_rehandler=self.handle_part, can_be_array=False))
+                self._stack_handler(parsers.type.Parser(after=self._unstacking(self._store_constructor_throws), part_rehandler=self.handle_part, allow_array=False))
 
             else:
 
@@ -544,7 +553,7 @@ class Parser(StackingSemiParser):
 
             if part == words.COMMA:
 
-                self._stack_handler(parsers.type.Parser(after=self._unstacking(self._store_constructor_throws), part_rehandler=self.handle_part, can_be_array=False))
+                self._stack_handler(parsers.type.Parser(after=self._unstacking(self._store_constructor_throws), part_rehandler=self.handle_part, allow_array=False))
 
             else:
 
@@ -584,7 +593,7 @@ class Parser(StackingSemiParser):
                 if self._vars.throws is not None: raise exc.ThrowsDuplicateException(line)
                 self._vars.state  = state.States.METHOD_THROWS
                 self._vars.throws = list()
-                self._stack_handler(parsers.type.Parser(after=self._unstacking(self._store_method_throws), part_rehandler=self.handle_part, can_be_array=False))
+                self._stack_handler(parsers.type.Parser(after=self._unstacking(self._store_method_throws), part_rehandler=self.handle_part, allow_array=False))
 
             elif part == words.DEFAULT:
 
@@ -613,7 +622,7 @@ class Parser(StackingSemiParser):
 
             if part == words.COMMA:
 
-                self._stack_handler(parsers.type.Parser(after=self._unstacking(self._store_method_throws), part_rehandler=self.handle_part, can_be_array=False))
+                self._stack_handler(parsers.type.Parser(after=self._unstacking(self._store_method_throws), part_rehandler=self.handle_part, allow_array=False))
 
             else:
 

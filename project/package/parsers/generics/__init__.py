@@ -82,7 +82,7 @@ class Parser(parsers.entity.StackingSemiParser):
 
                 else:
 
-                    self._stack_handler(parsers.type.Parser(after=self._unstacking(self._store_type), part_rehandler=self.handle_part, can_be_array=True, can_be_annotated=True))
+                    self._stack_handler(parsers.type.Parser(after=self._unstacking(self._store_type), part_rehandler=self.handle_part, allow_array=True, allow_annotations=True))
                     self.handle_part(part0)
 
                 self.handle_part(part)
@@ -96,7 +96,7 @@ class Parser(parsers.entity.StackingSemiParser):
         elif self._state is state.States.CONSTRAINT:
 
             self._constraint = _CONSTRAINT_TYPE_MAP_BY_KEYWORD[part]
-            self._stack_handler(parsers.type.Parser(after=self._unstacking(self._store_target_type), part_rehandler=self.handle_part, can_be_array=False))
+            self._stack_handler(parsers.type.Parser(after=self._unstacking(self._store_target_type), part_rehandler=self.handle_part, allow_array=False))
 
         elif self._state is state.States.CONSTRAINT_LOOKAHEAD:
 
@@ -107,7 +107,7 @@ class Parser(parsers.entity.StackingSemiParser):
 
             else:
 
-                self._stack_handler(parsers.type.Parser(after=self._unstacking(self._store_target_type), part_rehandler=self.handle_part, can_be_array=False))
+                self._stack_handler(parsers.type.Parser(after=self._unstacking(self._store_target_type), part_rehandler=self.handle_part, allow_array=False))
 
         elif self._state is state.States.AFTER:
 
