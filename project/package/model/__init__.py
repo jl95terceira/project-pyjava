@@ -71,9 +71,10 @@ class Annotation:
 @dataclass
 class Type:
 
-    name     :str                      = field()
-    generics :list['GenericType']|None = field(default=None)
-    array_dim:int                      = field(default=0)
+    name       :str                      = field()
+    generics   :list['GenericType']|None = field(default        =None)
+    array_dim  :int                      = field(default        =0)
+    annotations:list[Annotation]         = field(default_factory=list)
 
     @typing.override
     def source(self): return f'{self.name}{'' if self.generics is None else f'<{', '.join(map(lambda t: t.source(), self.generics))}>'}'

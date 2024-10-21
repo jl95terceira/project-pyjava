@@ -21,7 +21,7 @@ class Parser(parsers.entity.StackingSemiParser):
         self._parts:list[str]|None = None
 
     @typing.override
-    def _default_handle_line     (self, line: str): pass
+    def _default_handle_line     (self, line:str): pass
 
     @typing.override
     def _default_handle_part     (self, part:str): 
@@ -63,7 +63,7 @@ class Parser(parsers.entity.StackingSemiParser):
         else: raise AssertionError(f'{self._state=}')
 
     @typing.override
-    def _default_handle_comment  (self, text: str): pass #TO-DO
+    def _default_handle_comment  (self, text:str): pass #TO-DO
 
     @typing.override
     def _default_handle_spacing  (self, spacing:str): pass #TO-DO

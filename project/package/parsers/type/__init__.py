@@ -9,27 +9,28 @@ _WORD_PATTERN = re.compile('^\\w+$')
 
 class Parser(parsers.entity.StackingSemiParser):
 
-    def __init__(self, after   :typing.Callable[[model.Type],None], 
-                 part_rehandler:typing.Callable[[str],None], 
-                 can_be_array  =True):
+    def __init__(self, after     :typing.Callable[[model.Type],None], 
+                 part_rehandler  :typing.Callable[[str],None], 
+                 can_be_array    =True,
+                 can_be_annotated=False):
 
         super().__init__()
-        self._state                                     = state.States.BEGIN
-        self._parts       :list[str]                    = list()
-        self._can_be_array                              = can_be_array
-        self._array_dim                                 = 0
-        self._generics    :list[model.GenericType]|None = None
         self._after                                     = after
         self._part_rehandler                            = part_rehandler
-        # ...
-        self._stack_handler(parsers.name.Parser(after=self._unstacking(self._store_name), part_rehandler=self.handle_part))
+        self._can_be_array                              = can_be_array
+        self._can_be_annotated                          = can_be_annotated
+        self._state                                     = state.States.BEGIN
+        self._name        :str                    |None = list()
+        self._array_dim                                 = 0
+        self._generics    :list[model.GenericType]|None = None
+        self._annotations :list[model.Annotation]       = list()
 
-    def _store_name     (self, name:str):
+    def _store_name      (self, name:str):
 
-        self._parts.append(name)
+        self._name  = name
         self._state = state.States.AFTER_NAME
 
-    def _store_generics (self, generics:list[model.GenericType]):
+    def _store_generics  (self, generics:list[model.GenericType]):
 
         self._generics = generics
 
@@ -42,7 +43,16 @@ class Parser(parsers.entity.StackingSemiParser):
         line = self._line
         if self._state   is state.States.BEGIN:
             
-            raise AssertionError()
+            if part != words.ATSIGN:
+
+                self._stack_handler(parsers.name      .Parser(after=self._unstacking(self._store_name)        , part_rehandler=self.handle_part))
+
+            else:
+
+                if not self._can_be_annotated: raise exc.AnnotationsNotAllowedException(line)
+                self._stack_handler(parsers.annotation.Parser(after=self._unstacking(self._annotations.append), part_rehandler=self.handle_part))
+
+            self.handle_part(part)
 
         elif self._state is state.States.AFTER_NAME:
 
@@ -100,9 +110,10 @@ class Parser(parsers.entity.StackingSemiParser):
     def _stop(self, part_to_rehandle:str|None): 
 
         self._state = state.States.END
-        self._after(model.Type(name     =''.join(self._parts), 
-                               generics =self._generics, 
-                               array_dim=self._array_dim))
+        self._after(model.Type(name       =self._name, 
+                               generics   =self._generics, 
+                               array_dim  =self._array_dim,
+                               annotations=self._annotations))
         if part_to_rehandle is not None:
 
             self._part_rehandler(part_to_rehandle)
