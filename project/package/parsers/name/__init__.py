@@ -50,7 +50,7 @@ class Parser(parsers.entity.StackingSemiParser):
 
             if part == words.ASTERISK:
 
-                if not self._allow_wildcard: raise exc.WildcaldNotAllowedException(line)
+                if not self._allow_wildcard: raise exc.WildcardNotAllowedException(line)
                 self._parts.append('*')
                 self._stop()
 
