@@ -22,6 +22,11 @@ class Tests(unittest.TestCase):
         self.tr.r_attribute     (model.Attribute        (name='b2', type=model.Type('boolean')                                                                           , value='   true'        , final =True))
         self.tr.r_attribute     (model.Attribute        (name='b3', type=model.Type('String')                                , access=model.AccessModifiers.PROTECTED    , value='  "abc"'        , final =False))
         self.tr.r_attribute     (model.Attribute        (name='b4', type=model.Type('Object', array_dim=2)   , static=True   , access=model.AccessModifiers.PUBLIC       , value=' new Object[]{}', final =True))
+        self.tr.r_attribute     (model.Attribute        (name='c1', type=model.Type('Object', array_dim=1)   , static=True   , access=model.AccessModifiers.PUBLIC       , value='null'           , final =True))
+        self.tr.r_attribute     (model.Attribute        (name='c2', type=model.Type('Object', array_dim=2)   , static=True   , access=model.AccessModifiers.PUBLIC       , value='null'           , final =True))
+        self.tr.r_attribute     (model.Attribute        (name='c3', type=model.Type('Object', array_dim=2)   , static=True   , access=model.AccessModifiers.PUBLIC       , value='null'           , final =True))
+        self.tr.r_attribute     (model.Attribute        (name='c4', type=model.Type('Object', array_dim=3)   , static=True   , access=model.AccessModifiers.PUBLIC       , value='null'           , final =True))
+        self.tr.r_attribute     (model.Attribute        (name='c5', type=model.Type('Object', array_dim=4)   , static=True   , access=model.AccessModifiers.PUBLIC       , value='null'           , final =True))
         self.tr.r_initializer   (model.Initializer      (body='\n'+8*' '+'System.out.println("Hello, static");\n'+4*' ', static=True))
         self.tr.r_constructor   (model.Constructor      (access=model.AccessModifiers.PUBLIC,  args={'properties':model.Argument(type=model.Type('Map'    , generics=[model.Type(name='String'),model.Type(name='String')])),
                                                                                                      'awesome'   :model.Argument(type=model.Type('Boolean'))}, body=''))

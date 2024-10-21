@@ -72,7 +72,6 @@ class Parser(parsers.entity.StackingSemiParser):
             if part != words.SQUARE_CLOSED: raise exc.Exception(line)
             self._state = state.States.ARRAY_CLOSE
             self._array_dim += 1
-            self._stop()
 
         elif self._state is state.States.ARRAY_CLOSE:
 
@@ -81,7 +80,10 @@ class Parser(parsers.entity.StackingSemiParser):
                 self._state = state.States.DEFAULT
                 self.handle_part(part)
 
-            else: raise exc.Exception(line)
+            else: 
+                
+                self._stop()
+                self._part_rehandler(part)
 
         else: raise AssertionError(f'{self._state=}')
 
@@ -103,8 +105,7 @@ class Parser(parsers.entity.StackingSemiParser):
     def _stop(self): 
         
         self._state = state.States.END
+        self._after('.'.join(self._parts)) # if parts has only 1 element, no dot appears - so, no problem
         if self._if_array is not None:
 
             self._if_array(self._array_dim)
-
-        self._after('.'.join(self._parts)) # if parts has only 1 element, no dot appears - so, no problem

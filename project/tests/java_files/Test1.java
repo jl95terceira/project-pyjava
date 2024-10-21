@@ -12,6 +12,11 @@ public class Test1 {
                        final boolean     b2 =   true;
     protected                String      b3 =  "abc";
     public      static final Object[][]  b4 = new Object[]{};
+    public      static final Object      c1[] =null;
+    public      static final Object      c2[][] =null;
+    public      static final Object[]    c3[] =null;
+    public      static final Object[]    c4[][] =null;
+    public      static final Object[][]  c5[][] =null;
 
     static {
         System.out.println("Hello, static");
