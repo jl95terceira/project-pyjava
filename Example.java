@@ -39,8 +39,8 @@ public abstract class Example<A,B> extends Object implements Foo,Bar {
                                      final Long z) {
 
         return (new Thingy() {
-            {
-                {
+            { // there
+                { // are
                     // lots of braces :)
                 }
             }
