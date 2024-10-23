@@ -11,9 +11,9 @@ class Tests(unittest.TestCase):
 
     def test_file(file_name:str):
 
-        def a(f:typing.Callable[[Tests],None]):
+        def a(f:typing.Callable[['Tests'],None]):
 
-            def b(self:Tests):
+            def b(self:'Tests'):
     
                 f(self)
                 self.th.test_file(file_name)
@@ -22,8 +22,8 @@ class Tests(unittest.TestCase):
         
         return a
 
-    @test_file('Test1.java')
-    def test_1(self):
+    @test_file('Test0.java')
+    def test_0(self):
 
         self.tr.r_package       (model.Package          (name='project.tests.java_files'))
         self.tr.r_import        (model.Import           (name='java.util.Map'))
