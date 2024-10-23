@@ -132,10 +132,10 @@ class ClassEnd: pass
 @dataclass
 class Argument:
 
-    type      :Type            = field()
-    final     :bool            = field(default=False)
-    varargs   :bool            = field(default=False)
-    annotation:Annotation|None = field(default=None)
+    type       :Type             = field()
+    final      :bool             = field(default        =False)
+    varargs    :bool             = field(default        =False)
+    annotations:list[Annotation] = field(default_factory=list)
 
 @dataclass
 class Initializer:

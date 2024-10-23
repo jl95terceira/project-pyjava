@@ -13,37 +13,32 @@ class Parser(parsers.entity.StackingSemiParser):
                        skip_begin=False):
 
         super().__init__()
-        self._sign                              = dict()
-        self._sign_state                        = state.States.BEGIN   if not skip_begin else \
-                                                  state.States.DEFAULT
-        self._sign_after                        = after
-        self._arg_name   :str             |None = None
-        self._arg_type   :model.Type      |None = None
-        self._arg_annot  :model.Annotation|None = None
-        self._arg_varargs                       = False
-        self._finality                          = model.FinalityTypes.DEFAULT
+        self._sign                                   = dict()
+        self._sign_state                             = state.States.BEGIN   if not skip_begin else \
+                                                       state.States.DEFAULT
+        self._sign_after                             = after
+        self._arg_name       :str             |None  = None
+        self._arg_type       :model.Type      |None  = None
+        self._arg_annotations:list[model.Annotation] = list()
+        self._arg_varargs                            = False
+        self._finality                               = model.FinalityTypes.DEFAULT
 
     def _store_arg                  (self):
 
-        self._sign[self._arg_name] = model.Argument(type      =self._arg_type, 
-                                                    final     =self._finality is model.FinalityTypes.FINAL,
-                                                    annotation=self._arg_annot,
-                                                    varargs   =self._arg_varargs)
-        self._arg_name    = None
-        self._arg_type    = None
-        self._arg_annot   = None
-        self._arg_varargs = False
-        self._finality  = model.FinalityTypes.DEFAULT
+        self._sign[self._arg_name] = model.Argument(type       =self._arg_type, 
+                                                    final      =self._finality is model.FinalityTypes.FINAL,
+                                                    annotations=self._arg_annotations,
+                                                    varargs    =self._arg_varargs)
+        self._arg_name        = None
+        self._arg_type        = None
+        self._arg_annotations = list()
+        self._arg_varargs     = False
+        self._finality        = model.FinalityTypes.DEFAULT
 
     def _store_arg_type             (self, type:model.Type):
 
         self._arg_type   = type
         self._sign_state = state.States.ARG_TYPED
-
-    def _store_arg_annotation       (self, annot:model.Annotation):
-
-        self._arg_annot  = annot
-        self._sign_state = state.States.DEFAULT
 
     def _store_arg_name             (self, name:str):
 
@@ -70,8 +65,8 @@ class Parser(parsers.entity.StackingSemiParser):
 
             if   part == words.PARENTH_CLOSE:
 
-                if self._finality  is not model.FinalityTypes.DEFAULT or \
-                   self._arg_annot is not None                       : raise exc.Exception(line)
+                if self._finality is not model.FinalityTypes.DEFAULT or \
+                   self._arg_annotations                            : raise exc.Exception(line)
                 
                 self._stop()
 
@@ -81,7 +76,7 @@ class Parser(parsers.entity.StackingSemiParser):
 
             elif part == words.ATSIGN:
 
-                self._stack_handler(parsers.annotation.Parser(after=self._unstacking(self._store_arg_annotation), part_rehandler=self.handle_part))
+                self._stack_handler(parsers.annotation.Parser(after=self._unstacking(self._arg_annotations.append), part_rehandler=self.handle_part))
                 self.handle_part(part)
 
             else:
