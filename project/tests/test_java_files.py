@@ -27,7 +27,7 @@ class Tests(unittest.TestCase):
     @_file('Test1.java')
     def test_1(self):
 
-        self.tr.r_package       (model.Package    (name='project.tests.java_files'))
+        self.tr.r_package(model.Package(name='project.tests.java_files'))
         self.tr.r_import        (model.Import     (name='java.util.Map'))
         self.tr.r_class         (model.Class      (name='Test1'                                                        , access=model.AccessModifiers.PUBLIC))
         self.tr.r_attribute     (model.Attribute  (name='a1', type=model.Type('int')                                   , access=model.AccessModifiers.PRIVATE))
@@ -51,6 +51,11 @@ class Tests(unittest.TestCase):
         self.tr.r_constructor   (model.Constructor(access=model.AccessModifiers.DEFAULT, args={}, body=f''))
         self.tr.r_class_end     ()
 
-    #def test_2(self):
+    def test_2(self):
 
-    #    self.tr.r_method        (model.Method     (access=model.AccessModifiers.PUBLIC, type='void', name='Test2', args={'ints':model.Argument(annotation=model.Annotation(name='QueryParam'), type=model.Type())}))
+        self.tr.r_package(model.Package(name='project.tests.java_files'))
+        self.tr.r_import        (model.Import     (name='java.util.*'))
+        self.tr.r_class         (model.Class      (name='Test2', access=model.AccessModifiers.PUBLIC))
+        self.tr.r_method        (model.Method     (access=model.AccessModifiers.PUBLIC, type='void', name='Test2', args={'ints':model.Argument(annotations=[model.Annotation(name='QueryParam')], type=model.Type(name='List', generics=[model.Type(name='Integer')]))}, body=''))
+        self.tr.r_constructor   (model.Constructor(access=model.AccessModifiers.PUBLIC,                            args={'ints':model.Argument(annotations=[model.Annotation(name='QueryParam')], type=model.Type(name='List', generics=[model.Type(name='Integer')]))}, body=''))
+        self.tr.r_method        (model.Method     (access=model.AccessModifiers.PUBLIC, type='void', name='Test2', args={'ints':model.Argument(annotations=[model.Annotation(name='QueryParam'), model.Annotation(name='Foo', args=['"Bar"', '"Baz"'])], type=model.Type(name='List', generics=[model.Type(name='Integer')]))}, body=''))
