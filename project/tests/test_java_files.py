@@ -22,8 +22,8 @@ class Tests(unittest.TestCase):
         
         return a
 
-    @test_file('Test0.java')
-    def test_0(self):
+    @test_file('Test1.java')
+    def test_1(self):
 
         self.tr.r_package       (model.Package          (name='project.tests.java_files'))
         self.tr.r_import        (model.Import           (name='java.util.Map'))
