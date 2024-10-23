@@ -9,6 +9,20 @@ class Tests(unittest.TestCase):
         self.tr = TestRegistrator()
         self.th = self.tr.handler(self)
 
+    def test_file(file_name:str):
+
+        def a(f:typing.Callable[[Tests],None]):
+
+            def b(self:Tests):
+    
+                f(self)
+                self.th.test_file(file_name)
+
+            return b
+        
+        return a
+
+    @test_file('Test1.java')
     def test_1(self):
 
         self.tr.r_package       (model.Package          (name='project.tests.java_files'))
@@ -33,5 +47,3 @@ class Tests(unittest.TestCase):
         self.tr.r_constructor   (model.Constructor      (access=model.AccessModifiers.PRIVATE, args={'data'      :model.Argument(type=model.Type('byte'   , array_dim=1))}, body=f'\n{8*' '}Test1(null, false);\n{4*' '}'))
         self.tr.r_constructor   (model.Constructor      (access=model.AccessModifiers.DEFAULT, args={}, body=f''))
         self.tr.r_class_end     ()
-        # do it
-        self.th.test_file('Test1.java')
