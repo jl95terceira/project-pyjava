@@ -51,11 +51,13 @@ class Tests(unittest.TestCase):
         self.tr.r_constructor   (model.Constructor(access=model.AccessModifiers.DEFAULT, args={}, body=f''))
         self.tr.r_class_end     ()
 
+    @_file('Test2.java')
     def test_2(self):
 
         self.tr.r_package(model.Package(name='project.tests.java_files'))
         self.tr.r_import        (model.Import     (name='java.util.*'))
         self.tr.r_class         (model.Class      (name='Test2', access=model.AccessModifiers.PUBLIC))
-        self.tr.r_method        (model.Method     (access=model.AccessModifiers.PUBLIC, type='void', name='Test2', args={'ints':model.Argument(annotations=[model.Annotation(name='QueryParam')], type=model.Type(name='List', generics=[model.Type(name='Integer')]))}, body=''))
-        self.tr.r_constructor   (model.Constructor(access=model.AccessModifiers.PUBLIC,                            args={'ints':model.Argument(annotations=[model.Annotation(name='QueryParam')], type=model.Type(name='List', generics=[model.Type(name='Integer')]))}, body=''))
-        self.tr.r_method        (model.Method     (access=model.AccessModifiers.PUBLIC, type='void', name='Test2', args={'ints':model.Argument(annotations=[model.Annotation(name='QueryParam'), model.Annotation(name='Foo', args=['"Bar"', '"Baz"'])], type=model.Type(name='List', generics=[model.Type(name='Integer')]))}, body=''))
+        self.tr.r_method        (model.Method     (access=model.AccessModifiers.PUBLIC, type=model.Type(name='void'), name='Test2', args={'ints':model.Argument(annotations=[model.Annotation(name='QueryParam')], type=model.Type(name='List', generics=[model.Type(name='Integer', annotations=[model.Annotation(name='NonNull')])]))}, body=''))
+        self.tr.r_constructor   (model.Constructor(access=model.AccessModifiers.PUBLIC,                                             args={'ints':model.Argument(annotations=[model.Annotation(name='QueryParam')], type=model.Type(name='List', generics=[model.Type(name='Integer', annotations=[model.Annotation(name='NonNull')])]))}, body=''))
+        self.tr.r_method        (model.Method     (access=model.AccessModifiers.PUBLIC, type=model.Type(name='void'), name='Test2', args={'ints':model.Argument(annotations=[model.Annotation(name='QueryParam'), model.Annotation(name='Foo', args=['"Bar"', '"Baz"'])], type=model.Type(name='List', generics=[model.Type(name='Integer', annotations=[model.Annotation(name='NonNull')])]))}, body=''))
+        self.tr.r_class_end     ()

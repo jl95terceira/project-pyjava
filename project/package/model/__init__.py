@@ -2,8 +2,9 @@ import abc
 from   dataclasses import dataclass, field
 import typing
 
+from jl95terceira.batteries import Enumerator
+
 from ..          import words
-from ..batteries import Enumerator
 from ..util      import Named
 
 class ClassType(Named): pass
