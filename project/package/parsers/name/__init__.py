@@ -3,7 +3,6 @@ import typing
 
 from .            import exc, state
 from ...          import handlers, parsers, model, util, words
-from jl95terceira.batteries import *
 
 _WORD_PATTERN = re.compile('^(?:\\w|\\$)+$')
 

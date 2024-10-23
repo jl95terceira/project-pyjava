@@ -4,8 +4,6 @@ import typing
 from .            import exc, state
 from ...          import handlers, parsers, model, util, words
 
-from jl95terceira.batteries import *
-
 class Parser(parsers.entity.StackingSemiParser):
 
     def __init__(self, after     :typing.Callable[[model.Package],None],

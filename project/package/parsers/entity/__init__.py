@@ -9,7 +9,7 @@ import typing
 from .            import exc, state
 from ...          import handlers, model, util, words, parsers
 
-from jl95terceira.batteries import *
+from jl95terceira.batteries import ChainedCallables
 
 _INHERIT_TYPE_MAP_BY_KEYWORD = {words.EXTENDS   :model.InheritanceTypes.EXTENDS,
                                 words.IMPLEMENTS:model.InheritanceTypes.IMPLEMENTS}
