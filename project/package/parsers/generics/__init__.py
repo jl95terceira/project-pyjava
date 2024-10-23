@@ -3,7 +3,8 @@ import typing
 
 from .            import exc, state
 from ...          import handlers, model, parsers, words
-from ...batteries import *
+
+from jl95terceira.batteries import *
 
 _CONSTRAINT_TYPE_MAP_BY_KEYWORD = {words.EXTENDS: model.TypeConstraints.EXTENDS,
                                    words.SUPER  : model.TypeConstraints.SUPER}

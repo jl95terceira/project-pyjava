@@ -2,7 +2,8 @@ import typing
 
 from .            import exc, state
 from ...          import handlers, parsers, model, words
-from ...batteries import *
+
+from jl95terceira.batteries import *
 
 class Parser(parsers.entity.StackingSemiParser):
 

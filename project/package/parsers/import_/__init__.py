@@ -3,9 +3,10 @@ import typing
 
 from .            import exc, state
 from ...          import handlers, parsers, model, util, words
-from ...batteries import *
 
-_WORD_PATTERN                = re.compile('^\\w+$')
+from jl95terceira.batteries import *
+
+_WORD_PATTERN = re.compile('^\\w+$')
 
 class Parser(parsers.entity.StackingSemiParser):
 

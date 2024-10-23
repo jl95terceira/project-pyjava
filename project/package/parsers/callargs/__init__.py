@@ -3,7 +3,8 @@ import typing
 
 from .            import exc, state
 from ...          import handlers, parsers, words
-from ...batteries import *
+
+from jl95terceira.batteries import *
 
 _WORD_PATTERN = re.compile('^\\w+$')
 _ACREMENTERS  = {words.PARENTH_OPEN: words.PARENTH_CLOSE,
