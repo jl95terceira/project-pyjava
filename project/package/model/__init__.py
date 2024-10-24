@@ -149,7 +149,7 @@ class Constructor:
 
     body  :str                = field()
     args  :dict[str,Argument] = field(default_factory=dict)
-    access:AccessModifier     = field(default=AccessModifiers.DEFAULT)
+    access:AccessModifier     = field(default        =AccessModifiers.DEFAULT)
     throws:list[Type]         = field(default_factory=list)
 
 @dataclass
