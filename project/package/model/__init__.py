@@ -212,6 +212,6 @@ class Class:
 @dataclass
 class File:
 
-    package:Package    |None = field(default        =None)
-    imports:set[Import]      = field(default_factory=set)
-    classes:dict[str,Class]
+    package:Package        |None = field(default        =None)
+    imports:set[Import]          = field(default_factory=set)
+    classes:dict[str,Class]      = field(default_factory=dict)
