@@ -51,11 +51,6 @@ class StreamPrinter(handlers.entity.Handler):
         print(f'Handling enum value:            {enum}')
 
     @typing.override
-    def handle_ainterface(self, ainterface: model.AInterface):
-
-        print(f'Handling annotation interface:  {ainterface}')
-
-    @typing.override
     def handle_comment    (self, comment:model.Comment):
 
         print(f'Handling comment:               {comment}')
@@ -80,7 +75,5 @@ class SilentHandler(handlers.entity.Handler):
     def handle_method     (self, method:model.Method): pass
     @typing.override
     def handle_enum_value (self, enum:model.EnumValue): pass
-    @typing.override
-    def handle_ainterface (self, ainterface: model.AInterface): pass
     @typing.override
     def handle_comment    (self, comment:model.Comment): pass

@@ -25,7 +25,9 @@ _FINALITY_TYPE_MAP_BY_KEYWORD= {''              :model.FinalityTypes.DEFAULT,
 _FINALITY_TYPE_KEYWORDS      = set(_FINALITY_TYPE_MAP_BY_KEYWORD)
 _CLASS_TYPE_MAP_BY_KEYWORD   = {words.CLASS     :model.ClassTypes.CLASS,
                                 words.INTERFACE :model.ClassTypes.INTERFACE,
-                                words.ENUM      :model.ClassTypes.ENUM}
+                                words.ENUM      :model.ClassTypes.ENUM,
+                                f'{words.ATSIGN}{words.INTERFACE}'\
+                                                :model.ClassTypes.AINTERFACE}
 _CLASS_TYPE_KEYWORDS         = set(_CLASS_TYPE_MAP_BY_KEYWORD)
 _WORD_PATTERN                = re.compile('^\\w+$')
 
@@ -691,6 +693,7 @@ class Parser(StackingSemiParser):
 
         elif self._vars.state is state.States.AINTERFACE:
 
+            if words.is_reserved(part): raise exc.Exception(line)
             self._vars.class_name = part
             self._vars.state = state.States.AINTERFACE_NAMED
             return
@@ -698,9 +701,12 @@ class Parser(StackingSemiParser):
         elif self._vars.state is state.States.AINTERFACE_NAMED:
 
             if part != words.CURLY_OPEN: raise exc.Exception(line)
-            self._NEXT.handle_ainterface(model.AInterface(name       =self._vars.class_name,
-                                                          access     =self._vars.access,
-                                                          annotations=self._vars.annotations))
+            self._NEXT.handle_class(model.ClassHeader(name       =self._vars.class_name,
+                                                      type       =model.ClassTypes.AINTERFACE,
+                                                      static     =self._vars.static,
+                                                      access     =self._coerce_access  (self._vars.access),
+                                                      finality   =self._coerce_finality(self._vars.finality),
+                                                      annotations=self._vars.annotations))
             self._class_stack.append(ParserClassStackElement(class_=None))
             self._reset_vars()
             return

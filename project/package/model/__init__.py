@@ -1,4 +1,5 @@
 import abc
+from   collections import defaultdict
 from   dataclasses import dataclass, field
 import typing
 
@@ -11,9 +12,10 @@ class ClassType(Named): pass
 class ClassTypes:
 
     _e:Enumerator[ClassType] = Enumerator()
-    CLASS     = _e(ClassType(name='CLASS'))
-    INTERFACE = _e(ClassType(name='INTERFACE'))
-    ENUM      = _e(ClassType(name='ENUM'))
+    CLASS      = _e(ClassType(name='CLASS'))
+    INTERFACE  = _e(ClassType(name='INTERFACE'))
+    ENUM       = _e(ClassType(name='ENUM'))
+    AINTERFACE = _e(ClassType(name='@INTERFACE'))
     @staticmethod
     def values(): yield from ClassTypes._e
 
@@ -51,7 +53,7 @@ class Package:
 
     name:str = field()
 
-@dataclass
+@dataclass(frozen=True)
 class Import:
 
     name  :str  = field()
@@ -189,3 +191,27 @@ class EnumValue:
 class Comment:
 
     text:str = field()
+
+@dataclass
+class ClassMembers:
+
+    static_attributes :dict[str,list[Attribute]]      = field(default_factory=lambda: defaultdict(list))
+    attributes        :dict[str,list[Attribute]]      = field(default_factory=lambda: defaultdict(list))
+    static_initializer:Initializer              |None = field(default        =None)
+    initializer       :Initializer              |None = field(default        =None)
+    constructors      :list[Attribute]                = field(default_factory=list)
+    static_methods    :dict[str,list[Method]]         = field(default_factory=lambda: defaultdict(list))
+    methods           :dict[str,list[Method]]         = field(default_factory=lambda: defaultdict(list))
+
+@dataclass
+class Class:
+
+    header :ClassHeader  = field()
+    members:ClassMembers = field()
+
+@dataclass
+class File:
+
+    package:Package    |None = field(default        =None)
+    imports:set[Import]      = field(default_factory=set)
+    classes:dict[str,Class]

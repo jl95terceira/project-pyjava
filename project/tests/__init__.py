@@ -23,21 +23,23 @@ class _TestsRegistry:
 
     def __init__(self):
 
+        # per entity type
         self.packages           :dict[int, model.Package]           = dict()
         self.imports            :dict[int, model.Import]            = dict()
-        self.classes            :dict[int, model.ClassHeader]             = dict()
+        self.classes            :dict[int, model.ClassHeader]       = dict()
         self.class_ends         :dict[int, None]                    = dict()
         self.initializers       :dict[int, model.Initializer]       = dict()
         self.constructors       :dict[int, model.Constructor]       = dict()
         self.attributes         :dict[int, model.Attribute]         = dict()
         self.methods            :dict[int, model.Method]            = dict()
         self.enum_values        :dict[int, model.EnumValue]         = dict()
-        self.ainterfaces        :dict[int, model.AInterface]        = dict()
         self.comments           :dict[int, model.Comment]           = dict()
+        # all listed
         self.a                  :list[typing.Any]                   = list()
 
     def clear(self): 
         
+        # per entity type
         self.packages           .clear()
         self.imports            .clear()
         self.classes            .clear()
@@ -48,6 +50,7 @@ class _TestsRegistry:
         self.methods            .clear()
         self.enum_values        .clear()
         self.comments           .clear()
+        # all listed
         self.a                  .clear()
 
 class TestRegistrator:
@@ -77,7 +80,6 @@ class TestRegistrator:
     def r_attribute       (self, attr           :model.Attribute)       : self._register(lambda tr: tr.attributes   , attr)
     def r_method          (self, method         :model.Method)          : self._register(lambda tr: tr.methods      , method)
     def r_enum_value      (self, enum_value     :model.EnumValue)       : self._register(lambda tr: tr.enum_values  , enum_value)
-    def r_ainterface      (self, ainterface     :model.AInterface)      : self._register(lambda tr: tr.ainterfaces  , ainterface)
     def r_comment         (self, comment        :model.Comment)         : self._register(lambda tr: tr.comments     , comment)
 
     def clear_registry(self): 
@@ -163,8 +165,6 @@ class _TestHandler(entity.Handler):
     def handle_method           (self, method          :model.Method)       : self._test(lambda tr: tr.methods      , method)
     @typing.override
     def handle_enum_value       (self, enum_value      :model.EnumValue)    : self._test(lambda tr: tr.enum_values  , enum_value)
-    @typing.override
-    def handle_ainterface       (self, ainterface      : model.AInterface)  : self._test(lambda tr: tr.ainterfaces  , ainterface)
     @typing.override
     def handle_comment          (self, comment         :model.Comment)      : self._test(lambda tr: tr.comments     , comment)
 

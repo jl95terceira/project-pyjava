@@ -1,28 +1,27 @@
+import typing
+
+from .   import Handler
 from ... import model
 
-import abc
+class ClassBuilder(Handler):
 
-class Handler(abc.ABC):
-
-    @abc.abstractmethod
+    @typing.override
     def handle_package      (self, package:model.Package):  ...
-    @abc.abstractmethod
+    @typing.override
     def handle_import       (self, import_:model.Import):  ...
-    @abc.abstractmethod
+    @typing.override
     def handle_class        (self, class_:model.ClassHeader):  ...
-    @abc.abstractmethod
+    @typing.override
     def handle_class_end    (self):  ...
-    @abc.abstractmethod
+    @typing.override
     def handle_initializer  (self, initializer:model.Initializer):  ...
-    @abc.abstractmethod
+    @typing.override
     def handle_constructor  (self, constr:model.Constructor):  ...
-    @abc.abstractmethod
+    @typing.override
     def handle_attr         (self, attr:model.Attribute):  ...
-    @abc.abstractmethod
+    @typing.override
     def handle_method       (self, method:model.Method):  ...
-    @abc.abstractmethod
+    @typing.override
     def handle_enum_value   (self, enum:model.EnumValue):  ...
-    @abc.abstractmethod
+    @typing.override
     def handle_comment      (self, comment:model.Comment): ...
-
-from ._builder import ClassBuilder
