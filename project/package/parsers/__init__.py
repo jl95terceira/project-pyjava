@@ -26,7 +26,7 @@ class StreamPrinter(handlers.entity.Handler):
         print(f'Handling end of class')
 
     @typing.override
-    def handle_initializer      (self, initializer:model.Initializer):
+    def handle_initializer(self, initializer:model.Initializer):
 
         print(F'Handling initializer:           {initializer}')
 
