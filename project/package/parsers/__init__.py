@@ -16,7 +16,7 @@ class StreamPrinter(handlers.entity.Handler):
         print(f'Handling import:                {import_}')
 
     @typing.override
-    def handle_class      (self, class_:model.Class):
+    def handle_class      (self, class_:model.ClassHeader):
 
         print(f'Handling class:                 {class_}')
 
@@ -67,7 +67,7 @@ class SilentHandler(handlers.entity.Handler):
     @typing.override
     def handle_import     (self, import_:model.Import): pass
     @typing.override
-    def handle_class      (self, class_:model.Class): pass
+    def handle_class      (self, class_:model.ClassHeader): pass
     @typing.override
     def handle_class_end  (self): pass
     @typing.override

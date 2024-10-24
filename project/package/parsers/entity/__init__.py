@@ -138,7 +138,7 @@ class ParserResettableVariables:
 @dataclasses.dataclass
 class ParserClassStackElement:
 
-    class_        :model.Class|None = dataclasses.field()
+    class_        :model.ClassHeader|None = dataclasses.field()
     in_enum_values:bool             = dataclasses.field(default=False)
 
 class Parser(StackingSemiParser):
@@ -167,7 +167,7 @@ class Parser(StackingSemiParser):
 
     def _flush_class                (self):
 
-        class_ = model.Class(name       =self._vars.class_name, 
+        class_ = model.ClassHeader(name       =self._vars.class_name, 
                              annotations=self._vars.annotations,
                              generics   =self._vars.class_generics,
                              static     =self._vars.static,

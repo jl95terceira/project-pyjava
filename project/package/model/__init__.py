@@ -108,7 +108,7 @@ class UnboundedType: pass
 GenericType = typing.Union[Type, ConstrainedType, UnboundedType]
 
 @dataclass
-class Class:
+class ClassHeader:
 
     name       :str                              = field()
     annotations:list[Annotation]                 = field(default_factory=list)
