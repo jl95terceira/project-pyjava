@@ -1,11 +1,23 @@
 from ... import model
 
 import abc
+from   dataclasses import dataclass, field
+
+@dataclass
+class PackageDeclaration:
+
+    name:str = field()
+
+@dataclass
+class ImportDeclaration:
+
+    name  :str  = field()
+    static:bool = field(default=False)
 
 class Handler(abc.ABC):
 
     @abc.abstractmethod
-    def handle_package      (self, package:model.Package):  ...
+    def handle_package      (self, package:PackageDeclaration):  ...
     @abc.abstractmethod
     def handle_import       (self, import_:model.Import):  ...
     @abc.abstractmethod

@@ -6,7 +6,7 @@ from ...          import handlers, parsers, model, util, words
 
 class Parser(parsers.entity.StackingSemiParser):
 
-    def __init__(self, after     :typing.Callable[[model.Package],None],
+    def __init__(self, after     :typing.Callable[[handlers.entity.PackageDeclaration],None],
                        skip_begin=False):
 
         super().__init__()
@@ -61,4 +61,4 @@ class Parser(parsers.entity.StackingSemiParser):
     def _stop(self): 
         
         self._state = state.States.END
-        self._after(model.Package(name=self._name))
+        self._after(handlers.entity.PackageDeclaration(name=self._name))

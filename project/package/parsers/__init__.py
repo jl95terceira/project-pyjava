@@ -6,7 +6,7 @@ from ..  import model, handlers
 class StreamPrinter(handlers.entity.Handler):
 
     @typing.override
-    def handle_package    (self, package:model.Package):
+    def handle_package    (self, package:handlers.entity.PackageDeclaration):
 
         print(f'Handling package:               {package}')
 
@@ -58,7 +58,7 @@ class StreamPrinter(handlers.entity.Handler):
 class SilentHandler(handlers.entity.Handler):
 
     @typing.override
-    def handle_package    (self, package:model.Package): pass
+    def handle_package    (self, package:handlers.entity.PackageDeclaration): pass
     @typing.override
     def handle_import     (self, import_:model.Import): pass
     @typing.override

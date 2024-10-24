@@ -24,7 +24,7 @@ class _TestsRegistry:
     def __init__(self):
 
         # per entity type
-        self.packages           :dict[int, model.Package]           = dict()
+        self.packages           :dict[int, entity.PackageDeclaration]           = dict()
         self.imports            :dict[int, model.Import]            = dict()
         self.classes            :dict[int, model.ClassHeader]       = dict()
         self.class_ends         :dict[int, None]                    = dict()
@@ -71,7 +71,7 @@ class TestRegistrator:
         registry_getter(self._tr)[self._index()] = x
         self._tr.a.append(x)
 
-    def r_package         (self, package        :model.Package)         : self._register(lambda tr: tr.packages     , package)
+    def r_package         (self, package        :entity.PackageDeclaration)         : self._register(lambda tr: tr.packages     , package)
     def r_import          (self, import_        :model.Import)          : self._register(lambda tr: tr.imports      , import_)
     def r_class           (self, class_         :model.ClassHeader)     : self._register(lambda tr: tr.classes      , class_)
     def r_class_end       (self)                                        : self._register(lambda tr: tr.class_ends   , None)
@@ -148,7 +148,7 @@ class _TestHandler(entity.Handler):
         self._tc.assertEqual(self._i, len(self._tr.a), msg=f'Expected no more entities to be process but there are {len(self._tr.a) - self._i} remaining')
 
     @typing.override
-    def handle_package          (self, package         :model.Package)      : self._test(lambda tr: tr.packages     , package)
+    def handle_package          (self, package         :entity.PackageDeclaration)      : self._test(lambda tr: tr.packages     , package)
     @typing.override
     def handle_import           (self, import_         :model.Import)       : self._test(lambda tr: tr.imports      , import_)
     @typing.override

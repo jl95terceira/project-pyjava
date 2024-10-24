@@ -31,7 +31,7 @@ class PackageTests              (unittest.TestCase):
     def setUp(self):
 
         self.tr,self.th = gett(self)
-        self.tr.r_package(model.Package(name='abc.def'))
+        self.tr.r_package(entity.PackageDeclaration(name='abc.def'))
 
     def test(self, name='abc.def', end=';'): self.th.test(' '.join(filter(bool, ('package',name,end))))
 
