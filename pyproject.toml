@@ -1,5 +1,5 @@
 [build-system]
-requires = ["hatchling"]
+requires = ["hatchling", "hatch-requirements-txt"]
 build-backend = "hatchling.build"
 [project]
 name = "jl95terceira_java"
@@ -15,6 +15,7 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
 ]
+dynamic = ["dependencies"]
 
 [project.urls]
 Homepage = "https://github.com/jl95terceira/project-E"
@@ -25,3 +26,6 @@ packages = ["project/package"]
 
 [tool.hatch.build.targets.wheel.sources]
 "project/package" = "jl95terceira/java"
+
+[tool.hatch.metadata.hooks.requirements_txt]
+files = ["requirements.txt"]
