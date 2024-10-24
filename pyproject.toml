@@ -1,0 +1,27 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+[project]
+name = "jl95terceira_java"
+version = "0.1.0"
+authors = [
+  { name="Joao Luis Ornelas da Silva", email="jl95terceira@gmail.com" },
+]
+description = "Java parser"
+readme = "README.md"
+requires-python = ">=3.12"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+
+[project.urls]
+Homepage = "https://github.com/jl95terceira/project-E"
+Issues = "https://github.com/jl95terceira/project-E/issues"
+
+[tool.hatch.build.targets.wheel]
+packages = ["project/package"]
+
+[tool.hatch.build.targets.wheel.sources]
+"project/package" = "jl95terceira/java"
