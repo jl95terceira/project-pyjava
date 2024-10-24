@@ -26,7 +26,7 @@ class _TestsRegistry:
         self.packages           :dict[int, model.Package]           = dict()
         self.imports            :dict[int, model.Import]            = dict()
         self.classes            :dict[int, model.Class]             = dict()
-        self.class_ends         :dict[int, model.ClassEnd]          = dict()
+        self.class_ends         :dict[int, None]                    = dict()
         self.initializers       :dict[int, model.Initializer]       = dict()
         self.constructors       :dict[int, model.Constructor]       = dict()
         self.attributes         :dict[int, model.Attribute]         = dict()
@@ -71,7 +71,7 @@ class TestRegistrator:
     def r_package         (self, package        :model.Package)         : self._register(lambda tr: tr.packages     , package)
     def r_import          (self, import_        :model.Import)          : self._register(lambda tr: tr.imports      , import_)
     def r_class           (self, class_         :model.Class)           : self._register(lambda tr: tr.classes      , class_)
-    def r_class_end       (self)                                        : self._register(lambda tr: tr.class_ends   , model.ClassEnd())
+    def r_class_end       (self)                                        : self._register(lambda tr: tr.class_ends   , None)
     def r_initializer     (self, initializer    :model.Initializer)     : self._register(lambda tr: tr.initializers , initializer)
     def r_constructor     (self, constr         :model.Constructor)     : self._register(lambda tr: tr.constructors , constr)
     def r_attribute       (self, attr           :model.Attribute)       : self._register(lambda tr: tr.attributes   , attr)
@@ -152,7 +152,7 @@ class _TestHandler(entity.Handler):
     @typing.override
     def handle_class            (self, class_          :model.Class)        : self._test(lambda tr: tr.classes      , class_)
     @typing.override
-    def handle_class_end        (self, class_end       :model.ClassEnd)     : self._test(lambda tr: tr.class_ends   , class_end)
+    def handle_class_end        (self)                                      : self._test(lambda tr: tr.class_ends   , None)
     @typing.override
     def handle_initializer      (self, initializer     :model.Initializer)  : self._test(lambda tr: tr.initializers , initializer)
     @typing.override

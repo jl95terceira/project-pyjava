@@ -128,9 +128,6 @@ class AInterface:
     access     :AccessModifier   = field(default        =AccessModifiers.DEFAULT)
 
 @dataclass
-class ClassEnd: pass
-
-@dataclass
 class Argument:
 
     type       :Type             = field()

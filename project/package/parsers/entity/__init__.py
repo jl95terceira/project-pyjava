@@ -184,7 +184,7 @@ class Parser(StackingSemiParser):
 
     def _flush_class_end            (self):
 
-        self._NEXT.handle_class_end(model.ClassEnd())
+        self._NEXT.handle_class_end()
         self._class_stack.pop()
         if self._class_stack and self._class_stack[-1].in_enum_values:
             
