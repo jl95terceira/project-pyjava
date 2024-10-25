@@ -10,3 +10,6 @@ class StaticRootClassException              (Exception): pass
 class ClassDuplicateException               (Exception): pass
 class InitializerOutsideClassException      (Exception): pass
 class StaticInitializerDuplicateException   (Exception): pass
+class InitializerDuplicateException         (Exception): pass
+class AttributeOutsideClassException        (Exception): pass
+class MethodOutsideClassException           (Exception): pass

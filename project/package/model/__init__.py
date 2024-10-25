@@ -147,9 +147,7 @@ class Constructor:
 @dataclass
 class Attribute:
 
-    name     :str            = field()
     type     :Type           = field()
-    static   :bool           = field(default=False)
     volatile :bool           = field(default=False)
     access   :AccessModifier = field(default=AccessModifiers.DEFAULT)
     final    :bool           = field(default=False)
@@ -159,10 +157,8 @@ class Attribute:
 @dataclass
 class Method:
 
-    name         :str                     = field()
     type         :Type              |None = field()
     default      :bool                    = field(default        =False)
-    static       :bool                    = field(default        =False)
     access       :AccessModifier          = field(default        =AccessModifiers.DEFAULT)
     finality     :FinalityType            = field(default        =FinalityTypes  .DEFAULT)
     synchronized :bool                    = field(default        =False)
@@ -194,7 +190,7 @@ class ClassMembers:
     static_classes    :dict[str,'Class']              = field(default_factory=dict)
     attributes        :dict[str,list[Attribute]]      = field(default_factory=lambda: defaultdict(list))
     initializer       :Initializer              |None = field(default        =None)
-    constructors      :list[Attribute]                = field(default_factory=list)
+    constructors      :list[Constructor]              = field(default_factory=list)
     methods           :dict[str,list[Method]]         = field(default_factory=lambda: defaultdict(list))
     classes           :dict[str,'Class']              = field(default_factory=dict)
 

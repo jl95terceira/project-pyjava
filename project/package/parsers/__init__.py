@@ -31,17 +31,17 @@ class StreamPrinter(handlers.entity.Handler):
         print(F'Handling initializer:           {initializer}')
 
     @typing.override
-    def handle_constructor(self, constr:model.Constructor):
+    def handle_constructor(self, constructor:handlers.entity.ConstructorDeclaration):
 
-        print(f'Handling constructor:           {constr}')
-
-    @typing.override
-    def handle_attr       (self, attr:model.Attribute):
-
-        print(f'Handling attribute:             {attr}')
+        print(f'Handling constructor:           {constructor}')
 
     @typing.override
-    def handle_method     (self, method:model.Method):
+    def handle_attribute  (self, attribute:handlers.entity.AttributeDeclaration):
+
+        print(f'Handling attribute:             {attribute}')
+
+    @typing.override
+    def handle_method     (self, method:handlers.entity.MethodDeclaration):
 
         print(f'Handling method:                {method}')
 
@@ -68,11 +68,11 @@ class SilentHandler(handlers.entity.Handler):
     @typing.override
     def handle_initializer(self, initializer:handlers.entity.InitializerDeclaration): pass
     @typing.override
-    def handle_constructor(self, constructor:model.Constructor): pass
+    def handle_constructor(self, constructor:handlers.entity.ConstructorDeclaration): pass
     @typing.override
-    def handle_attr       (self, attribute  :model.Attribute): pass
+    def handle_attribute  (self, attribute  :handlers.entity.AttributeDeclaration): pass
     @typing.override
-    def handle_method     (self, method     :model.Method): pass
+    def handle_method     (self, method     :handlers.entity.MethodDeclaration): pass
     @typing.override
     def handle_enum_value (self, enum       :model.EnumValue): pass
     @typing.override

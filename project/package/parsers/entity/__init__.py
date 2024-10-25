@@ -201,40 +201,40 @@ class Parser(StackingSemiParser):
 
     def _flush_constructor          (self, body:str): 
         
-        self._NEXT.handle_constructor(model.Constructor(access=self._coerce_access(self._vars.access),
-                                                        args  =self._vars.method_signature, 
-                                                        body  =body,
-                                                        throws=self._vars.throws if self._vars.throws is not None else list()))
+        self._NEXT.handle_constructor(handlers.entity.ConstructorDeclaration(model.Constructor(access=self._coerce_access(self._vars.access),
+                                                                                               args  =self._vars.method_signature, 
+                                                                                               body  =body,
+                                                                                               throws=self._vars.throws if self._vars.throws is not None else list())))
         self._reset_vars()
 
     def _flush_attribute            (self, decl_only=False,
                                            continued=False):
 
-        self._NEXT.handle_attr(model.Attribute(name     =self._vars.attr_name, 
-                                               type     =self._vars.attr_type,
-                                               static   =self._vars.static,
-                                               volatile =self._vars.volatile,
-                                               final    =self._vars.finality is model.FinalityTypes.FINAL,
-                                               access   =self._coerce_access(self._vars.access), 
-                                               transient=self._vars.transient,
-                                               value    =None if decl_only else ''.join(self._vars.attr_value_parts)))
+        self._NEXT.handle_attribute(handlers.entity.AttributeDeclaration(name     =self._vars.attr_name, 
+                                                                         static   =self._vars.static,
+                                                                         attribute=model.Attribute(type     =self._vars.attr_type,
+                                                                                                   volatile =self._vars.volatile,
+                                                                                                   final    =self._vars.finality is model.FinalityTypes.FINAL,
+                                                                                                   access   =self._coerce_access(self._vars.access), 
+                                                                                                   transient=self._vars.transient,
+                                                                                                   value    =None if decl_only else ''.join(self._vars.attr_value_parts))))
         if continued: return
         self._reset_vars()
 
     def _flush_method               (self, body:str|None): 
         
-        self._NEXT.handle_method(model.Method(name         =self._vars.attr_name,
-                                              static       =self._vars.static,
-                                              default      =self._vars.default,
-                                              access       =self._coerce_access(self._vars.access),
-                                              finality     =self._coerce_finality(self._vars.finality),
-                                              synchronized =self._vars.synchronized,
-                                              generics     =self._vars.method_generics,
-                                              type         =self._vars.attr_type,
-                                              args         =self._vars.method_signature,
-                                              throws       =self._vars.throws if self._vars.throws is not None else list(),
-                                              default_value=self._vars.method_defaultv,
-                                              body         =body))
+        self._NEXT.handle_method(handlers.entity.MethodDeclaration(name  =self._vars.attr_name,
+                                                                   static=self._vars.static,
+                                                                   method=model.Method(default      =self._vars.default,
+                                                                                       access       =self._coerce_access(self._vars.access),
+                                                                                       finality     =self._coerce_finality(self._vars.finality),
+                                                                                       synchronized =self._vars.synchronized,
+                                                                                       generics     =self._vars.method_generics,
+                                                                                       type         =self._vars.attr_type,
+                                                                                       args         =self._vars.method_signature,
+                                                                                       throws       =self._vars.throws if self._vars.throws is not None else list(),
+                                                                                       default_value=self._vars.method_defaultv,
+                                                                                       body         =body)))
         self._reset_vars()
 
     def _flush_enum_value           (self, callargs:list[str]|None=None):

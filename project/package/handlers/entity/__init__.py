@@ -27,6 +27,25 @@ class InitializerDeclaration:
     initializer:model.Initializer = field()
     static     :bool              = field(default=False)
 
+@dataclass
+class ConstructorDeclaration:
+
+    constructor:model.Constructor = field()
+
+@dataclass
+class AttributeDeclaration:
+
+    name     :str             = field()
+    attribute:model.Attribute = field()
+    static   :bool            = field(default=False)
+
+@dataclass
+class MethodDeclaration:
+
+    name  :str          = field()
+    method:model.Method = field()
+    static:bool         = field(default=False)
+
 class Handler(abc.ABC):
 
     @abc.abstractmethod
@@ -40,11 +59,11 @@ class Handler(abc.ABC):
     @abc.abstractmethod
     def handle_initializer  (self, initializer  :InitializerDeclaration):  ...
     @abc.abstractmethod
-    def handle_constructor  (self, constructor  :model.Constructor):  ...
+    def handle_constructor  (self, constructor  :ConstructorDeclaration):  ...
     @abc.abstractmethod
-    def handle_attr         (self, attribute    :model.Attribute):  ...
+    def handle_attribute    (self, attribute    :AttributeDeclaration):  ...
     @abc.abstractmethod
-    def handle_method       (self, method       :model.Method):  ...
+    def handle_method       (self, method       :MethodDeclaration):  ...
     @abc.abstractmethod
     def handle_enum_value   (self, enum         :model.EnumValue):  ...
     @abc.abstractmethod

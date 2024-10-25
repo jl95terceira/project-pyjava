@@ -29,9 +29,9 @@ class _TestsRegistry:
         self.classes            :dict[int, entity.ClassHeaderDeclaration]       = dict()
         self.class_ends         :dict[int, None]                                = dict()
         self.initializers       :dict[int, entity.InitializerDeclaration]       = dict()
-        self.constructors       :dict[int, model.Constructor]       = dict()
-        self.attributes         :dict[int, model.Attribute]         = dict()
-        self.methods            :dict[int, model.Method]            = dict()
+        self.constructors       :dict[int, entity.ConstructorDeclaration]       = dict()
+        self.attributes         :dict[int, entity.AttributeDeclaration]         = dict()
+        self.methods            :dict[int, entity.MethodDeclaration]            = dict()
         self.enum_values        :dict[int, model.EnumValue]         = dict()
         self.comments           :dict[int, model.Comment]           = dict()
         # all listed
@@ -74,11 +74,11 @@ class TestRegistrator:
     def r_package         (self, package        :entity.PackageDeclaration)         : self._register(lambda tr: tr.packages     , package)
     def r_import          (self, import_        :entity.ImportDeclaration)          : self._register(lambda tr: tr.imports      , import_)
     def r_class           (self, class_         :entity.ClassHeaderDeclaration)     : self._register(lambda tr: tr.classes      , class_)
-    def r_class_end       (self)                                        : self._register(lambda tr: tr.class_ends   , None)
+    def r_class_end       (self)                                                    : self._register(lambda tr: tr.class_ends   , None)
     def r_initializer     (self, initializer    :entity.InitializerDeclaration)     : self._register(lambda tr: tr.initializers , initializer)
-    def r_constructor     (self, constr         :model.Constructor)     : self._register(lambda tr: tr.constructors , constr)
-    def r_attribute       (self, attr           :model.Attribute)       : self._register(lambda tr: tr.attributes   , attr)
-    def r_method          (self, method         :model.Method)          : self._register(lambda tr: tr.methods      , method)
+    def r_constructor     (self, constr         :entity.ConstructorDeclaration)     : self._register(lambda tr: tr.constructors , constr)
+    def r_attribute       (self, attr           :entity.AttributeDeclaration)       : self._register(lambda tr: tr.attributes   , attr)
+    def r_method          (self, method         :entity.MethodDeclaration)          : self._register(lambda tr: tr.methods      , method)
     def r_enum_value      (self, enum_value     :model.EnumValue)       : self._register(lambda tr: tr.enum_values  , enum_value)
     def r_comment         (self, comment        :model.Comment)         : self._register(lambda tr: tr.comments     , comment)
 
@@ -154,15 +154,15 @@ class _TestHandler(entity.Handler):
     @typing.override
     def handle_class            (self, class_          :entity.ClassHeaderDeclaration)  : self._test(lambda tr: tr.classes      , class_)
     @typing.override
-    def handle_class_end        (self)                                      : self._test(lambda tr: tr.class_ends   , None)
+    def handle_class_end        (self)                                                  : self._test(lambda tr: tr.class_ends   , None)
     @typing.override
     def handle_initializer      (self, initializer     :entity.InitializerDeclaration)  : self._test(lambda tr: tr.initializers , initializer)
     @typing.override
-    def handle_constructor      (self, constr          :model.Constructor)  : self._test(lambda tr: tr.constructors , constr)
+    def handle_constructor      (self, constr          :entity.ConstructorDeclaration)  : self._test(lambda tr: tr.constructors , constr)
     @typing.override
-    def handle_attr             (self, attr            :model.Attribute)    : self._test(lambda tr: tr.attributes   , attr)
+    def handle_attribute        (self, attr            :entity.AttributeDeclaration)    : self._test(lambda tr: tr.attributes   , attr)
     @typing.override
-    def handle_method           (self, method          :model.Method)       : self._test(lambda tr: tr.methods      , method)
+    def handle_method           (self, method          :entity.MethodDeclaration)       : self._test(lambda tr: tr.methods      , method)
     @typing.override
     def handle_enum_value       (self, enum_value      :model.EnumValue)    : self._test(lambda tr: tr.enum_values  , enum_value)
     @typing.override
