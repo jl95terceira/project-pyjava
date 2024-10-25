@@ -46,7 +46,7 @@ class ImportTests               (unittest.TestCase):
     def setUp(self):
 
         self.tr,self.th = gett(self)
-        self.tr.r_import(model.Import(name='foo.bar'))
+        self.tr.r_import(entity.ImportDeclaration(name='foo.bar'))
 
     def test(self, static=False, name='foo.bar', end=';'): self.th.test(' '.join(filter(bool, ('import','static' if static else '',name,end))))
 
@@ -70,7 +70,7 @@ class ImportTestsCombinations   (unittest.TestCase):
 
                 self.tr.clear_registry()
                 self.th.reset         ()
-                self.tr.r_import     (model.Import(name='hello.world', static=static))
+                self.tr.r_import      (entity.ImportDeclaration(name='hello.world', static=static))
                 self.th.test          (' '.join(filter(bool, (f'import','static ' if static else '', 'hello.world;'))))
 
 class AnnotationTests           (unittest.TestCase): 

@@ -48,11 +48,6 @@ class AccessModifiers:
     @staticmethod
     def values(): yield from AccessModifiers._e
 
-@dataclass
-class Package:
-
-    name:str = field()
-
 @dataclass(frozen=True)
 class Import:
 
@@ -212,6 +207,6 @@ class Class:
 @dataclass
 class File:
 
-    package:Package        |None = field(default        =None)
+    package:str            |None = field(default        =None)
     imports:set[Import]          = field(default_factory=set)
     classes:dict[str,Class]      = field(default_factory=dict)

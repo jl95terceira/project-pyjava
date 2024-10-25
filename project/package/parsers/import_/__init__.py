@@ -6,7 +6,7 @@ from ...          import handlers, parsers, model, util, words
 
 class Parser(parsers.entity.StackingSemiParser):
 
-    def __init__(self, after     :typing.Callable[[model.Import],None],
+    def __init__(self, after     :typing.Callable[[handlers.entity.ImportDeclaration],None],
                        skip_begin=False):
 
         super().__init__()
@@ -87,5 +87,5 @@ class Parser(parsers.entity.StackingSemiParser):
     def _stop(self): 
         
         self._state = state.States.END
-        self._after(model.Import(name  =self._name,
-                                 static=self._static))
+        self._after(handlers.entity.ImportDeclaration(name  =self._name,
+                                                      static=self._static))

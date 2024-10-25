@@ -27,8 +27,8 @@ class Tests(unittest.TestCase):
     @_file('Test1.java')
     def test_1(self):
 
-        self.tr.r_package       (entity.PackageDeclaration(name='project.tests.java_files'))
-        self.tr.r_import        (model.Import     (name='java.util.Map'))
+        self.tr.r_package       (entity.PackageDeclaration    (name='project.tests.java_files'))
+        self.tr.r_import        (entity.ImportDeclaration     (name='java.util.Map'))
         self.tr.r_class         (model.ClassHeader      (name='Test1'                                                        , access=model.AccessModifiers.PUBLIC))
         self.tr.r_attribute     (model.Attribute  (name='a1', type=model.Type('int')                                   , access=model.AccessModifiers.PRIVATE))
         self.tr.r_attribute     (model.Attribute  (name='a2', type=model.Type('boolean')               , static=True))
@@ -54,8 +54,8 @@ class Tests(unittest.TestCase):
     @_file('Test2.java')
     def test_2(self):
 
-        self.tr.r_package       (entity.PackageDeclaration(name='project.tests.java_files'))
-        self.tr.r_import        (model.Import     (name='java.util.*'))
+        self.tr.r_package       (entity.PackageDeclaration    (name='project.tests.java_files'))
+        self.tr.r_import        (entity.ImportDeclaration     (name='java.util.*'))
         self.tr.r_class         (model.ClassHeader      (name='Test2', access=model.AccessModifiers.PUBLIC))
         self.tr.r_method        (model.Method     (access=model.AccessModifiers.PUBLIC, type=model.Type(name='void'), name='Test2', args={'ints':model.Argument(annotations=[model.Annotation(name='QueryParam')], type=model.Type(name='List', generics=[model.Type(name='Integer', annotations=[model.Annotation(name='NonNull')])]))}, body=''))
         self.tr.r_constructor   (model.Constructor(access=model.AccessModifiers.PUBLIC,                                             args={'ints':model.Argument(annotations=[model.Annotation(name='QueryParam')], type=model.Type(name='List', generics=[model.Type(name='Integer', annotations=[model.Annotation(name='NonNull')])]))}, body=''))

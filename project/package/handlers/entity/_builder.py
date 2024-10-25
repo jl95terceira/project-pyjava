@@ -1,6 +1,6 @@
 import typing
 
-from .   import Handler, PackageDeclaration
+from .   import Handler, PackageDeclaration, ImportDeclaration
 from ... import model
 
 class ClassBuilder(Handler):
@@ -8,7 +8,7 @@ class ClassBuilder(Handler):
     @typing.override
     def handle_package      (self, package:PackageDeclaration):  ...
     @typing.override
-    def handle_import       (self, import_:model.Import):  ...
+    def handle_import       (self, import_:ImportDeclaration):  ...
     @typing.override
     def handle_class        (self, class_:model.ClassHeader):  ...
     @typing.override
