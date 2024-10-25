@@ -140,8 +140,9 @@ class ParserResettableVariables:
 @dataclasses.dataclass
 class ParserClassStackElement:
 
-    class_        :model.ClassHeader|None = dataclasses.field()
-    in_enum_values:bool             = dataclasses.field(default=False)
+    class_        :handlers.entity.ClassHeaderDeclaration|None \
+                        = dataclasses.field()
+    in_enum_values:bool = dataclasses.field(default=False)
 
 class Parser(StackingSemiParser):
 
@@ -169,15 +170,15 @@ class Parser(StackingSemiParser):
 
     def _flush_class                (self):
 
-        class_ = model.ClassHeader(name       =self._vars.class_name, 
-                             annotations=self._vars.annotations,
-                             generics   =self._vars.class_generics,
-                             static     =self._vars.static,
-                             access     =self._coerce_access(self._vars.access),
-                             finality   =self._coerce_finality(self._vars.finality),
-                             type       =self._vars.class_type,
-                             inherit    =dict(self._vars.class_subc),
-                             signature  =self._vars.method_signature)
+        class_ = handlers.entity.ClassHeaderDeclaration(name  =self._vars.class_name, 
+                                                        static=self._vars.static,
+                                                        header=model.ClassHeader(annotations=self._vars.annotations,
+                                                                                 generics   =self._vars.class_generics,
+                                                                                 access     =self._coerce_access(self._vars.access),
+                                                                                 finality   =self._coerce_finality(self._vars.finality),
+                                                                                 type       =self._vars.class_type,
+                                                                                 inherit    =dict(self._vars.class_subc),
+                                                                                 signature  =self._vars.method_signature))
         self._NEXT.handle_class(class_)
         self._class_stack.append(ParserClassStackElement(class_        =class_, 
                                                          in_enum_values=self._vars.class_type is model.ClassTypes.ENUM))
@@ -701,13 +702,14 @@ class Parser(StackingSemiParser):
         elif self._vars.state is state.States.AINTERFACE_NAMED:
 
             if part != words.CURLY_OPEN: raise exc.Exception(line)
-            self._NEXT.handle_class(model.ClassHeader(name       =self._vars.class_name,
-                                                      type       =model.ClassTypes.AINTERFACE,
-                                                      static     =self._vars.static,
-                                                      access     =self._coerce_access  (self._vars.access),
-                                                      finality   =self._coerce_finality(self._vars.finality),
-                                                      annotations=self._vars.annotations))
-            self._class_stack.append(ParserClassStackElement(class_=None))
+            class_ = handlers.entity.ClassHeaderDeclaration(name  =self._vars.class_name,
+                                                            static=self._vars.static,
+                                                            header=model.ClassHeader(type       =model.ClassTypes.AINTERFACE,
+                                                                                     access     =self._coerce_access  (self._vars.access),
+                                                                                     finality   =self._coerce_finality(self._vars.finality),
+                                                                                     annotations=self._vars.annotations))
+            self._NEXT.handle_class(class_)
+            self._class_stack.append(ParserClassStackElement(class_=class_))
             self._reset_vars()
             return
 

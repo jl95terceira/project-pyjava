@@ -78,7 +78,7 @@ class AnnotationTests           (unittest.TestCase):
     def setUp(self):
 
         self.tr,self.th = gett(self)
-        self.tr.r_class   (model.ClassHeader(name='Foo', annotations=[model.Annotation(name='Log')]))
+        self.tr.r_class   (entity.ClassHeaderDeclaration(name='Foo', header=model.ClassHeader(annotations=[model.Annotation(name='Log')])))
         self.tr.r_class_end()
 
     def test_01        (self): self.th.test('@Log class Foo {}'  , end=True)
@@ -90,7 +90,7 @@ class AnnotationTests2          (unittest.TestCase):
     def setUp(self):
 
         self.tr,self.th = gett(self)
-        self.tr.r_class    (model.ClassHeader('Foo', annotations=[model.Annotation(name='DataClass', args=['true', ' 123', ' this.<String, String>get()'])]))
+        self.tr.r_class    (entity.ClassHeaderDeclaration(name='Foo', header=model.ClassHeader(annotations=[model.Annotation(name='DataClass', args=['true', ' 123', ' this.<String, String>get()'])])))
         self.tr.r_class_end()
 
     def test_01          (self): self.th.test('@DataClass(true, 123, this.<String, String>get()) class Foo {}', end=True)
@@ -110,10 +110,10 @@ class ClassTests                (unittest.TestCase):
     def setUp(self):
 
         self.tr,self.th = gett(self)
-        self.tr.r_class(model.ClassHeader(name      ='Foo', 
-                                     access    =model.AccessModifiers.PUBLIC, 
-                                     inherit  ={model.InheritanceTypes.EXTENDS   : [model.Type(name='Bar')],
-                                                 model.InheritanceTypes.IMPLEMENTS: [model.Type(name='Tim'), model.Type(name='Tom', generics=[model.Type(name='Tum')])]}))
+        self.tr.r_class(entity.ClassHeaderDeclaration(name  ='Foo',
+                                                      header=model.ClassHeader(access    =model.AccessModifiers.PUBLIC, 
+                                                                               inherit  ={model.InheritanceTypes.EXTENDS   : [model.Type(name='Bar')],
+                                                                                          model.InheritanceTypes.IMPLEMENTS: [model.Type(name='Tim'), model.Type(name='Tom', generics=[model.Type(name='Tum')])]})))
         self.tr.r_class_end()
 
     def test(self, access=model.AccessModifiers.PUBLIC, static=False, type=model.ClassTypes.CLASS, name='Foo', extends:list[model.Type]=[model.Type(name='Bar')], implements:list[model.Type]=[model.Type(name='Tim'),model.Type(name='Tom', generics=[model.Type(name='Tum')]),], end='{}'):
@@ -169,7 +169,7 @@ class ClassTestsCombinations    (unittest.TestCase):
 
                 self.tr.clear_registry()
                 self.th.reset         ()
-                self.tr.r_class      (model.ClassHeader(name='Hello', access=access, static=static, finality=finality, type=type))
+                self.tr.r_class       (entity.ClassHeaderDeclaration(name='Hello', static=static, header=model.ClassHeader(access=access, finality=finality, type=type)))
                 self.tr.r_class_end   ()
                 self.th.test          (' '.join(filter(bool, (_ACCESS_MOD_MAP_RE[access], 
                                                               'static' if static else '', 

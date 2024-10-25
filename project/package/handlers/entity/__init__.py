@@ -8,7 +8,18 @@ class PackageDeclaration:
 
     name:str = field()
 
-class ImportDeclaration(model.Import): pass
+@dataclass
+class ImportDeclaration: 
+
+    name  :str  = field()
+    static:bool = field(default=False)
+
+@dataclass
+class ClassHeaderDeclaration:
+
+    name  :str               = field()
+    header:model.ClassHeader = field()
+    static:bool              = field(default=False)
 
 class Handler(abc.ABC):
 
@@ -17,7 +28,7 @@ class Handler(abc.ABC):
     @abc.abstractmethod
     def handle_import       (self, import_      :ImportDeclaration):  ...
     @abc.abstractmethod
-    def handle_class        (self, class_       :model.ClassHeader):  ...
+    def handle_class        (self, class_       :ClassHeaderDeclaration):  ...
     @abc.abstractmethod
     def handle_class_end    (self):  ...
     @abc.abstractmethod
@@ -33,4 +44,4 @@ class Handler(abc.ABC):
     @abc.abstractmethod
     def handle_comment      (self, comment      :model.Comment): ...
 
-from ._builder import ClassBuilder
+from ._builder import Builder

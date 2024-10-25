@@ -8,6 +8,7 @@ from ..util      import Named
 
 from jl95terceira.batteries import Enumerator
 
+@dataclass(frozen=True)
 class ClassType(Named): pass
 class ClassTypes:
 
@@ -19,6 +20,7 @@ class ClassTypes:
     @staticmethod
     def values(): yield from ClassTypes._e
 
+@dataclass(frozen=True)
 class InheritanceType(Named): pass
 class InheritanceTypes:
 
@@ -28,6 +30,7 @@ class InheritanceTypes:
     @staticmethod
     def values(): yield from InheritanceTypes._e
     
+@dataclass(frozen=True)
 class FinalityType(Named): pass
 class FinalityTypes:
 
@@ -37,6 +40,7 @@ class FinalityTypes:
     FINAL    = _e(FinalityType(name='FINAL'))
     def values(): yield from FinalityTypes._e
 
+@dataclass(frozen=True)
 class AccessModifier(Named): pass
 class AccessModifiers:
 
@@ -48,14 +52,11 @@ class AccessModifiers:
     @staticmethod
     def values(): yield from AccessModifiers._e
 
-@dataclass(frozen=True)
-class Import:
+@dataclass
+class Package: pass # sentinel
 
-    name  :str  = field()
-    static:bool = field(default=False)
-
-    @typing.override
-    def source(self): return f'{words.IMPORT} {'' if not self.static else f'{words.STATIC} '}{self.name};'
+@dataclass
+class Import: pass # sentinel
 
 @dataclass
 class Annotation:
@@ -107,11 +108,9 @@ GenericType = typing.Union[Type, ConstrainedType, UnboundedType]
 @dataclass
 class ClassHeader:
 
-    name       :str                              = field()
     annotations:list[Annotation]                 = field(default_factory=list)
     generics   :list[GenericType]|None           = field(default        =None)
     type       :ClassType                        = field(default        =ClassTypes     .CLASS)
-    static     :bool                             = field(default        =False)
     access     :AccessModifier                   = field(default        =AccessModifiers.DEFAULT)
     finality   :FinalityType                     = field(default        =FinalityTypes  .DEFAULT)
     inherit    :dict[InheritanceType,list[Type]] = field(default_factory=dict)
@@ -191,22 +190,25 @@ class Comment:
 class ClassMembers:
 
     static_attributes :dict[str,list[Attribute]]      = field(default_factory=lambda: defaultdict(list))
-    attributes        :dict[str,list[Attribute]]      = field(default_factory=lambda: defaultdict(list))
     static_initializer:Initializer              |None = field(default        =None)
+    static_methods    :dict[str,list[Method]]         = field(default_factory=lambda: defaultdict(list))
+    static_classes    :dict[str,'Class']              = field(default_factory=dict)
+    attributes        :dict[str,list[Attribute]]      = field(default_factory=lambda: defaultdict(list))
     initializer       :Initializer              |None = field(default        =None)
     constructors      :list[Attribute]                = field(default_factory=list)
-    static_methods    :dict[str,list[Method]]         = field(default_factory=lambda: defaultdict(list))
     methods           :dict[str,list[Method]]         = field(default_factory=lambda: defaultdict(list))
+    classes           :dict[str,'Class']              = field(default_factory=dict)
 
 @dataclass
 class Class:
 
     header :ClassHeader  = field()
-    members:ClassMembers = field()
+    members:ClassMembers = field(default_factory=ClassMembers)
 
 @dataclass
-class File:
+class Unit:
 
-    package:str            |None = field(default        =None)
-    imports:set[Import]          = field(default_factory=set)
-    classes:dict[str,Class]      = field(default_factory=dict)
+    package       :str             |None = field(default        =None)
+    imports       :dict[str,Import]      = field(default_factory=set)
+    imports_static:dict[str,Import]      = field(default_factory=set)
+    classes       :dict[str,Class]       = field(default_factory=dict)

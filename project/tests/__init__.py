@@ -26,7 +26,7 @@ class _TestsRegistry:
         # per entity type
         self.packages           :dict[int, entity.PackageDeclaration]           = dict()
         self.imports            :dict[int, entity.ImportDeclaration]            = dict()
-        self.classes            :dict[int, model.ClassHeader]       = dict()
+        self.classes            :dict[int, entity.ClassHeaderDeclaration]       = dict()
         self.class_ends         :dict[int, None]                    = dict()
         self.initializers       :dict[int, model.Initializer]       = dict()
         self.constructors       :dict[int, model.Constructor]       = dict()
@@ -73,7 +73,7 @@ class TestRegistrator:
 
     def r_package         (self, package        :entity.PackageDeclaration)         : self._register(lambda tr: tr.packages     , package)
     def r_import          (self, import_        :entity.ImportDeclaration)          : self._register(lambda tr: tr.imports      , import_)
-    def r_class           (self, class_         :model.ClassHeader)     : self._register(lambda tr: tr.classes      , class_)
+    def r_class           (self, class_         :entity.ClassHeaderDeclaration)     : self._register(lambda tr: tr.classes      , class_)
     def r_class_end       (self)                                        : self._register(lambda tr: tr.class_ends   , None)
     def r_initializer     (self, initializer    :model.Initializer)     : self._register(lambda tr: tr.initializers , initializer)
     def r_constructor     (self, constr         :model.Constructor)     : self._register(lambda tr: tr.constructors , constr)
@@ -152,7 +152,7 @@ class _TestHandler(entity.Handler):
     @typing.override
     def handle_import           (self, import_         :entity.ImportDeclaration)       : self._test(lambda tr: tr.imports      , import_)
     @typing.override
-    def handle_class            (self, class_          :model.ClassHeader)        : self._test(lambda tr: tr.classes      , class_)
+    def handle_class            (self, class_          :entity.ClassHeaderDeclaration)  : self._test(lambda tr: tr.classes      , class_)
     @typing.override
     def handle_class_end        (self)                                      : self._test(lambda tr: tr.class_ends   , None)
     @typing.override
