@@ -195,8 +195,8 @@ class Parser(StackingSemiParser):
 
     def _flush_initializer          (self, body:str): 
         
-        self._NEXT.handle_initializer(model.Initializer(body  =body,
-                                                        static=self._vars.static))
+        self._NEXT.handle_initializer(handlers.entity.InitializerDeclaration(static     =self._vars.static, 
+                                                                             initializer=model.Initializer(body=body)))
         self._reset_vars()
 
     def _flush_constructor          (self, body:str): 

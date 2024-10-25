@@ -134,8 +134,7 @@ class Argument:
 @dataclass
 class Initializer:
 
-    body  :str  = field()
-    static:bool = field(default=False)
+    body:str = field()
 
 @dataclass
 class Constructor:

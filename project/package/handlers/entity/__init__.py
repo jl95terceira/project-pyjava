@@ -21,6 +21,12 @@ class ClassHeaderDeclaration:
     header:model.ClassHeader = field()
     static:bool              = field(default=False)
 
+@dataclass
+class InitializerDeclaration:
+
+    initializer:model.Initializer = field()
+    static     :bool              = field(default=False)
+
 class Handler(abc.ABC):
 
     @abc.abstractmethod
@@ -32,7 +38,7 @@ class Handler(abc.ABC):
     @abc.abstractmethod
     def handle_class_end    (self):  ...
     @abc.abstractmethod
-    def handle_initializer  (self, initializer  :model.Initializer):  ...
+    def handle_initializer  (self, initializer  :InitializerDeclaration):  ...
     @abc.abstractmethod
     def handle_constructor  (self, constructor  :model.Constructor):  ...
     @abc.abstractmethod

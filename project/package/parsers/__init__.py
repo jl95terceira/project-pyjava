@@ -26,7 +26,7 @@ class StreamPrinter(handlers.entity.Handler):
         print(f'Handling end of class')
 
     @typing.override
-    def handle_initializer(self, initializer:model.Initializer):
+    def handle_initializer(self, initializer:handlers.entity.InitializerDeclaration):
 
         print(F'Handling initializer:           {initializer}')
 
@@ -58,22 +58,22 @@ class StreamPrinter(handlers.entity.Handler):
 class SilentHandler(handlers.entity.Handler):
 
     @typing.override
-    def handle_package    (self, package:handlers.entity.PackageDeclaration): pass
+    def handle_package    (self, package    :handlers.entity.PackageDeclaration): pass
     @typing.override
-    def handle_import     (self, import_:handlers.entity.ImportDeclaration): pass
+    def handle_import     (self, import_    :handlers.entity.ImportDeclaration): pass
     @typing.override
-    def handle_class      (self, class_ :handlers.entity.ClassHeaderDeclaration): pass
+    def handle_class      (self, class_     :handlers.entity.ClassHeaderDeclaration): pass
     @typing.override
     def handle_class_end  (self): pass
     @typing.override
-    def handle_initializer(self, initializer:model.Initializer): pass
+    def handle_initializer(self, initializer:handlers.entity.InitializerDeclaration): pass
     @typing.override
     def handle_constructor(self, constructor:model.Constructor): pass
     @typing.override
-    def handle_attr       (self, attribute:model.Attribute): pass
+    def handle_attr       (self, attribute  :model.Attribute): pass
     @typing.override
-    def handle_method     (self, method:model.Method): pass
+    def handle_method     (self, method     :model.Method): pass
     @typing.override
-    def handle_enum_value (self, enum:model.EnumValue): pass
+    def handle_enum_value (self, enum       :model.EnumValue): pass
     @typing.override
-    def handle_comment    (self, comment:model.Comment): pass
+    def handle_comment    (self, comment    :model.Comment): pass

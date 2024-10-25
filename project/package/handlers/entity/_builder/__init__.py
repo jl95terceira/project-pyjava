@@ -1,7 +1,7 @@
 import typing
 
 from .    import exc
-from ..   import Handler, PackageDeclaration, ImportDeclaration, ClassHeaderDeclaration
+from ..   import Handler, PackageDeclaration, ImportDeclaration, ClassHeaderDeclaration, InitializerDeclaration
 from .... import model
 
 class Builder(Handler):
@@ -53,7 +53,7 @@ class Builder(Handler):
         self._class_stack.pop()
 
     @typing.override
-    def handle_initializer  (self, initializer:model.Initializer): 
+    def handle_initializer  (self, initializer:InitializerDeclaration): 
         
         if not self._class_stack: raise exc.InitializerOutsideClassException()
         parent = self._class_stack[-1]
