@@ -171,7 +171,6 @@ class Method:
 @dataclass
 class EnumValue:
 
-    name       :str              = field()
     annotations:list[Annotation] = field(default_factory=list)
     args       :list[str]        = field(default_factory=list)
     subclasses :bool             = field(default        =False)
@@ -193,6 +192,7 @@ class ClassMembers:
     constructors      :list[Constructor]              = field(default_factory=list)
     methods           :dict[str,list[Method]]         = field(default_factory=lambda: defaultdict(list))
     classes           :dict[str,'Class']              = field(default_factory=dict)
+    enumvalues        :dict[str,EnumValue]            = field(default_factory=dict)
 
 @dataclass
 class Class:
@@ -204,6 +204,6 @@ class Class:
 class Unit:
 
     package       :str             |None = field(default        =None)
-    imports       :dict[str,Import]      = field(default_factory=set)
-    imports_static:dict[str,Import]      = field(default_factory=set)
+    imports       :dict[str,Import]      = field(default_factory=dict)
+    imports_static:dict[str,Import]      = field(default_factory=dict)
     classes       :dict[str,Class]       = field(default_factory=dict)

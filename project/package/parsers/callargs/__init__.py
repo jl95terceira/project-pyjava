@@ -6,8 +6,7 @@ from ...          import handlers, parsers, words
 
 _ACREMENTERS  = {words.PARENTH_OPEN: words.PARENTH_CLOSE,
                  words.CURLY_OPEN  : words.CURLY_CLOSE,
-                 words.ANGLE_OPEN  : words.ANGLE_CLOSE,
-                 words.SQUARE_OPEN : words.SQUARE_CLOSED}
+                 words.ANGLE_OPEN  : words.ANGLE_CLOSE}
 
 class Parser(parsers.entity.StackingSemiParser):
 

@@ -78,6 +78,7 @@ public abstract class Example<A,B> extends Object implements Foo,Bar {
     public enum FooEnum4 {
 
         VALUE_A(123),
+        @Deprecated
         VALUE_B("D EF");
 
         FooEnum4(final Object x) {}

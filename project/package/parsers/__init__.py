@@ -46,9 +46,9 @@ class StreamPrinter(handlers.entity.Handler):
         print(f'Handling method:                {method}')
 
     @typing.override
-    def handle_enum_value (self, enum:model.EnumValue):
+    def handle_enum_value (self, enumvalue:handlers.entity.EnumValueDeclaration):
 
-        print(f'Handling enum value:            {enum}')
+        print(f'Handling enum value:            {enumvalue}')
 
     @typing.override
     def handle_comment    (self, comment:model.Comment):
@@ -74,6 +74,6 @@ class SilentHandler(handlers.entity.Handler):
     @typing.override
     def handle_method     (self, method     :handlers.entity.MethodDeclaration): pass
     @typing.override
-    def handle_enum_value (self, enum       :model.EnumValue): pass
+    def handle_enum_value (self, enumvalue  :handlers.entity.EnumValueDeclaration): pass
     @typing.override
     def handle_comment    (self, comment    :model.Comment): pass

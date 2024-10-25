@@ -59,7 +59,7 @@ class StackingSemiParser(handlers.part.Handler, abc.ABC):
 
     @typing.override
     def handle_part                 (self, part:str): 
-        if DEBUG: print(part)
+        
         self._part = part
         if self._subhandler is not None: self._subhandler.handle_part(part)
         else                           : self.   _default_handle_part(part)
@@ -135,6 +135,7 @@ class ParserResettableVariables:
         self.method_defaultv  :str                          |None = None
         self.enumv_name       :str                          |None = None
         self.enumv_subclasses                                     = False
+        self.enumv_callargs   :list[str]                    |None = None
         self.throws           :list[model.Type]             |None = None
 
 @dataclasses.dataclass
@@ -173,12 +174,12 @@ class Parser(StackingSemiParser):
         class_ = handlers.entity.ClassHeaderDeclaration(name  =self._vars.class_name, 
                                                         static=self._vars.static,
                                                         header=model.ClassHeader(annotations=self._vars.annotations,
-                                                                                 generics   =self._vars.class_generics,
-                                                                                 access     =self._coerce_access(self._vars.access),
-                                                                                 finality   =self._coerce_finality(self._vars.finality),
-                                                                                 type       =self._vars.class_type,
-                                                                                 inherit    =dict(self._vars.class_subc),
-                                                                                 signature  =self._vars.method_signature))
+                                                                                    generics   =self._vars.class_generics,
+                                                                                    access     =self._coerce_access(self._vars.access),
+                                                                                    finality   =self._coerce_finality(self._vars.finality),
+                                                                                    type       =self._vars.class_type,
+                                                                                    inherit    =dict(self._vars.class_subc),
+                                                                                    signature  =self._vars.method_signature))
         self._NEXT.handle_class(class_)
         self._class_stack.append(ParserClassStackElement(class_        =class_, 
                                                          in_enum_values=self._vars.class_type is model.ClassTypes.ENUM))
@@ -186,9 +187,10 @@ class Parser(StackingSemiParser):
                                state.States.ENUM)
 
     def _flush_class_end            (self):
-
+        
         self._NEXT.handle_class_end()
         self._class_stack.pop()
+        self._reset_vars() 
         if self._class_stack and self._class_stack[-1].in_enum_values:
             
             self._vars.state = state.States.ENUM_DEFINED
@@ -237,20 +239,23 @@ class Parser(StackingSemiParser):
                                                                                        body         =body)))
         self._reset_vars()
 
-    def _flush_enum_value           (self, callargs:list[str]|None=None):
+    def _flush_enum_value           (self):
 
-        self._NEXT.handle_enum_value(model.EnumValue(name      =self._vars.enumv_name, 
-                                                     args      =callargs if callargs is not None else list(),
-                                                     subclasses=self._vars.enumv_subclasses))
+        self._NEXT.handle_enum_value(handlers.entity.EnumValueDeclaration(name     =self._vars.enumv_name, 
+                                                                          enumvalue=model.EnumValue(args       =self._vars.enumv_callargs,
+                                                                                                    subclasses =self._vars.enumv_subclasses,
+                                                                                                    annotations=self._vars.annotations)))
         subclasses = self._vars.enumv_subclasses
+        if subclasses:
+
+            self._reset_vars()
+            self._vars.class_subc = {model.InheritanceTypes.EXTENDS: self._class_stack[-1].class_.name}
+            self._flush_class()
+
         self._reset_vars()
         if not subclasses: 
             
-            self._vars.state = state.States.ENUM_DEFINED
-
-        else: 
-            
-            self._class_stack.append(ParserClassStackElement(class_=None))
+            self._vars.state = state.States.ENUM_DEFINED        
 
     def _store_annotation           (self, annotation: model.Annotation):
 
@@ -331,6 +336,11 @@ class Parser(StackingSemiParser):
 
         self._vars.method_defaultv = value
         self._vars.state = state.States.METHOD_DEFAULT_VALUE_AFTER
+
+    def _store_enumvalue_callargs   (self, callargs:list[str]): 
+        
+        self._vars.enumv_callargs = callargs
+        self._vars.state          = state.States.ENUM_AFTER_CALLARGS
 
     @typing.override
     def _default_handle_line        (self, line:str): pass
@@ -666,8 +676,22 @@ class Parser(StackingSemiParser):
 
             if part == words.PARENTH_OPEN:
                 
-                self._stack_handler(parsers.callargs.Parser(after=self._unstacking(self._flush_enum_value)))
+                self._stack_handler(parsers.callargs.Parser(after=self._unstacking(self._store_enumvalue_callargs)))
                 self.handle_part(part) # re-handle part ('('), since it was used only for look-ahead
+
+            else:
+
+                self._vars.state = state.States.ENUM_AFTER_CALLARGS
+                self.handle_part(part) # re-handle part, as it was used only for look-ahead
+
+            return
+
+        elif self._vars.state is state.States.ENUM_AFTER_CALLARGS:
+            
+            if part == words.CURLY_OPEN:
+
+                self._vars.enumv_subclasses = True
+                self._flush_enum_value()
 
             else:
 
@@ -677,18 +701,19 @@ class Parser(StackingSemiParser):
             return
 
         elif self._vars.state is state.States.ENUM_DEFINED:
-
-            if   part == words.CURLY_OPEN:
-
-                self._vars.enumv_subclasses = True
-                self._flush_enum_value()
-
-            else:
+            
+            if  part == words.COMMA:
 
                 self._vars.state = state.States.ENUM
-                if part != words.COMMA:
 
-                    self.handle_part(part)
+            elif part == words.SEMICOLON:
+
+                self._vars.state = state.States.DEFAULT
+
+            elif part == words.CURLY_CLOSE:
+
+                self._reset_vars()
+                self.handle_part(part)
 
             return
 

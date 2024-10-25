@@ -46,6 +46,12 @@ class MethodDeclaration:
     method:model.Method = field()
     static:bool         = field(default=False)
 
+@dataclass
+class EnumValueDeclaration:
+
+    name     :str             = field()
+    enumvalue:model.EnumValue = field()
+
 class Handler(abc.ABC):
 
     @abc.abstractmethod
@@ -65,8 +71,8 @@ class Handler(abc.ABC):
     @abc.abstractmethod
     def handle_method       (self, method       :MethodDeclaration):  ...
     @abc.abstractmethod
-    def handle_enum_value   (self, enum         :model.EnumValue):  ...
+    def handle_enum_value   (self, enumvalue    :EnumValueDeclaration):  ...
     @abc.abstractmethod
     def handle_comment      (self, comment      :model.Comment): ...
 
-from ._builder import Builder
+from .builder import Builder

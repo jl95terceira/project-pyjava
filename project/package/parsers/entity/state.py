@@ -23,6 +23,7 @@ class States:
     ENUM                        = State('Enum')
     ENUM_NAMED                  = State('Enum Named')
     ENUM_DEFINED                = State('Enum Defined')
+    ENUM_AFTER_CALLARGS         = State('Enum After Callargs')
     RECORD                      = State('Record')
     RECORD_AFTER_NAME           = State('Record After Name')
     INITIALIZER_BODY            = State('Initializer Body')

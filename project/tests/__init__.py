@@ -32,7 +32,7 @@ class _TestsRegistry:
         self.constructors       :dict[int, entity.ConstructorDeclaration]       = dict()
         self.attributes         :dict[int, entity.AttributeDeclaration]         = dict()
         self.methods            :dict[int, entity.MethodDeclaration]            = dict()
-        self.enum_values        :dict[int, model.EnumValue]         = dict()
+        self.enum_values        :dict[int, entity.EnumValueDeclaration]         = dict()
         self.comments           :dict[int, model.Comment]           = dict()
         # all listed
         self.a                  :list[typing.Any]                   = list()
@@ -79,7 +79,7 @@ class TestRegistrator:
     def r_constructor     (self, constr         :entity.ConstructorDeclaration)     : self._register(lambda tr: tr.constructors , constr)
     def r_attribute       (self, attr           :entity.AttributeDeclaration)       : self._register(lambda tr: tr.attributes   , attr)
     def r_method          (self, method         :entity.MethodDeclaration)          : self._register(lambda tr: tr.methods      , method)
-    def r_enum_value      (self, enum_value     :model.EnumValue)       : self._register(lambda tr: tr.enum_values  , enum_value)
+    def r_enum_value      (self, enum_value     :entity.EnumValueDeclaration)       : self._register(lambda tr: tr.enum_values  , enum_value)
     def r_comment         (self, comment        :model.Comment)         : self._register(lambda tr: tr.comments     , comment)
 
     def clear_registry(self): 
@@ -137,7 +137,7 @@ class _TestHandler(entity.Handler):
     def test     (self, line:str, end=True):
 
         print(f'Got line       : {repr(line)}', flush=True)
-        self._parser.parse(line)
+        self._parser.parse_line(line)
         if end: 
             
             self._parser.eof()
@@ -164,7 +164,7 @@ class _TestHandler(entity.Handler):
     @typing.override
     def handle_method           (self, method          :entity.MethodDeclaration)       : self._test(lambda tr: tr.methods      , method)
     @typing.override
-    def handle_enum_value       (self, enum_value      :model.EnumValue)    : self._test(lambda tr: tr.enum_values  , enum_value)
+    def handle_enum_value       (self, enum_value      :entity.EnumValueDeclaration)    : self._test(lambda tr: tr.enum_values  , enum_value)
     @typing.override
     def handle_comment          (self, comment         :model.Comment)      : self._test(lambda tr: tr.comments     , comment)
 
