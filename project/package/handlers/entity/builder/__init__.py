@@ -136,7 +136,8 @@ class Builder(Handler):
         parent = self._class_stack[-1].class_
         attributes_dict = (parent.members.attributes        if not attribute_decl.static else \
                            parent.members.static_attributes)
-        attributes_dict[attribute_decl.name].append(attribute_decl.attribute)
+        if attribute_decl.name in attributes_dict: raise exc.AttributeDuplicateException(attribute_decl.name)
+        attributes_dict[attribute_decl.name] = attribute_decl.attribute
 
     @typing.override
     @_handled(_EntityTypes.METHOD)

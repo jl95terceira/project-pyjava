@@ -113,7 +113,7 @@ class ClassHeader:
     type       :ClassType                        = field(default        =ClassTypes     .CLASS)
     access     :AccessModifier                   = field(default        =AccessModifiers.DEFAULT)
     finality   :FinalityType                     = field(default        =FinalityTypes  .DEFAULT)
-    inherit    :dict[InheritanceType,list[Type]] = field(default_factory=dict)
+    inherit    :dict[InheritanceType,list[Type]] = field(default_factory=lambda: defaultdict(list))
     signature  :dict[str, 'Argument']|None       = field(default        =None)
 
 @dataclass
@@ -187,7 +187,7 @@ class ClassMembers:
     static_initializer:Initializer              |None = field(default        =None)
     static_methods    :dict[str,list[Method]]         = field(default_factory=lambda: defaultdict(list))
     static_classes    :dict[str,'Class']              = field(default_factory=dict)
-    attributes        :dict[str,list[Attribute]]      = field(default_factory=lambda: defaultdict(list))
+    attributes        :dict[str,Attribute]            = field(default_factory=dict)
     initializer       :Initializer              |None = field(default        =None)
     constructors      :list[Constructor]              = field(default_factory=list)
     methods           :dict[str,list[Method]]         = field(default_factory=lambda: defaultdict(list))

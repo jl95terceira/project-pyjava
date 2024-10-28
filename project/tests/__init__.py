@@ -7,7 +7,7 @@ import unittest
 
 from ..package.handlers import entity
 
-from ..package import model, StreamParser
+from ..package import model, StreamParser, load
 
 _DEBUG = 0
 _JAVA_FILES_PATH = 'java_files'
@@ -124,11 +124,11 @@ class _TestHandler(entity.Handler):
         self._i      = 0
         self._parser = StreamParser(self)
 
-    def test_file(self, fn:str, pre_reset=True, end=True):
+    def test_file(self, fn:str, pre_reset=True, end=True): 
 
         print(f'Testing file   : {repr(fn)}', flush=True)
         if pre_reset: self.reset()
-        with open(os.path.join(os.path.split(__file__)[0], _JAVA_FILES_PATH, fn), mode='r', encoding='utf-8') as f:
+        with open(testfile_path(fn), mode='r', encoding='utf-8') as f:
 
             self._parser.parse_whole(f.read())
 
@@ -167,6 +167,8 @@ class _TestHandler(entity.Handler):
     def handle_enum_value       (self, enum_value      :entity.EnumValueDeclaration)    : self._test(lambda tr: tr.enum_values  , enum_value)
     @typing.override
     def handle_comment          (self, comment         :model.Comment)      : self._test(lambda tr: tr.comments     , comment)
+
+def testfile_path(fn:str): return os.path.join(os.path.split(__file__)[0], _JAVA_FILES_PATH, fn)
 
 def to_fail(f):
 

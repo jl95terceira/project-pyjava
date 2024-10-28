@@ -12,5 +12,6 @@ class InitializerOutsideClassException      (Exception): pass
 class StaticInitializerDuplicateException   (Exception): pass
 class InitializerDuplicateException         (Exception): pass
 class AttributeOutsideClassException        (Exception): pass
+class AttributeDuplicateException           (Exception): pass
 class MethodOutsideClassException           (Exception): pass
 class EnumValueDuplicationException         (Exception): pass

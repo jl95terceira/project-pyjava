@@ -178,7 +178,7 @@ class Parser(StackingSemiParser):
                                                                                     access     =self._coerce_access(self._vars.access),
                                                                                     finality   =self._coerce_finality(self._vars.finality),
                                                                                     type       =self._vars.class_type,
-                                                                                    inherit    =dict(self._vars.class_subc),
+                                                                                    inherit    =defaultdict(list, self._vars.class_subc),
                                                                                     signature  =self._vars.method_signature))
         self._NEXT.handle_class(class_)
         self._class_stack.append(_ParserClassStackElement(class_ =class_, 
