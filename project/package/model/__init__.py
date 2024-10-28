@@ -171,9 +171,9 @@ class Method:
 @dataclass
 class EnumValue:
 
-    annotations:list[Annotation] = field(default_factory=list)
-    args       :list[str]        = field(default_factory=list)
-    subclasses :bool             = field(default        =False)
+    annotations:list[Annotation]           = field(default_factory=list)
+    args       :list[str]                  = field(default_factory=list)
+    subclass   :typing.Union['Class',None] = field(default        =None)
 
 @dataclass
 class Comment:

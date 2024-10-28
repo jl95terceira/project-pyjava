@@ -2,7 +2,7 @@ DEBUG = 0
 
 import abc
 from   collections import defaultdict
-import dataclasses
+from   dataclasses import dataclass, field
 import re
 import typing
 
@@ -134,16 +134,15 @@ class ParserResettableVariables:
         self.method_generics  :list[model.GenericType]      |None = None
         self.method_defaultv  :str                          |None = None
         self.enumv_name       :str                          |None = None
-        self.enumv_subclasses                                     = False
+        self.enumv_subclass   :model.Class                  |None = None
         self.enumv_callargs   :list[str]                    |None = None
         self.throws           :list[model.Type]             |None = None
 
-@dataclasses.dataclass
+@dataclass
 class ParserClassStackElement:
 
-    class_        :handlers.entity.ClassHeaderDeclaration|None \
-                        = dataclasses.field()
-    in_enum_values:bool = dataclasses.field(default=False)
+    class_:handlers.entity.ClassHeaderDeclaration|None = field()
+    vars  :ParserResettableVariables                   = field()
 
 class Parser(StackingSemiParser):
 
@@ -181,8 +180,8 @@ class Parser(StackingSemiParser):
                                                                                     inherit    =dict(self._vars.class_subc),
                                                                                     signature  =self._vars.method_signature))
         self._NEXT.handle_class(class_)
-        self._class_stack.append(ParserClassStackElement(class_        =class_, 
-                                                         in_enum_values=self._vars.class_type is model.ClassTypes.ENUM))
+        self._class_stack.append(ParserClassStackElement(class_=class_, 
+                                                         vars  =self._vars))
         self._reset_vars(state=state.States.DEFAULT if self._vars.class_type is not model.ClassTypes.ENUM else \
                                state.States.ENUM)
 
@@ -191,7 +190,7 @@ class Parser(StackingSemiParser):
         self._NEXT.handle_class_end()
         self._class_stack.pop()
         self._reset_vars() 
-        if self._class_stack and self._class_stack[-1].in_enum_values:
+        if self._class_stack and self._class_stack[-1].vars.class_type is model.ClassTypes.ENUM:
             
             self._vars.state = state.States.ENUM_DEFINED
 
@@ -243,19 +242,10 @@ class Parser(StackingSemiParser):
 
         self._NEXT.handle_enum_value(handlers.entity.EnumValueDeclaration(name     =self._vars.enumv_name, 
                                                                           enumvalue=model.EnumValue(args       =self._vars.enumv_callargs,
-                                                                                                    subclasses =self._vars.enumv_subclasses,
+                                                                                                    subclass   =self._vars.enumv_subclass,
                                                                                                     annotations=self._vars.annotations)))
-        subclasses = self._vars.enumv_subclasses
-        if subclasses:
-
-            self._reset_vars()
-            self._vars.class_subc = {model.InheritanceTypes.EXTENDS: self._class_stack[-1].class_.name}
-            self._flush_class()
-
         self._reset_vars()
-        if not subclasses: 
-            
-            self._vars.state = state.States.ENUM_DEFINED        
+        self._vars.state = state.States.ENUM_DEFINED        
 
     def _store_annotation           (self, annotation: model.Annotation):
 
@@ -650,7 +640,6 @@ class Parser(StackingSemiParser):
             if   part == words.SEMICOLON:
 
                 self._vars.state = state.States.DEFAULT
-                self._class_stack[-1].in_enum_values = False
 
             elif part == words.CURLY_CLOSE:
 
@@ -690,8 +679,9 @@ class Parser(StackingSemiParser):
             
             if part == words.CURLY_OPEN:
 
-                self._vars.enumv_subclasses = True
-                self._flush_enum_value()
+                self._reset_vars()
+                self._vars.class_subc = {model.InheritanceTypes.EXTENDS: self._class_stack[-1].class_.name}
+                self._flush_class()
 
             else:
 
@@ -734,7 +724,8 @@ class Parser(StackingSemiParser):
                                                                                      finality   =self._coerce_finality(self._vars.finality),
                                                                                      annotations=self._vars.annotations))
             self._NEXT.handle_class(class_)
-            self._class_stack.append(ParserClassStackElement(class_=class_))
+            self._class_stack.append(ParserClassStackElement(class_=class_, 
+                                                             vars  =self._vars))
             self._reset_vars()
             return
 
