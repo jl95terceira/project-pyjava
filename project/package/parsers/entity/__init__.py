@@ -9,7 +9,7 @@ import typing
 from .            import exc, state
 from ...          import handlers, model, util, words, parsers
 
-from jl95terceira.batteries import ChainedCallables
+from jl95terceira.batteries import chaincallables
 
 _INHERIT_TYPE_MAP_BY_KEYWORD = {words.EXTENDS   :model.InheritanceTypes.EXTENDS,
                                 words.IMPLEMENTS:model.InheritanceTypes.IMPLEMENTS}
@@ -48,7 +48,7 @@ class StackingSemiParser(handlers.part.Handler, abc.ABC):
 
         self._subhandler = None
 
-    def _unstacking                 (self, f): return ChainedCallables(lambda *a, **ka: self._unstack_handler(), f)
+    def _unstacking                 (self, f): return chaincallables(lambda *a, **ka: self._unstack_handler(), f)
 
     @typing.override
     def handle_line                 (self, line:str):
