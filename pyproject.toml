@@ -3,7 +3,7 @@ requires = ["hatchling", "hatch-requirements-txt"]
 build-backend = "hatchling.build"
 [project]
 name = "jl95terceira_java"
-version = "0.2.0"
+version = "0.2.1"
 authors = [
   { name="Joao Luis Ornelas da Silva", email="jl95terceira@gmail.com" },
 ]
