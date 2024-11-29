@@ -1,1 +1,1 @@
-jl95terceira_batteries==1.2.0b
+jl95terceira_batteries==1.2.1b
