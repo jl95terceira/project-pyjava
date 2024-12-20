@@ -25,6 +25,7 @@ _FINALITY_TYPE_MAP_BY_KEYWORD= {''              :model.FinalityTypes.DEFAULT,
 _FINALITY_TYPE_KEYWORDS      = set(_FINALITY_TYPE_MAP_BY_KEYWORD)
 _CLASS_TYPE_MAP_BY_KEYWORD   = {words.CLASS     :model.ClassTypes.CLASS,
                                 words.INTERFACE :model.ClassTypes.INTERFACE,
+                                words.RECORD    :model.ClassTypes.RECORD,
                                 words.ENUM      :model.ClassTypes.ENUM,
                                 f'{words.ATSIGN}{words.INTERFACE}'\
                                                 :model.ClassTypes.AINTERFACE}
@@ -131,7 +132,7 @@ class ParserResettableVariables:
         self.attr_value_parts :list[str]                    |None = None
         self.attr_nest_depth  :int                          |None = None
         self.attr_scope_depth :int                          |None = None
-        self.method_signature      :dict[str,model.Argument]|None = None
+        self.method_signature :dict[str,model.Argument]     |None = None
         self.method_generics  :list[model.GenericType]      |None = None
         self.method_defaultv  :str                          |None = None
         self.enumv_name       :str                          |None = None
@@ -186,14 +187,24 @@ class Parser(StackingSemiParser):
                 access     =self._coerce_access(self._vars.access),
                 inherit    =defaultdict(list, self._vars.class_subc),
             ) if self._vars.finality is model.FinalityTypes.ABSTRACT else \
+                   model.RecordHeader(
+                annotations=self._vars.annotations,
+                generics   =self._vars.class_generics,
+                access     =self._coerce_access(self._vars.access),
+                finality   =self._coerce_finality(self._vars.finality),
+                inherit    =defaultdict(list, self._vars.class_subc),
+                signature  =self._vars.method_signature
+            ) if self._vars.class_type is model.ClassTypes.RECORD else \
+                   model.AInterfaceHeader(
+                annotations=self._vars.annotations,
+                access     =self._coerce_access(self._vars.access)
+            ) if self._vars.class_type is model.ClassTypes.AINTERFACE else \
                    model.ConcreteClassHeader(
                 annotations=self._vars.annotations,
                 generics   =self._vars.class_generics,
                 access     =self._coerce_access(self._vars.access),
                 finality   =self._coerce_finality(self._vars.finality),
-                type       =self._vars.class_type,
                 inherit    =defaultdict(list, self._vars.class_subc),
-                signature  =self._vars.method_signature
             )
         )
         self._NEXT.handle_class(class_)
@@ -287,7 +298,8 @@ class Parser(StackingSemiParser):
         if annotation.name == words.INTERFACE: 
             
             if annotation.args: raise exc.Exception(self._line)
-            self._vars.state = state.States.AINTERFACE
+            self._vars.state = state.States.CLASS
+            self._stack_handler(parsers.type.Parser(after=self._unstacking(self._store_class_name), part_rehandler=self.handle_part, allow_array=False))
 
         else:
 
@@ -424,13 +436,15 @@ class Parser(StackingSemiParser):
 
                 if self._vars.class_type is not None: raise exc.ClassException(line)
                 self._vars.class_type = _CLASS_TYPE_MAP_BY_KEYWORD[part]
-                self._vars.state      = state.States.CLASS
-                self._stack_handler(parsers.type.Parser(after=self._unstacking(self._store_class_name), part_rehandler=self.handle_part, allow_array=False))
+                if part != words.RECORD:
 
-            elif part == words.RECORD:
+                    self._vars.state = state.States.CLASS
+                    self._stack_handler(parsers.type.Parser(after=self._unstacking(self._store_class_name), part_rehandler=self.handle_part, allow_array=False))
 
-                self._vars.state = state.States.RECORD
-                self._stack_handler(parsers.type.Parser(after=self._unstacking(self._store_record_name), part_rehandler=self.handle_part, allow_array=False))
+                else:
+
+                    self._vars.state = state.States.RECORD
+                    self._stack_handler(parsers.type.Parser(after=self._unstacking(self._store_record_name), part_rehandler=self.handle_part, allow_array=False))
 
             elif part == words.SYNCHRONIZED:
 
@@ -743,28 +757,6 @@ class Parser(StackingSemiParser):
                 self._reset_vars()
                 self.handle_part(part)
 
-            return
-
-        elif self._vars.state is state.States.AINTERFACE:
-
-            if words.is_reserved(part): raise exc.Exception(line)
-            self._vars.class_name = part
-            self._vars.state = state.States.AINTERFACE_NAMED
-            return
-
-        elif self._vars.state is state.States.AINTERFACE_NAMED:
-
-            if part != words.CURLY_OPEN: raise exc.Exception(line)
-            class_ = handlers.entity.ClassHeaderDeclaration(name  =self._vars.class_name,
-                                                            static=self._vars.static,
-                                                            header=model.ConcreteClassHeader(type       =model.ClassTypes.AINTERFACE,
-                                                                                     access     =self._coerce_access  (self._vars.access),
-                                                                                     finality   =self._coerce_finality(self._vars.finality),
-                                                                                     annotations=self._vars.annotations))
-            self._NEXT.handle_class(class_)
-            self._class_stack.append(_ParserClassStackElement(class_=class_, 
-                                                             vars  =self._vars))
-            self._reset_vars()
             return
 
         raise NotImplementedError(f'line = {repr(line)}, state = {repr(self._vars.state.name)}')

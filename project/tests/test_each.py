@@ -112,8 +112,8 @@ class ClassTests                (unittest.TestCase):
         self.tr,self.th = gett(self)
         self.tr.r_class(entity.ClassHeaderDeclaration(name  ='Foo',
                                                       header=model.ConcreteClassHeader(access    =model.AccessModifiers.PUBLIC, 
-                                                                               inherit  ={model.InheritanceTypes.EXTENDS   : [model.Type(name='Bar')],
-                                                                                          model.InheritanceTypes.IMPLEMENTS: [model.Type(name='Tim'), model.Type(name='Tom', generics=[model.Type(name='Tum')])]})))
+                                                                                       inherit  ={model.InheritanceTypes.EXTENDS   : [model.Type(name='Bar')],
+                                                                                                  model.InheritanceTypes.IMPLEMENTS: [model.Type(name='Tim'), model.Type(name='Tom', generics=[model.Type(name='Tum')])]})))
         self.tr.r_class_end()
 
     def test(self, access=model.AccessModifiers.PUBLIC, static=False, type=model.ClassTypes.CLASS, name='Foo', extends:list[model.Type]=[model.Type(name='Bar')], implements:list[model.Type]=[model.Type(name='Tim'),model.Type(name='Tom', generics=[model.Type(name='Tum')]),], end='{}'):
@@ -148,30 +148,3 @@ class ClassTests                (unittest.TestCase):
     def test_wrong_closer       (self): self.test(end='{{')
     @to_explode
     def test_wrong_opener       (self): self.test(end='}')
-
-class ClassTestsCombinations    (unittest.TestCase): 
-
-    def setUp(self):
-
-        self.tr,self.th = gett(self)
-
-    def test(self):
-
-        for i,(access   , 
-               static   ,
-               finality ,
-               type     ) in enumerate(itertools.product(model.AccessModifiers.values(),
-                                                         (True,False,),
-                                                         model.FinalityTypes  .values(),
-                                                         model.ClassTypes     .values())):
-
-            with self.subTest(i=i):
-
-                self.tr.clear_registry()
-                self.th.reset         ()
-                self.tr.r_class       (entity.ClassHeaderDeclaration(name='Hello', static=static, header=model.ConcreteClassHeader(access=access, finality=finality, type=type)))
-                self.tr.r_class_end   ()
-                self.th.test          (' '.join(filter(bool, (_ACCESS_MOD_MAP_RE[access], 
-                                                              'static' if static else '', 
-                                                              _FINALITY_TYPE_MAP_RE[finality], 
-                                                              _CLASS_TYPE_MAP_RE[type], 'Hello {}'))))

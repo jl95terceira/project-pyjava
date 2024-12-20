@@ -74,7 +74,10 @@ class Builder(Handler):
     @_handled(_EntityTypes.CLASS)
     def handle_class        (self, class_decl:ClassHeaderDeclaration):  
         
-        class_                    = model.Class(header=class_decl.header)
+        class_                    = model.Interface    (header=class_decl.header) if isinstance(class_decl.header, model.InterfaceHeader)     else \
+                                    model.AbstractClass(header=class_decl.header) if isinstance(class_decl.header, model.AbstractClassHeader) else \
+                                    model.Record       (header=class_decl.header) if isinstance(class_decl.header, model.RecordHeader)        else \
+                                    model.ConcreteClass(header=class_decl.header)
         class_reg:typing.Callable[[str|None, model.Class],None] \
                                   = None
         if not self._class_stack:
@@ -90,8 +93,8 @@ class Builder(Handler):
         else:
 
             parent     = self._class_stack[-1].class_
-            class_dict = (parent.members.classes        if not class_decl.static else \
-                          parent.members.static_classes)
+            class_dict = (parent.members       .classes if not class_decl.static else \
+                          parent.static_members.classes)
             if class_decl.name in class_dict: raise exc.ClassDuplicateException(class_decl.name)
             class_reg  = class_dict.__setitem__
             
@@ -112,8 +115,8 @@ class Builder(Handler):
         parent = self._class_stack[-1].class_
         if initializer_decl.static:
 
-            if parent.members.static_initializer is not None: raise exc.StaticInitializerDuplicateException()
-            parent.members.static_initializer = initializer_decl.initializer
+            if parent.static_members.initializer is not None: raise exc.StaticInitializerDuplicateException()
+            parent.static_members.initializer = initializer_decl.initializer
         
         else:
 
@@ -134,8 +137,8 @@ class Builder(Handler):
         
         if not self._class_stack: raise exc.AttributeOutsideClassException(attribute_decl.name)
         parent = self._class_stack[-1].class_
-        attributes_dict = (parent.members.attributes        if not attribute_decl.static else \
-                           parent.members.static_attributes)
+        attributes_dict = (parent.members       .attributes if not attribute_decl.static else \
+                           parent.static_members.attributes)
         if attribute_decl.name in attributes_dict: raise exc.AttributeDuplicateException(attribute_decl.name)
         attributes_dict[attribute_decl.name] = attribute_decl.attribute
 
@@ -145,8 +148,8 @@ class Builder(Handler):
         
         if not self._class_stack: raise exc.MethodOutsideClassException(method_decl.name)
         parent = self._class_stack[-1].class_
-        methods_dict = (parent.members.methods        if not method_decl.static else \
-                        parent.members.static_methods)
+        methods_dict = (parent.members       .methods if not method_decl.static else \
+                        parent.static_members.methods)
         methods_dict[method_decl.name].append(method_decl.method)
 
     @typing.override

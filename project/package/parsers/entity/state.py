@@ -3,8 +3,6 @@ from ... import util
 class State(util.Named): pass
 class States:
 
-    AINTERFACE                  = State('@interface')
-    AINTERFACE_NAMED            = State('@interface Named')
     ATTR_BEGIN                  = State('Attr')
     ATTR_INITIALIZE             = State('Attr Initialize')
     ATTR_MULTI_SEP              = State('Attr Multi Sep.')

@@ -19,6 +19,7 @@ class ClassTypes:
     _e:Enumerator[ClassType] = Enumerator()
     CLASS      = _e(ClassType(name='CLASS'))
     INTERFACE  = _e(ClassType(name='INTERFACE'))
+    RECORD     = _e(ClassType(name='RECORD'))
     ENUM       = _e(ClassType(name='ENUM'))
     AINTERFACE = _e(ClassType(name='@INTERFACE'))
     @staticmethod
@@ -117,7 +118,12 @@ class ConcreteClassHeader:
     access     :AccessModifier                   = field(default        =AccessModifiers.DEFAULT)
     finality   :FinalityType                     = field(default        =FinalityTypes  .DEFAULT)
     inherit    :dict[InheritanceType,list[Type]] = field(default_factory=lambda: defaultdict(list))
-    signature  :dict[str, 'Argument']|None       = field(default        =None)
+
+@dataclass 
+class AInterfaceHeader:
+
+    annotations:list[Annotation] = field(default_factory=list)
+    access     :AccessModifier   = field(default        =AccessModifiers.DEFAULT)
 
 @dataclass
 class AbstractClassHeader:
@@ -135,14 +141,12 @@ class InterfaceHeader:
     access     :AccessModifier                   = field(default        =AccessModifiers.DEFAULT)
     inherit    :list[Type]                       = field(default_factory=list)
 
-ClassHeader = typing.Union[ConcreteClassHeader, AbstractClassHeader, InterfaceHeader]
-
 @dataclass
-class AInterface:
+class RecordHeader(ConcreteClassHeader):
 
-    name       :str              = field()
-    annotations:list[Annotation] = field(default_factory=list)
-    access     :AccessModifier   = field(default        =AccessModifiers.DEFAULT)
+    signature:dict[str,'Argument'] = field(default_factory=dict)
+
+ClassHeader = typing.Union[ConcreteClassHeader, AbstractClassHeader, InterfaceHeader, RecordHeader, AInterfaceHeader]
 
 @dataclass
 class Argument:
@@ -244,23 +248,36 @@ class ConcreteClass:
 
     header        :ConcreteClassHeader = field()
     static_members:StaticMembers       = field(kw_only=True, default_factory=StaticMembers)
-    members       :Members             = field(default_factory=Members)
+    members       :Members             = field(kw_only=True, default_factory=Members)
 
 @dataclass
 class AbstractClass:
 
     header        :AbstractClassHeader = field()
     static_members:StaticMembers       = field(kw_only=True, default_factory=StaticMembers)
-    members       :Members             = field(default_factory=Members)
+    members       :Members             = field(kw_only=True, default_factory=Members)
 
 @dataclass
 class Interface:
 
     header        :InterfaceHeader = field()
     static_members:StaticMembers   = field(kw_only=True, default_factory=StaticMembers)
-    members       :Members         = field(default_factory=Members)
+    members       :Members         = field(kw_only=True, default_factory=Members)
 
-Class = typing.Union[ConcreteClass, AbstractClass, Interface]
+@dataclass
+class Record(ConcreteClass):
+
+    header        :RecordHeader  = field()
+    static_members:StaticMembers = field(kw_only=True, default_factory=StaticMembers)
+    members       :Members       = field(kw_only=True, default_factory=Members)
+
+@dataclass
+class AInterface:
+
+    header        :AInterfaceHeader = field()
+    members       :Members          = field(kw_only=True, default_factory=Members)
+
+Class = typing.Union[ConcreteClass, AbstractClass, Interface, Record, AInterface]
 
 @dataclass
 class Unit:
