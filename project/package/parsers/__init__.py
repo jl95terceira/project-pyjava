@@ -5,55 +5,59 @@ from ..  import model, handlers
 
 class StreamPrinter(handlers.entity.Handler):
 
+    def __init__(self, printer:typing.Callable[[str],None]=lambda a: print(a, end='')):
+
+        self._print = printer
+
     @typing.override
     def handle_package    (self, package:handlers.entity.PackageDeclaration):
 
-        print(f'Handling package:               {package}')
+        self._print(f'Handling package:               {package}\n')
 
     @typing.override
     def handle_import     (self, import_:handlers.entity.ImportDeclaration):
 
-        print(f'Handling import:                {import_}')
+        self._print(f'Handling import:                {import_}\n')
 
     @typing.override
     def handle_class      (self, class_:handlers.entity.ClassHeaderDeclaration):
 
-        print(f'Handling class:                 {class_}')
+        self._print(f'Handling class:                 {class_}\n')
 
     @typing.override
     def handle_class_end  (self):
 
-        print(f'Handling end of class')
+        self._print(f'Handling end of class\n')
 
     @typing.override
     def handle_initializer(self, initializer:handlers.entity.InitializerDeclaration):
 
-        print(F'Handling initializer:           {initializer}')
+        self._print(F'Handling initializer:           {initializer}\n')
 
     @typing.override
     def handle_constructor(self, constructor:handlers.entity.ConstructorDeclaration):
 
-        print(f'Handling constructor:           {constructor}')
+        self._print(f'Handling constructor:           {constructor}\n')
 
     @typing.override
     def handle_attribute  (self, attribute:handlers.entity.AttributeDeclaration):
 
-        print(f'Handling attribute:             {attribute}')
+        self._print(f'Handling attribute:             {attribute}\n')
 
     @typing.override
     def handle_method     (self, method:handlers.entity.MethodDeclaration):
 
-        print(f'Handling method:                {method}')
+        self._print(f'Handling method:                {method}\n')
 
     @typing.override
     def handle_enum_value (self, enumvalue:handlers.entity.EnumValueDeclaration):
 
-        print(f'Handling enum value:            {enumvalue}')
+        self._print(f'Handling enum value:            {enumvalue}\n')
 
     @typing.override
     def handle_comment    (self, comment:model.Comment):
 
-        print(f'Handling comment:               {comment}')
+        self._print(f'Handling comment:               {comment}\n')
 
 class SilentHandler(handlers.entity.Handler):
 

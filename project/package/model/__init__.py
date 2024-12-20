@@ -195,11 +195,18 @@ class ConcreteMethod:
 class InterfaceMethod:
 
     type         :Type              |None = field()
-    default      :bool                    = field(default        =False)
     generics     :list[GenericType] |None = field(default        =None)
     args         :dict[str,Argument]      = field(default_factory=dict)
     throws       :list[Type]              = field(default_factory=list)
-    default_value:str               |None = field(default        =None)
+
+@dataclass
+class InterfaceDefaultMethod:
+
+    type         :Type              |None = field()
+    generics     :list[GenericType] |None = field(default        =None)
+    args         :dict[str,Argument]      = field(default_factory=dict)
+    throws       :list[Type]              = field(default_factory=list)
+    body         :str                     = field(default        ='')
 
 @dataclass
 class AbstractMethod:
@@ -211,7 +218,13 @@ class AbstractMethod:
     args         :dict[str,Argument]      = field(default_factory=dict)
     throws       :list[Type]              = field(default_factory=list)
 
-Method = typing.Union[ConcreteMethod, InterfaceMethod, AbstractMethod]
+@dataclass
+class AInterfaceMethod:
+
+    type         :Type|None = field()
+    default_value:str |None = field(default=None)
+
+Method = typing.Union[ConcreteMethod, InterfaceMethod, InterfaceDefaultMethod, AbstractMethod, AInterfaceMethod]
 
 @dataclass
 class EnumValue:

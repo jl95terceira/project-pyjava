@@ -26,9 +26,7 @@ _FINALITY_TYPE_KEYWORDS      = set(_FINALITY_TYPE_MAP_BY_KEYWORD)
 _CLASS_TYPE_MAP_BY_KEYWORD   = {words.CLASS     :model.ClassTypes.CLASS,
                                 words.INTERFACE :model.ClassTypes.INTERFACE,
                                 words.RECORD    :model.ClassTypes.RECORD,
-                                words.ENUM      :model.ClassTypes.ENUM,
-                                f'{words.ATSIGN}{words.INTERFACE}'\
-                                                :model.ClassTypes.AINTERFACE}
+                                words.ENUM      :model.ClassTypes.ENUM,}
 _CLASS_TYPE_KEYWORDS         = set(_CLASS_TYPE_MAP_BY_KEYWORD)
 _WORD_PATTERN                = re.compile('^\\w+$')
 
@@ -181,12 +179,6 @@ class Parser(StackingSemiParser):
                 access     =self._coerce_access(self._vars.access),
                 inherit    =list(self._vars.class_subc[model.InheritanceTypes.IMPLEMENTS])
             ) if self._vars.class_type is model.ClassTypes.INTERFACE else \
-                   model.AbstractClassHeader(
-                annotations=self._vars.annotations,
-                generics   =self._vars.class_generics,
-                access     =self._coerce_access(self._vars.access),
-                inherit    =defaultdict(list, self._vars.class_subc),
-            ) if self._vars.finality is model.FinalityTypes.ABSTRACT else \
                    model.RecordHeader(
                 annotations=self._vars.annotations,
                 generics   =self._vars.class_generics,
@@ -199,6 +191,12 @@ class Parser(StackingSemiParser):
                 annotations=self._vars.annotations,
                 access     =self._coerce_access(self._vars.access)
             ) if self._vars.class_type is model.ClassTypes.AINTERFACE else \
+                   model.AbstractClassHeader(
+                annotations=self._vars.annotations,
+                generics   =self._vars.class_generics,
+                access     =self._coerce_access(self._vars.access),
+                inherit    =defaultdict(list, self._vars.class_subc),
+            ) if self._vars.finality is model.FinalityTypes.ABSTRACT else \
                    model.ConcreteClassHeader(
                 annotations=self._vars.annotations,
                 generics   =self._vars.class_generics,
@@ -253,10 +251,15 @@ class Parser(StackingSemiParser):
 
     def _flush_method               (self, body:str|None): 
         
+        parent_class_decl = (lambda e: e.class_)(self._class_stack[-1])
         self._NEXT.handle_method(handlers.entity.MethodDeclaration(
             name  =self._vars.attr_name,
             static=self._vars.static,
-            method=model.AbstractMethod(
+            method=model.AInterfaceMethod(
+                type         =self._vars.attr_type,
+                default_value=self._vars.method_defaultv
+            ) if parent_class_decl is not None and isinstance(parent_class_decl.header, model.AInterfaceHeader) else \
+                   model.AbstractMethod(
                 type        =self._vars.attr_type,
                 access      =self._coerce_access(self._vars.access),
                 synchronized=self._vars.synchronized,
@@ -276,11 +279,16 @@ class Parser(StackingSemiParser):
             ) if self._vars.finality is not model.FinalityTypes.DEFAULT and body is not None else \
                    model.InterfaceMethod(
                 type         =self._vars.attr_type,
-                default      =self._vars.default,
                 generics     =self._vars.method_generics,
                 args         =self._vars.method_signature,
                 throws       =self._vars.throws if self._vars.throws is not None else list(),
-                default_value=self._vars.method_defaultv
+            ) if self._vars.finality is not model.FinalityTypes.DEFAULT else \
+                   model.InterfaceDefaultMethod(
+                type         =self._vars.attr_type,
+                generics     =self._vars.method_generics,
+                args         =self._vars.method_signature,
+                throws       =self._vars.throws if self._vars.throws is not None else list(),
+                body         =body
             )
         ))
         self._reset_vars()
@@ -298,7 +306,8 @@ class Parser(StackingSemiParser):
         if annotation.name == words.INTERFACE: 
             
             if annotation.args: raise exc.Exception(self._line)
-            self._vars.state = state.States.CLASS
+            self._vars.class_type = model.ClassTypes.AINTERFACE
+            self._vars.state      = state.States.CLASS
             self._stack_handler(parsers.type.Parser(after=self._unstacking(self._store_class_name), part_rehandler=self.handle_part, allow_array=False))
 
         else:
