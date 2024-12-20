@@ -24,34 +24,34 @@ class _TestsRegistry:
     def __init__(self):
 
         # per entity type
-        self.packages           :dict[int, entity.PackageDeclaration]           = dict()
-        self.imports            :dict[int, entity.ImportDeclaration]            = dict()
-        self.classes            :dict[int, entity.ClassHeaderDeclaration]       = dict()
-        self.class_ends         :dict[int, None]                                = dict()
-        self.initializers       :dict[int, entity.InitializerDeclaration]       = dict()
-        self.constructors       :dict[int, entity.ConstructorDeclaration]       = dict()
-        self.attributes         :dict[int, entity.AttributeDeclaration]         = dict()
-        self.methods            :dict[int, entity.MethodDeclaration]            = dict()
-        self.enum_values        :dict[int, entity.EnumValueDeclaration]         = dict()
-        self.comments           :dict[int, model.Comment]           = dict()
+        self.packages           :dict[int, entity.PackageDeclaration]       = dict()
+        self.imports            :dict[int, entity.ImportDeclaration]        = dict()
+        self.classes            :dict[int, entity.ClassHeaderDeclaration]   = dict()
+        self.class_ends         :dict[int, None]                            = dict()
+        self.initializers       :dict[int, entity.InitializerDeclaration]   = dict()
+        self.constructors       :dict[int, entity.ConstructorDeclaration]   = dict()
+        self.attributes         :dict[int, entity.AttributeDeclaration]     = dict()
+        self.methods            :dict[int, entity.MethodDeclaration]        = dict()
+        self.enum_values        :dict[int, entity.EnumValueDeclaration]     = dict()
+        self.comments           :dict[int, model.Comment]                   = dict()
         # all listed
-        self.a                  :list[typing.Any]                   = list()
+        self.a                  :list[typing.Any] = list()
 
     def clear(self): 
         
         # per entity type
-        self.packages           .clear()
-        self.imports            .clear()
-        self.classes            .clear()
-        self.class_ends         .clear()
-        self.initializers       .clear()
-        self.constructors       .clear()
-        self.attributes         .clear()
-        self.methods            .clear()
-        self.enum_values        .clear()
-        self.comments           .clear()
+        self.packages       .clear()
+        self.imports        .clear()
+        self.classes        .clear()
+        self.class_ends     .clear()
+        self.initializers   .clear()
+        self.constructors   .clear()
+        self.attributes     .clear()
+        self.methods        .clear()
+        self.enum_values    .clear()
+        self.comments       .clear()
         # all listed
-        self.a                  .clear()
+        self.a              .clear()
 
 class TestRegistrator:
 

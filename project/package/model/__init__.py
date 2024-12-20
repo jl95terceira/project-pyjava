@@ -1,3 +1,4 @@
+import abc
 from   collections import defaultdict
 from   dataclasses import dataclass, field
 import typing
@@ -5,6 +6,11 @@ import typing
 from ..util import Named
 
 from jl95terceira.batteries import Enumerator
+
+class Entity(abc.ABC): pass
+
+#    @abc.abstractmethod
+#    def source(self): ...
 
 @dataclass(frozen=True)
 class ClassType(Named): pass
@@ -104,15 +110,32 @@ class UnboundedType: pass
 GenericType = typing.Union[Type, ConstrainedType, UnboundedType]
 
 @dataclass
-class ClassHeader:
+class ConcreteClassHeader:
 
     annotations:list[Annotation]                 = field(default_factory=list)
     generics   :list[GenericType]|None           = field(default        =None)
-    type       :ClassType                        = field(default        =ClassTypes     .CLASS)
     access     :AccessModifier                   = field(default        =AccessModifiers.DEFAULT)
     finality   :FinalityType                     = field(default        =FinalityTypes  .DEFAULT)
     inherit    :dict[InheritanceType,list[Type]] = field(default_factory=lambda: defaultdict(list))
     signature  :dict[str, 'Argument']|None       = field(default        =None)
+
+@dataclass
+class AbstractClassHeader:
+
+    annotations:list[Annotation]                 = field(default_factory=list)
+    generics   :list[GenericType]|None           = field(default        =None)
+    access     :AccessModifier                   = field(default        =AccessModifiers.DEFAULT)
+    inherit    :dict[InheritanceType,list[Type]] = field(default_factory=lambda: defaultdict(list))
+
+@dataclass
+class InterfaceHeader:
+
+    annotations:list[Annotation]                 = field(default_factory=list)
+    generics   :list[GenericType]|None           = field(default        =None)
+    access     :AccessModifier                   = field(default        =AccessModifiers.DEFAULT)
+    inherit    :list[Type]                       = field(default_factory=list)
+
+ClassHeader = typing.Union[ConcreteClassHeader, AbstractClassHeader, InterfaceHeader]
 
 @dataclass
 class AInterface:
@@ -153,18 +176,38 @@ class Attribute:
     value    :str|None       = field(default=None)
 
 @dataclass
-class Method:
+class ConcreteMethod:
 
     type         :Type              |None = field()
-    default      :bool                    = field(default        =False)
     access       :AccessModifier          = field(default        =AccessModifiers.DEFAULT)
     finality     :FinalityType            = field(default        =FinalityTypes  .DEFAULT)
     synchronized :bool                    = field(default        =False)
     generics     :list[GenericType] |None = field(default        =None)
     args         :dict[str,Argument]      = field(default_factory=dict)
     throws       :list[Type]              = field(default_factory=list)
-    body         :str               |None = field(default        =None)
+    body         :str                     = field(default        ='')
+
+@dataclass
+class InterfaceMethod:
+
+    type         :Type              |None = field()
+    default      :bool                    = field(default        =False)
+    generics     :list[GenericType] |None = field(default        =None)
+    args         :dict[str,Argument]      = field(default_factory=dict)
+    throws       :list[Type]              = field(default_factory=list)
     default_value:str               |None = field(default        =None)
+
+@dataclass
+class AbstractMethod:
+
+    type         :Type              |None = field()
+    access       :AccessModifier          = field(default        =AccessModifiers.DEFAULT)
+    synchronized :bool                    = field(default        =False)
+    generics     :list[GenericType] |None = field(default        =None)
+    args         :dict[str,Argument]      = field(default_factory=dict)
+    throws       :list[Type]              = field(default_factory=list)
+
+Method = typing.Union[ConcreteMethod, InterfaceMethod, AbstractMethod]
 
 @dataclass
 class EnumValue:
@@ -179,24 +222,45 @@ class Comment:
     text:str = field()
 
 @dataclass
-class ClassMembers:
+class StaticMembers:
 
-    static_attributes :dict[str,list[Attribute]]      = field(default_factory=lambda: defaultdict(list))
-    static_initializer:Initializer              |None = field(default        =None)
-    static_methods    :dict[str,list[Method]]         = field(default_factory=lambda: defaultdict(list))
-    static_classes    :dict[str,'Class']              = field(default_factory=dict)
-    attributes        :dict[str,Attribute]            = field(default_factory=dict)
-    initializer       :Initializer              |None = field(default        =None)
-    constructors      :list[Constructor]              = field(default_factory=list)
-    methods           :dict[str,list[Method]]         = field(default_factory=lambda: defaultdict(list))
-    classes           :dict[str,'Class']              = field(default_factory=dict)
-    enumvalues        :dict[str,EnumValue]            = field(default_factory=dict)
+    attributes :dict[str,list[Attribute]]      = field(default_factory=lambda: defaultdict(list))
+    initializer:Initializer              |None = field(default        =None)
+    methods    :dict[str,list[ConcreteMethod]] = field(default_factory=lambda: defaultdict(list))
+    classes    :dict[str,'Class']              = field(default_factory=dict)
 
 @dataclass
-class Class:
+class Members:
 
-    header :ClassHeader  = field()
-    members:ClassMembers = field(default_factory=ClassMembers)
+    attributes        :dict[str,Attribute]         = field(default_factory=dict)
+    initializer       :Initializer           |None = field(default        =None)
+    constructors      :list[Constructor]           = field(default_factory=list)
+    methods           :dict[str,list[Method]]      = field(default_factory=lambda: defaultdict(list))
+    classes           :dict[str,'Class']           = field(default_factory=dict)
+    enumvalues        :dict[str,EnumValue]         = field(default_factory=dict)
+
+@dataclass
+class ConcreteClass:
+
+    header        :ConcreteClassHeader = field()
+    static_members:StaticMembers       = field(kw_only=True, default_factory=StaticMembers)
+    members       :Members             = field(default_factory=Members)
+
+@dataclass
+class AbstractClass:
+
+    header        :AbstractClassHeader = field()
+    static_members:StaticMembers       = field(kw_only=True, default_factory=StaticMembers)
+    members       :Members             = field(default_factory=Members)
+
+@dataclass
+class Interface:
+
+    header        :InterfaceHeader = field()
+    static_members:StaticMembers   = field(kw_only=True, default_factory=StaticMembers)
+    members       :Members         = field(default_factory=Members)
+
+Class = typing.Union[ConcreteClass, AbstractClass, Interface]
 
 @dataclass
 class Unit:

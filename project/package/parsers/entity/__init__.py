@@ -171,15 +171,31 @@ class Parser(StackingSemiParser):
 
     def _flush_class                (self):
 
-        class_ = handlers.entity.ClassHeaderDeclaration(name  =self._vars.class_name, 
-                                                        static=self._vars.static,
-                                                        header=model.ClassHeader(annotations=self._vars.annotations,
-                                                                                    generics   =self._vars.class_generics,
-                                                                                    access     =self._coerce_access(self._vars.access),
-                                                                                    finality   =self._coerce_finality(self._vars.finality),
-                                                                                    type       =self._vars.class_type,
-                                                                                    inherit    =defaultdict(list, self._vars.class_subc),
-                                                                                    signature  =self._vars.method_signature))
+        class_ = handlers.entity.ClassHeaderDeclaration(
+            name  =self._vars.class_name, 
+            static=self._vars.static,
+            header=model.InterfaceHeader(
+                annotations=self._vars.annotations,
+                generics   =self._vars.class_generics,
+                access     =self._coerce_access(self._vars.access),
+                inherit    =list(self._vars.class_subc[model.InheritanceTypes.IMPLEMENTS])
+            ) if self._vars.class_type is model.ClassTypes.INTERFACE else \
+                   model.AbstractClassHeader(
+                annotations=self._vars.annotations,
+                generics   =self._vars.class_generics,
+                access     =self._coerce_access(self._vars.access),
+                inherit    =defaultdict(list, self._vars.class_subc),
+            ) if self._vars.finality is model.FinalityTypes.ABSTRACT else \
+                   model.ConcreteClassHeader(
+                annotations=self._vars.annotations,
+                generics   =self._vars.class_generics,
+                access     =self._coerce_access(self._vars.access),
+                finality   =self._coerce_finality(self._vars.finality),
+                type       =self._vars.class_type,
+                inherit    =defaultdict(list, self._vars.class_subc),
+                signature  =self._vars.method_signature
+            )
+        )
         self._NEXT.handle_class(class_)
         self._class_stack.append(_ParserClassStackElement(class_ =class_, 
                                                           vars   =self._vars,
@@ -226,18 +242,36 @@ class Parser(StackingSemiParser):
 
     def _flush_method               (self, body:str|None): 
         
-        self._NEXT.handle_method(handlers.entity.MethodDeclaration(name  =self._vars.attr_name,
-                                                                   static=self._vars.static,
-                                                                   method=model.Method(default      =self._vars.default,
-                                                                                       access       =self._coerce_access(self._vars.access),
-                                                                                       finality     =self._coerce_finality(self._vars.finality),
-                                                                                       synchronized =self._vars.synchronized,
-                                                                                       generics     =self._vars.method_generics,
-                                                                                       type         =self._vars.attr_type,
-                                                                                       args         =self._vars.method_signature,
-                                                                                       throws       =self._vars.throws if self._vars.throws is not None else list(),
-                                                                                       default_value=self._vars.method_defaultv,
-                                                                                       body         =body)))
+        self._NEXT.handle_method(handlers.entity.MethodDeclaration(
+            name  =self._vars.attr_name,
+            static=self._vars.static,
+            method=model.AbstractMethod(
+                type        =self._vars.attr_type,
+                access      =self._coerce_access(self._vars.access),
+                synchronized=self._vars.synchronized,
+                generics    =self._vars.method_generics,
+                args        =self._vars.method_signature,
+                throws      =self._vars.throws if self._vars.throws is not None else list()
+            ) if self._vars.finality is model.FinalityTypes.ABSTRACT else \
+                   model.ConcreteMethod(
+                access       =self._coerce_access(self._vars.access),
+                finality     =self._coerce_finality(self._vars.finality),
+                synchronized =self._vars.synchronized,
+                generics     =self._vars.method_generics,
+                type         =self._vars.attr_type,
+                args         =self._vars.method_signature,
+                throws       =self._vars.throws if self._vars.throws is not None else list(),
+                body         =body
+            ) if self._vars.finality is not model.FinalityTypes.DEFAULT and body is not None else \
+                   model.InterfaceMethod(
+                type         =self._vars.attr_type,
+                default      =self._vars.default,
+                generics     =self._vars.method_generics,
+                args         =self._vars.method_signature,
+                throws       =self._vars.throws if self._vars.throws is not None else list(),
+                default_value=self._vars.method_defaultv
+            )
+        ))
         self._reset_vars()
 
     def _flush_enum_value           (self):
@@ -723,7 +757,7 @@ class Parser(StackingSemiParser):
             if part != words.CURLY_OPEN: raise exc.Exception(line)
             class_ = handlers.entity.ClassHeaderDeclaration(name  =self._vars.class_name,
                                                             static=self._vars.static,
-                                                            header=model.ClassHeader(type       =model.ClassTypes.AINTERFACE,
+                                                            header=model.ConcreteClassHeader(type       =model.ClassTypes.AINTERFACE,
                                                                                      access     =self._coerce_access  (self._vars.access),
                                                                                      finality   =self._coerce_finality(self._vars.finality),
                                                                                      annotations=self._vars.annotations))

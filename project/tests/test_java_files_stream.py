@@ -29,7 +29,7 @@ class Tests(unittest.TestCase):
 
         self.tr.r_package       (entity.PackageDeclaration    (name='project.tests.java_files'))
         self.tr.r_import        (entity.ImportDeclaration     (name='java.util.Map'))
-        self.tr.r_class         (entity.ClassHeaderDeclaration(name='Test1', header=model.ClassHeader(access=model.AccessModifiers.PUBLIC)))
+        self.tr.r_class         (entity.ClassHeaderDeclaration(name='Test1', header=model.ConcreteClassHeader(access=model.AccessModifiers.PUBLIC)))
         self.tr.r_attribute     (entity.AttributeDeclaration  (name='a1'             , attribute=model.Attribute(type=model.Type('int')                 , access=model.AccessModifiers.PRIVATE)))
         self.tr.r_attribute     (entity.AttributeDeclaration  (name='a2', static=True, attribute=model.Attribute(type=model.Type('boolean'))))
         self.tr.r_attribute     (entity.AttributeDeclaration  (name='a3'             , attribute=model.Attribute(type=model.Type('String', array_dim=1) , access=model.AccessModifiers.PROTECTED)))
@@ -56,8 +56,8 @@ class Tests(unittest.TestCase):
 
         self.tr.r_package       (entity.PackageDeclaration    (name='project.tests.java_files'))
         self.tr.r_import        (entity.ImportDeclaration     (name='java.util.*'))
-        self.tr.r_class         (entity.ClassHeaderDeclaration(name='Test2'                     , header=model.ClassHeader(access=model.AccessModifiers.PUBLIC)))
-        self.tr.r_method        (entity.MethodDeclaration     (name='Test2', method=model.Method(access=model.AccessModifiers.PUBLIC, type=model.Type(name='void'), args={'ints':model.Argument(annotations=[model.Annotation(name='QueryParam')], type=model.Type(name='List', generics=[model.Type(name='Integer', annotations=[model.Annotation(name='NonNull')])]))}, body='')))
+        self.tr.r_class         (entity.ClassHeaderDeclaration(name='Test2'                     , header=model.ConcreteClassHeader(access=model.AccessModifiers.PUBLIC)))
+        self.tr.r_method        (entity.MethodDeclaration     (name='Test2', method=model.ConcreteMethod(access=model.AccessModifiers.PUBLIC, type=model.Type(name='void'), args={'ints':model.Argument(annotations=[model.Annotation(name='QueryParam')], type=model.Type(name='List', generics=[model.Type(name='Integer', annotations=[model.Annotation(name='NonNull')])]))}, body='')))
         self.tr.r_constructor   (entity.ConstructorDeclaration(model.Constructor(access=model.AccessModifiers.PUBLIC,                                               args={'ints':model.Argument(annotations=[model.Annotation(name='QueryParam')], type=model.Type(name='List', generics=[model.Type(name='Integer', annotations=[model.Annotation(name='NonNull')])]))}, body='')))
-        self.tr.r_method        (entity.MethodDeclaration     (name='Test2', method=model.Method(access=model.AccessModifiers.PUBLIC, type=model.Type(name='void'), args={'ints':model.Argument(annotations=[model.Annotation(name='QueryParam'), model.Annotation(name='Foo', args=['"Bar"', '"Baz"'])], type=model.Type(name='List', generics=[model.Type(name='Integer', annotations=[model.Annotation(name='NonNull')])]))}, body='')))
+        self.tr.r_method        (entity.MethodDeclaration     (name='Test2', method=model.ConcreteMethod(access=model.AccessModifiers.PUBLIC, type=model.Type(name='void'), args={'ints':model.Argument(annotations=[model.Annotation(name='QueryParam'), model.Annotation(name='Foo', args=['"Bar"', '"Baz"'])], type=model.Type(name='List', generics=[model.Type(name='Integer', annotations=[model.Annotation(name='NonNull')])]))}, body='')))
         self.tr.r_class_end     ()
