@@ -278,7 +278,7 @@ class Interface:
     members       :Members         = field(kw_only=True, default_factory=Members)
 
 @dataclass
-class Record(ConcreteClass):
+class Record:
 
     header        :RecordHeader  = field()
     static_members:StaticMembers = field(kw_only=True, default_factory=StaticMembers)
