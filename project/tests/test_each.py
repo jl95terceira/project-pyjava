@@ -97,11 +97,11 @@ class AnnotationTests2          (unittest.TestCase):
     @to_fail
     def test_wrong_args  (self): self.th.test('@DataClass(false, 123, this.<String, String>get()) class Foo {}', end=True)
     @to_fail
-    def test_wrong_args  (self): self.th.test('@DataCloss(true, 123, this.<String, String>get()) class Foo {}', end=True)
+    def test_wrong_args_2(self): self.th.test('@DataCloss(true, 123, this.<String, String>get()) class Foo {}', end=True)
     @to_fail
-    def test_wrong_args_2(self): self.th.test('@DataClass(true, 456, this.<String, String>get()) class Foo {}', end=True)
+    def test_wrong_args_3(self): self.th.test('@DataClass(true, 456, this.<String, String>get()) class Foo {}', end=True)
     @to_fail
-    def test_wrong_args_2(self): self.th.test('@DataClass(true, 456, this.<String, Integer>get()) class Foo {}', end=True)
+    def test_wrong_args_4(self): self.th.test('@DataClass(true, 456, this.<String, Integer>get()) class Foo {}', end=True)
     @to_fail
     def test_wrong_args_order(self): self.th.test('@DataClass(123, this.<String, String>get(), true) class Foo {}', end=True)
 
