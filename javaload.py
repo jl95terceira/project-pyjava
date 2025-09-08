@@ -1,4 +1,6 @@
 import argparse
+import pprint
+print = pprint.pprint
 
 import project.package as java
 
