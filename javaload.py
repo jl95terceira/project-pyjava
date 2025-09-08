@@ -11,7 +11,11 @@ if __name__ == '__main__':
         FILE_PATH = 'f'
 
     p = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter,
-                                description    =f"Parse and print Java file\nThis script serves as an example of how to make use of the module, using as handler the built-in {repr(java.parsers.StreamPrinter.__name__)}\nUse that handler as a template for your own {repr(java.handlers.entity.Handler)}.")
+                                description    =f"""
+                                Load a whole Java file as a Python object
+                                This script serves as an example of how to make use of the module to load Java files into a tree-like structure that can then be traversed. 
+                                It is more useful than just stream-parsing when you want to make multiple passes over the data. However, it is slower (as it still stream-parses the file first) and more memory-intensive.
+                                """)
     p.add_argument(f'{A.FILE_PATH}',
                    help='file name or path')
     get = p.parse_args().__getattribute__
