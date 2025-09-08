@@ -9,6 +9,7 @@ if __name__ == '__main__':
     class A:
 
         FILE_PATH = 'f'
+        ENCODING = 'enc'
 
     p = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter,
                                 description    =f"""
@@ -18,8 +19,10 @@ if __name__ == '__main__':
                                 """)
     p.add_argument(f'{A.FILE_PATH}',
                    help='file name or path')
+    p.add_argument(f'--{A.ENCODING}',
+                   help='file encoding')
     get = p.parse_args().__getattribute__
     # ...
-    with open(get(A.FILE_PATH), mode='r') as f:
+    with open(get(A.FILE_PATH), mode='r', encoding=get(A.ENCODING)) as f:
 
         print(java.load(f.read()))
