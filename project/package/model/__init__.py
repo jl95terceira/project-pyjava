@@ -7,6 +7,19 @@ from ..util import Named
 
 from jl95terceira.batteries import Enumerator
 
+class Sourceable(abc.ABC):
+
+    @abc.abstractmethod
+    def source(self) -> str: ...
+
+@dataclass(frozen=True)
+class NamedWithFixedSource(Named, Sourceable):
+
+    _source:str
+
+    @typing.override
+    def source(self) -> str: return self._source
+
 class Entity(abc.ABC): pass
 
 #    @abc.abstractmethod
@@ -43,6 +56,7 @@ class FinalityTypes:
     DEFAULT  = _e(FinalityType(name='DEFAULT'))
     ABSTRACT = _e(FinalityType(name='ABSTRACT'))
     FINAL    = _e(FinalityType(name='FINAL'))
+    @staticmethod
     def values(): yield from FinalityTypes._e
 
 @dataclass(frozen=True)
@@ -64,7 +78,7 @@ class Package: pass # sentinel
 class Import: pass # sentinel
 
 @dataclass
-class Annotation:
+class Annotation(Sourceable):
 
     name:str       = field()
     args:list[str] = field(default_factory=list)
@@ -73,7 +87,7 @@ class Annotation:
     def source(self): return f'@{self.name}{'' if not self.args else f'({', '.join(self.args)})'}'
 
 @dataclass
-class Type:
+class Type(Sourceable):
 
     name       :str                      = field()
     generics   :list['GenericType']|None = field(default        =None)
@@ -84,19 +98,17 @@ class Type:
     def source(self): return f'{self.name}{'' if self.generics is None else f'<{', '.join(map(lambda t: t.source(), self.generics))}>'}'
 
 @dataclass(frozen=True)
-class TypeConstraint(Named): pass
+class TypeConstraint(NamedWithFixedSource): pass
+
 class TypeConstraints:
 
     _e:Enumerator[TypeConstraint] = Enumerator()
-    NONE    = _e(TypeConstraint(name=None))
-    EXTENDS = _e(TypeConstraint(name='EXTENDS'))
-    SUPER   = _e(TypeConstraint(name='SUPER'))
-
-    @typing.override
-    def source(self): raise NotImplementedError()
+    NONE    = _e(TypeConstraint(name=None     , _source=''))
+    EXTENDS = _e(TypeConstraint(name='EXTENDS', _source='extends'))
+    SUPER   = _e(TypeConstraint(name='SUPER'  , _source='super'))
 
 @dataclass
-class ConstrainedType:
+class ConstrainedType(Sourceable):
 
     name      :str            = field()
     targets   :list[Type]     = field()
@@ -106,7 +118,10 @@ class ConstrainedType:
     def source(self) : return f'{self.name}{'' if self.constraint is TypeConstraints.NONE else f' {self.constraint.source()} {' & '.join(target.source() for target in self.targets)}'}'
 
 @dataclass
-class UnboundedType: pass
+class UnboundedType(Sourceable): 
+
+    @typing.override
+    def source(self): return '?'
 
 GenericType = typing.Union[Type, ConstrainedType, UnboundedType]
 
