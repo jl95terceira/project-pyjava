@@ -256,20 +256,20 @@ class Comment:
 @dataclass
 class StaticMembers:
 
-    attributes :dict[str,list[Attribute]]      = field(default_factory=lambda: defaultdict(list))
-    initializer:Initializer              |None = field(default        =None)
-    methods    :dict[str,list[ConcreteMethod]] = field(default_factory=lambda: defaultdict(list))
-    classes    :dict[str,'Class']              = field(default_factory=dict)
+    attributes :dict[str,Attribute]    = field(default_factory=dict)
+    initializer:Initializer|None       = field(default        =None)
+    methods    :dict[str,list[Method]] = field(default_factory=lambda: defaultdict(list))
+    classes    :dict[str,'Class']      = field(default_factory=dict)
 
 @dataclass
 class Members:
 
-    attributes        :dict[str,Attribute]         = field(default_factory=dict)
-    initializer       :Initializer           |None = field(default        =None)
-    constructors      :list[Constructor]           = field(default_factory=list)
-    methods           :dict[str,list[Method]]      = field(default_factory=lambda: defaultdict(list))
-    classes           :dict[str,'Class']           = field(default_factory=dict)
-    enumvalues        :dict[str,EnumValue]         = field(default_factory=dict)
+    attributes        :dict[str,Attribute]    = field(default_factory=dict)
+    initializer       :Initializer|None       = field(default        =None)
+    constructors      :list[Constructor]      = field(default_factory=list)
+    methods           :dict[str,list[Method]] = field(default_factory=lambda: defaultdict(list))
+    classes           :dict[str,'Class']      = field(default_factory=dict)
+    enumvalues        :dict[str,EnumValue]    = field(default_factory=dict)
 
 @dataclass
 class ConcreteClass:
@@ -279,31 +279,30 @@ class ConcreteClass:
     members       :Members             = field(kw_only=True, default_factory=Members)
 
 @dataclass
-class AbstractClass:
+class Memberful:
 
-    header        :AbstractClassHeader = field()
-    static_members:StaticMembers       = field(kw_only=True, default_factory=StaticMembers)
-    members       :Members             = field(kw_only=True, default_factory=Members)
-
-@dataclass
-class Interface:
-
-    header        :InterfaceHeader = field()
-    static_members:StaticMembers   = field(kw_only=True, default_factory=StaticMembers)
-    members       :Members         = field(kw_only=True, default_factory=Members)
-
-@dataclass
-class Record:
-
-    header        :RecordHeader  = field()
     static_members:StaticMembers = field(kw_only=True, default_factory=StaticMembers)
     members       :Members       = field(kw_only=True, default_factory=Members)
 
 @dataclass
-class AInterface:
+class AbstractClass(Memberful):
 
-    header        :AInterfaceHeader = field()
-    members       :Members          = field(kw_only=True, default_factory=Members)
+    header:AbstractClassHeader = field()
+
+@dataclass
+class Interface(Memberful):
+
+    header:InterfaceHeader = field()
+
+@dataclass
+class Record(Memberful):
+
+    header:RecordHeader = field()
+
+@dataclass
+class AInterface(Memberful):
+
+    header :AInterfaceHeader = field()
 
 Class = typing.Union[ConcreteClass, AbstractClass, Interface, Record, AInterface]
 

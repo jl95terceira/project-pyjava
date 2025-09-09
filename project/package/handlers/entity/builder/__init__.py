@@ -28,7 +28,21 @@ class _EntityTypes:
 
 class _Handler(typing.Protocol):
 
-    def __call__(self:'Builder', *aa, **kaa): ...
+    def __call__(_, self:'Builder', *aa, **kaa): ...
+
+def _handled(et:_EntityType):
+
+    def _f(f:_Handler):
+
+        def _g(self:'Builder', *aa, **kaa):
+
+            if DEBUG: print(et, *aa, **kaa)
+            f(self, *aa, **kaa)
+            self._type_of_prev = et
+
+        return _g
+    
+    return _f
 
 class Builder(Handler):
 
@@ -38,20 +52,6 @@ class Builder(Handler):
         self._class_stack :list[_ClassStackElement] = list()
         self._type_of_prev:_EntityType|None         = None
         self._enum_prev   :model.EnumValue|None     = None
-
-    def _handled(et:_EntityType):
-
-        def _f(f:_Handler):
-
-            def _g(self:'Builder', *aa, **kaa):
-
-                if DEBUG: print(et, *aa, **kaa)
-                f(self, *aa, **kaa)
-                self._type_of_prev = et
-
-            return _g
-        
-        return _f
 
     @typing.override
     @_handled(_EntityTypes.PACKAGE)
@@ -74,11 +74,14 @@ class Builder(Handler):
     @_handled(_EntityTypes.CLASS)
     def handle_class        (self, class_decl:ClassHeaderDeclaration):  
         
-        class_                    = model.Interface    (header=class_decl.header) if isinstance(class_decl.header, model.InterfaceHeader)     else \
-                                    model.AbstractClass(header=class_decl.header) if isinstance(class_decl.header, model.AbstractClassHeader) else \
-                                    model.Record       (header=class_decl.header) if isinstance(class_decl.header, model.RecordHeader)        else \
-                                    model.ConcreteClass(header=class_decl.header)
-        class_reg:typing.Callable[[str|None, model.Class],None] \
+        header = class_decl.header
+        class_                    = model.Interface    (header=header) if isinstance(header, model.InterfaceHeader)     else \
+                                    model.AbstractClass(header=header) if isinstance(header, model.AbstractClassHeader) else \
+                                    model.Record       (header=header) if isinstance(header, model.RecordHeader)        else \
+                                    model.ConcreteClass(header=header) if isinstance(header, model.ConcreteClassHeader) else \
+                                    None
+        if class_ is None: raise AssertionError(header)
+        class_reg:typing.Callable[[str, model.Class],None]|None \
                                   = None
         if not self._class_stack:
 
@@ -148,9 +151,8 @@ class Builder(Handler):
         
         if not self._class_stack: raise exc.MethodOutsideClassException(method_decl.name)
         parent = self._class_stack[-1].class_
-        methods_dict = (parent.members       .methods if not method_decl.static else \
-                        parent.static_members.methods)
-        methods_dict[method_decl.name].append(method_decl.method)
+        (parent.members       .methods[method_decl.name] if not method_decl.static else \
+         parent.static_members.methods[method_decl.name]).append(method_decl.method)
 
     @typing.override
     @_handled(_EntityTypes.ENUMVALUE)
