@@ -41,6 +41,7 @@ class StackingSemiParser(handlers.part.Handler, abc.ABC):
     def _stack_handler              (self, handler:handlers.part.Handler):
 
         self._subhandler = handler
+        assert self._line is not None
         self._subhandler.handle_line(self._line)
 
     def _unstack_handler            (self):
@@ -741,7 +742,9 @@ class Parser(StackingSemiParser):
             if part == words.CURLY_OPEN:
 
                 self._reset_vars()
-                self._vars.class_subc = {model.InheritanceTypes.EXTENDS: self._class_stack[-1].class_.name}
+                parent_class = self._class_stack[-1].class_
+                assert parent_class is not None
+                self._vars.class_subc = {model.InheritanceTypes.EXTENDS: [model.Type(name=parent_class.name),],}
                 self._flush_class()
 
             else:
