@@ -120,7 +120,7 @@ class Parser(parsers.entity.StackingSemiParser):
         self._sign_after(self._sign)
 
     @typing.override
-    def _default_handle_comment(self, text: str): pass #TO-DO
+    def _default_handle_comment(self, text: str, block:bool): pass #TO-DO
 
     @typing.override
     def _default_handle_spacing(self, spacing: str): pass #TO-DO

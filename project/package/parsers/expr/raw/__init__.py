@@ -54,7 +54,7 @@ class Parser(parsers.entity.StackingSemiParser):
     def _default_handle_newline(self): pass #TO-DO
 
     @typing.override
-    def _default_handle_comment(self, text: str): pass #TO-DO
+    def _default_handle_comment(self, text: str, block:bool): pass #TO-DO
 
     @typing.override
     def _default_handle_eof(self): raise NotImplementedError() #TO-DO

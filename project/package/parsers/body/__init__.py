@@ -67,9 +67,9 @@ class Parser(parsers.entity.StackingSemiParser):
         else: raise AssertionError(f'{self._state=}')
 
     @typing.override
-    def _default_handle_comment(self, text: str):
+    def _default_handle_comment(self, text: str, block: bool):
         
-        self._parts.append(text)
+        self._parts.append(((lambda t: f'//{t}') if not block else (lambda t: f'/*{t}*/'))(text))
 
     @typing.override
     def _default_handle_spacing(self, spacing:str):

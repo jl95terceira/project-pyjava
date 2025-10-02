@@ -5,6 +5,17 @@ from .   import exc, state
 from ... import handlers, parsers
 
 PATTERN  = re.compile(f'((?:(?:\\w|\\$)+)|(?:/\\*)|(?:\\*/)|(?://)|(?:\\\\.)|(?:\\.{{3}})|(?:<{{2,}})|\\s+|.)')
+PATTERN  = re.compile(f'({'|'.join((
+    f'(?:(?:\\w|\\$)+)',
+    f'(?:/\\*)',
+    f'(?:\\*/)',
+    f'(?://)',
+    f'(?:\\\\.)',
+    f'(?:\\.{{3}})',
+    f'(?:<{{2,}})',
+    f'\\s+',
+    f'.',
+))})')
 
 class Parser(handlers.line.Handler):
 
@@ -24,12 +35,14 @@ class Parser(handlers.line.Handler):
         self._next_handler.handle_line(line)
         if   self._state is state.States.IN_COMMENT_ONELINE: # // ...
 
-            self._next_handler.handle_comment(text=''.join(self._comment_parts))
+            assert self._comment_parts is not None
+            self._next_handler.handle_comment(text=''.join(self._comment_parts), block=False)
             self._comment_parts = None
             self._state = state.States.DEFAULT # no longer in comment, since this is another line
 
         elif self._state is state.States.IN_COMMENT_MULTILINE: # /* ... */
 
+            assert self._comment_parts is not None
             self._comment_parts.append('\n') # newline
 
         if not self._first_line:
@@ -46,6 +59,7 @@ class Parser(handlers.line.Handler):
             #print(self._state, self._string_delim, repr(part))
             if   self._state is state.States.IN_STRING: # "..."
 
+                assert self._string_parts is not None
                 if part != self._string_delim:
 
                     self._string_parts.append(part)
@@ -59,18 +73,20 @@ class Parser(handlers.line.Handler):
 
             elif self._state is state.States.IN_COMMENT_ONELINE: # // ...
 
+                assert self._comment_parts is not None
                 self._comment_parts.append(part)
                 # continue, because everything else in this line is part of the comment
 
             elif self._state is state.States.IN_COMMENT_MULTILINE: 
                 
+                assert self._comment_parts is not None
                 if part != '*/':
 
                     self._comment_parts.append(part)
 
                 else:
 
-                    self._next_handler.handle_comment(text=''.join(self._comment_parts))
+                    self._next_handler.handle_comment(text=''.join(self._comment_parts), block=True)
                     self._comment_parts = None
                     self._state = state.States.DEFAULT
 
@@ -87,7 +103,7 @@ class Parser(handlers.line.Handler):
                     self._string_parts = list()
 
                 elif part == '/*': 
-                    
+
                     self._comment_parts = list()
                     self._state = state.States.IN_COMMENT_MULTILINE
 

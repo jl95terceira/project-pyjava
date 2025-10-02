@@ -251,7 +251,8 @@ class EnumValue:
 @dataclass
 class Comment:
 
-    text:str = field()
+    text     :str  = field()
+    multiline:bool = field()
 
 @dataclass
 class StaticMembers:

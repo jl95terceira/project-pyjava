@@ -128,7 +128,7 @@ class Parser(parsers.entity.StackingSemiParser):
         else: raise NotImplementedError(f'{self._state.name}, {repr(part)},')
 
     @typing.override
-    def _default_handle_comment(self, text: str): pass #TO-DO save comment somewhere
+    def _default_handle_comment(self, text: str, block:bool): pass #TO-DO save comment somewhere
 
     @typing.override
     def _default_handle_spacing(self, spacing: str): pass #TO-DO save spacing somewhere

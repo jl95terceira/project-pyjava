@@ -66,10 +66,10 @@ class StackingSemiParser(handlers.part.Handler, abc.ABC):
         else                           : self.   _default_handle_part(part)
 
     @typing.override
-    def handle_comment              (self, text:str):
+    def handle_comment              (self, text:str, block:bool):
 
-        if self._subhandler is not None: self._subhandler.handle_comment(text)
-        else                           : self.   _default_handle_comment(text)
+        if self._subhandler is not None: self._subhandler.handle_comment(text,block)
+        else                           : self.   _default_handle_comment(text,block)
 
     @typing.override
     def handle_spacing              (self, spacing:str):
@@ -96,7 +96,7 @@ class StackingSemiParser(handlers.part.Handler, abc.ABC):
     def _default_handle_part        (self, part:str): ...
 
     @abc.abstractmethod
-    def _default_handle_comment     (self, text:str): ...
+    def _default_handle_comment     (self, text:str, block:bool): ...
 
     @abc.abstractmethod
     def _default_handle_spacing     (self, spacing:str): ...
@@ -253,6 +253,8 @@ class Parser(StackingSemiParser):
     def _flush_method               (self, body:str|None): 
         
         parent_class_decl = (lambda e: e.class_)(self._class_stack[-1])
+        assert self._vars.attr_name        is not None
+        assert self._vars.method_signature is not None
         self._NEXT.handle_method(handlers.entity.MethodDeclaration(
             name  =self._vars.attr_name,
             static=self._vars.static,
@@ -334,7 +336,7 @@ class Parser(StackingSemiParser):
         self._vars.state          = state.States.RECORD_AFTER_NAME
         self._stack_handler(parsers.signature.Parser(after=self._unstacking(self._store_record_signature)))
 
-    def _store_record_signature     (self, signature:dict[model.Argument]):
+    def _store_record_signature     (self, signature:dict[str,model.Argument]):
 
         self._vars.method_signature = signature
         self._vars.state       = state.States.CLASS_AFTER_NAME
@@ -774,15 +776,16 @@ class Parser(StackingSemiParser):
         raise NotImplementedError(f'line = {repr(line)}, state = {repr(self._vars.state.name)}')
         
     @typing.override
-    def _default_handle_comment     (self, text:str):
+    def _default_handle_comment     (self, text:str, block:bool):
 
-        self._NEXT.handle_comment(comment=model.Comment(text=text))
+        self._NEXT.handle_comment(comment=model.Comment(text=text,multiline=block))
 
     @typing.override
     def _default_handle_spacing     (self, spacing:str):
 
         if self._vars.state is state.States.ATTR_INITIALIZE:
 
+            assert self._vars.attr_value_parts is not None
             self._vars.attr_value_parts.append(spacing)
 
         else: pass
