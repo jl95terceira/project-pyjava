@@ -16,7 +16,7 @@ Java parser for Python
 
 Files and `javaload.py` and `javastream.py` are scripts to test a Java file quickly on whether it is loadable and streamable\*, respectively.
 
-\*_To "stream" (-parse) a Java file is to handle shallow declarations and statements, only - not to load the file into an element tree. In fact, by implementation, it is a step that preceedes loading proper._
+\*_To "stream" (-parse) a Java file is to handle shallow declarations and statements, only - not to load the whole file as an element tree. In fact, it is the first step in loading._
 
 # Build and install
 

@@ -5,7 +5,7 @@ import typing
 
 from ..util import Named
 
-from jl95terceira.batteries import Enumerator
+from jl95.batteries import Enumerator
 
 class Sourceable(abc.ABC):
 

@@ -3,7 +3,7 @@ requires = ["hatchling", "hatch-requirements-txt"]
 build-backend = "hatchling.build"
 [project]
 name = "jl95terceira_java"
-version = "0.3.3"
+version = "0.3.4"
 authors = [
   { name="Joao Luis Ornelas da Silva", email="jl95terceira@gmail.com" },
 ]
@@ -22,10 +22,11 @@ Homepage = "https://github.com/jl95terceira/project-pyjava"
 Issues = "https://github.com/jl95terceira/project-pyjava/issues"
 
 [tool.hatch.build.targets.wheel]
-packages = ["project/package"]
+packages = ["project/package","project/package_DEPRECATED"]
 
 [tool.hatch.build.targets.wheel.sources]
-"project/package" = "jl95terceira/java"
+"project/package" = "jl95/java"
+"project/package_DEPRECATED" = "jl95terceira/java"
 
 [tool.hatch.metadata.hooks.requirements_txt]
 files = ["requirements.txt"]
