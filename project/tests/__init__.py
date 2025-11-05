@@ -103,6 +103,7 @@ class _TestHandler(entity.Handler):
 
     def _test[T](self, registry_getter:typing.Callable[[_TestsRegistry],dict[int,T]], got:T):
 
+        assert self._i is not None
         i   = self._i
         MSG = lambda: f'No more entities expected at position {i} and beyond\n  Got: {got}'
         self._tc.assertLess (i  , len(self._tr.a), msg=MSG())
@@ -145,6 +146,7 @@ class _TestHandler(entity.Handler):
 
     def end(self):
 
+        assert self._i is not None
         self._tc.assertEqual(self._i, len(self._tr.a), msg=f'Expected no more entities to be process but there are {len(self._tr.a) - self._i} remaining')
 
     @typing.override
@@ -158,15 +160,15 @@ class _TestHandler(entity.Handler):
     @typing.override
     def handle_initializer      (self, initializer     :entity.InitializerDeclaration)  : self._test(lambda tr: tr.initializers , initializer)
     @typing.override
-    def handle_constructor      (self, constr          :entity.ConstructorDeclaration)  : self._test(lambda tr: tr.constructors , constr)
+    def handle_constructor      (self, constructor     :entity.ConstructorDeclaration)  : self._test(lambda tr: tr.constructors , constructor)
     @typing.override
-    def handle_attribute        (self, attr            :entity.AttributeDeclaration)    : self._test(lambda tr: tr.attributes   , attr)
+    def handle_attribute        (self, attribute       :entity.AttributeDeclaration)    : self._test(lambda tr: tr.attributes   , attribute)
     @typing.override
     def handle_method           (self, method          :entity.MethodDeclaration)       : self._test(lambda tr: tr.methods      , method)
     @typing.override
-    def handle_enum_value       (self, enum_value      :entity.EnumValueDeclaration)    : self._test(lambda tr: tr.enum_values  , enum_value)
+    def handle_enum_value       (self, enumvalue       :entity.EnumValueDeclaration)    : self._test(lambda tr: tr.enum_values  , enumvalue)
     @typing.override
-    def handle_comment          (self, comment         :model.Comment)      : self._test(lambda tr: tr.comments     , comment)
+    def handle_comment          (self, comment         :model.Comment)                  : self._test(lambda tr: tr.comments     , comment)
 
 def testfile_path(fn:str): return os.path.join(os.path.split(__file__)[0], _JAVA_FILES_PATH, fn)
 

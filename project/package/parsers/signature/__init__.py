@@ -22,6 +22,7 @@ class Parser(parsers.entity.StackingSemiParser):
 
     def _store_arg                  (self):
 
+        assert self._arg_type is not None
         self._sign[self._arg_name] = model.Argument(type       =self._arg_type, 
                                                     final      =self._finality is model.FinalityTypes.FINAL,
                                                     annotations=self._arg_annotations,
@@ -44,6 +45,7 @@ class Parser(parsers.entity.StackingSemiParser):
 
     def _if_array_after_name        (self, dim:int):
 
+        assert self._arg_type is not None
         self._arg_type.array_dim += dim
 
     @typing.override

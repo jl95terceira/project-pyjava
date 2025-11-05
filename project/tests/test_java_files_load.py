@@ -8,7 +8,25 @@ from . import *
 
 class _TestMethod(typing.Protocol):
 
-    def __call__(self:'Tests', unit:model.Unit): ...
+    def __call__(self, tests:'Tests', unit:model.Unit) -> None: ...
+
+def _file(file_name:str):
+
+    def a(f:_TestMethod):
+
+        def test_(self:'Tests'):
+
+            builtins.print(f'\nTest file: {file_name}',end=' ')
+            unit:model.Unit|None = None
+            with open(testfile_path(file_name), mode='r') as file:
+
+                unit = load(file.read())
+
+            f(self, unit)
+
+        return test_
+    
+    return a
 
 class Tests(unittest.TestCase): 
 
@@ -16,24 +34,6 @@ class Tests(unittest.TestCase):
 
         self.tr = TestRegistrator()
         self.th = self.tr.handler(self)
-
-    def _file(file_name:str):
-
-        def a(f:_TestMethod):
-
-            def test_(self:'Tests'):
-    
-                builtins.print(f'\nTest file: {file_name}',end=' ')
-                unit:model.Unit|None = None
-                with open(testfile_path(file_name), mode='r') as file:
-
-                    unit = load(file.read())
-
-                f(self, unit)
-
-            return test_
-        
-        return a
 
     def getAsserted[K,V](self, d:dict[K,V], k:K):
 

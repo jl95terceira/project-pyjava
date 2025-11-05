@@ -60,5 +60,6 @@ class Parser(parsers.entity.StackingSemiParser):
 
     def _stop(self): 
         
+        assert self._name is not None
         self._state = state.States.END
         self._after(handlers.entity.PackageDeclaration(name=self._name))
