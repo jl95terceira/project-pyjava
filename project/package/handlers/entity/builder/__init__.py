@@ -79,6 +79,7 @@ class Builder(Handler):
                                     model.AbstractClass(header=header) if isinstance(header, model.AbstractClassHeader) else \
                                     model.Record       (header=header) if isinstance(header, model.RecordHeader)        else \
                                     model.ConcreteClass(header=header) if isinstance(header, model.ConcreteClassHeader) else \
+                                    model.AInterface   (header=header) if isinstance(header, model.AInterfaceHeader)    else \
                                     None
         if class_ is None: raise AssertionError(header)
         class_reg:typing.Callable[[str, model.Class],None]|None \

@@ -17,7 +17,7 @@ class Parser(parsers.entity.StackingSemiParser):
         self._can_be_array                              = allow_array
         self._can_be_annotated                          = allow_annotations
         self._state                                     = state.States.BEGIN
-        self._name        :str                    |None = list()
+        self._name        :str                    |None = None
         self._array_dim                                 = 0
         self._generics    :list[model.GenericType]|None = None
         self._annotations :list[model.Annotation]       = list()
@@ -107,6 +107,7 @@ class Parser(parsers.entity.StackingSemiParser):
     def _stop(self, part_to_rehandle:str|None): 
 
         self._state = state.States.END
+        assert self._name is not None
         self._after(model.Type(name       =self._name, 
                                generics   =self._generics, 
                                array_dim  =self._array_dim,

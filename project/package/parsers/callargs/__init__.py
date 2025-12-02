@@ -17,7 +17,7 @@ class Parser(parsers.entity.StackingSemiParser):
         self._callargs_state                      = state.CallArgsStates.BEGIN
         self._callarg_value                       = ''
         self._callarg_depth                       = 0
-        self._callarg_depth_incrementer:str       = None
+        self._callarg_depth_incrementer:str|None  = None
         self._callargs_after                      = after
 
     def _store_callarg(self):
