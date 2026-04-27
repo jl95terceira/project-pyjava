@@ -79,6 +79,8 @@ class Parser(parsers.entity.StackingSemiParser):
     def _stop(self, part_to_rehandle:str|None):
 
         self._state = state.States.END
+        assert self._name is not None
+        assert self._args is not None
         self._after(model.Annotation(name=self._name,
                                      args=self._args))
         if part_to_rehandle is not None: self._part_rehandler(part_to_rehandle)
