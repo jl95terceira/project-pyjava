@@ -135,7 +135,7 @@ class ParserResettableVariables:
         self.method_generics  :list[model.GenericType]      |None = None
         self.method_defaultv  :str                          |None = None
         self.enumv_name       :str                          |None = None
-        self.enumv_callargs   :list[str]                    |None = None
+        self.enumv_args   :list[str]                    |None = None
         self.throws           :list[model.Type]             |None = None
 
 @dataclass
@@ -299,7 +299,7 @@ class Parser(StackingSemiParser):
     def _flush_enum_value           (self):
 
         self._NEXT.handle_enum_value(handlers.entity.EnumValueDeclaration(name     =self._vars.enumv_name, 
-                                                                          enumvalue=model.EnumValue(args       =self._vars.enumv_callargs,
+                                                                          enumvalue=model.EnumValue(args       =self._vars.enumv_args,
                                                                                                     annotations=self._vars.annotations)))
         self._reset_vars()
         self._vars.state = state.States.ENUM_DEFINED        
@@ -386,9 +386,9 @@ class Parser(StackingSemiParser):
         self._vars.method_defaultv = value
         self._vars.state = state.States.METHOD_DEFAULT_VALUE_AFTER
 
-    def _store_enumvalue_callargs   (self, callargs:list[str]): 
+    def _store_enumvalue_args   (self, args:list[str]): 
         
-        self._vars.enumv_callargs = callargs
+        self._vars.enumv_args = args
         self._vars.state          = state.States.ENUM_AFTER_CALLARGS
 
     @typing.override
@@ -728,7 +728,7 @@ class Parser(StackingSemiParser):
 
             if part == words.PARENTH_OPEN:
                 
-                self._stack_handler(parsers.callargs.Parser(after=self._unstacking(self._store_enumvalue_callargs)))
+                self._stack_handler(parsers.args.Parser(after=self._unstacking(self._store_enumvalue_args)))
                 self.handle_part(part) # re-handle part ('('), since it was used only for look-ahead
 
             else:

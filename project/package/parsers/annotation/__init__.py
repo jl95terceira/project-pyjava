@@ -52,7 +52,7 @@ class Parser(parsers.entity.StackingSemiParser):
 
             else:
 
-                self._stack_handler(parsers.callargs.Parser(after=self._unstacking(self._store_args)))
+                self._stack_handler(parsers.args.Parser(after=self._unstacking(self._store_args)))
                 self.handle_part(part)
             
         elif self._state is state.States.END:
