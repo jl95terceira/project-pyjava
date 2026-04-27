@@ -3,26 +3,26 @@ import unittest
 
 from . import *
 
+def _file(file_name:str):
+
+    def a(f:typing.Callable[['Tests'],None]):
+
+        def test_(self:'Tests'):
+
+            f(self)
+            builtins.print(f'\nTest file: {file_name}',end=' ')
+            self.th.test_file(file_name)
+
+        return test_
+    
+    return a
+
 class Tests(unittest.TestCase): 
 
     def setUp(self):
 
         self.tr = TestRegistrator()
         self.th = self.tr.handler(self)
-
-    def _file(file_name:str):
-
-        def a(f:typing.Callable[['Tests'],None]):
-
-            def test_(self:'Tests'):
-    
-                f(self)
-                builtins.print(f'\nTest file: {file_name}',end=' ')
-                self.th.test_file(file_name)
-
-            return test_
-        
-        return a
 
     @_file('Test1.java')
     def test_1(self):
