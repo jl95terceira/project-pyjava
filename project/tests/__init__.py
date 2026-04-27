@@ -5,7 +5,7 @@ import os.path
 import typing
 import unittest
 
-from ..package.handlers import entity
+from ..package.handlers import EntityHandler, decl
 
 from ..package import model, StreamParser, load
 
@@ -24,16 +24,16 @@ class _TestsRegistry:
     def __init__(self):
 
         # per entity type
-        self.packages           :dict[int, entity.PackageDeclaration]       = dict()
-        self.imports            :dict[int, entity.ImportDeclaration]        = dict()
-        self.classes            :dict[int, entity.ClassHeaderDeclaration]   = dict()
-        self.class_ends         :dict[int, None]                            = dict()
-        self.initializers       :dict[int, entity.InitializerDeclaration]   = dict()
-        self.constructors       :dict[int, entity.ConstructorDeclaration]   = dict()
-        self.attributes         :dict[int, entity.AttributeDeclaration]     = dict()
-        self.methods            :dict[int, entity.MethodDeclaration]        = dict()
-        self.enum_values        :dict[int, entity.EnumValueDeclaration]     = dict()
-        self.comments           :dict[int, model.Comment]                   = dict()
+        self.packages           :dict[int, decl.PackageDeclaration]       = dict()
+        self.imports            :dict[int, decl.ImportDeclaration]        = dict()
+        self.classes            :dict[int, decl.ClassHeaderDeclaration]   = dict()
+        self.class_ends         :dict[int, None]                          = dict()
+        self.initializers       :dict[int, decl.InitializerDeclaration]   = dict()
+        self.constructors       :dict[int, decl.ConstructorDeclaration]   = dict()
+        self.attributes         :dict[int, decl.AttributeDeclaration]     = dict()
+        self.methods            :dict[int, decl.MethodDeclaration]        = dict()
+        self.enum_values        :dict[int, decl.EnumValueDeclaration]     = dict()
+        self.comments           :dict[int, model.Comment]                 = dict()
         # all listed
         self.a                  :list[typing.Any] = list()
 
@@ -71,16 +71,16 @@ class TestRegistrator:
         registry_getter(self._tr)[self._index()] = x
         self._tr.a.append(x)
 
-    def r_package         (self, package        :entity.PackageDeclaration)         : self._register(lambda tr: tr.packages     , package)
-    def r_import          (self, import_        :entity.ImportDeclaration)          : self._register(lambda tr: tr.imports      , import_)
-    def r_class           (self, class_         :entity.ClassHeaderDeclaration)     : self._register(lambda tr: tr.classes      , class_)
-    def r_class_end       (self)                                                    : self._register(lambda tr: tr.class_ends   , None)
-    def r_initializer     (self, initializer    :entity.InitializerDeclaration)     : self._register(lambda tr: tr.initializers , initializer)
-    def r_constructor     (self, constr         :entity.ConstructorDeclaration)     : self._register(lambda tr: tr.constructors , constr)
-    def r_attribute       (self, attr           :entity.AttributeDeclaration)       : self._register(lambda tr: tr.attributes   , attr)
-    def r_method          (self, method         :entity.MethodDeclaration)          : self._register(lambda tr: tr.methods      , method)
-    def r_enum_value      (self, enum_value     :entity.EnumValueDeclaration)       : self._register(lambda tr: tr.enum_values  , enum_value)
-    def r_comment         (self, comment        :model.Comment)         : self._register(lambda tr: tr.comments     , comment)
+    def r_package         (self, package        :decl.PackageDeclaration)       : self._register(lambda tr: tr.packages     , package)
+    def r_import          (self, import_        :decl.ImportDeclaration)        : self._register(lambda tr: tr.imports      , import_)
+    def r_class           (self, class_         :decl.ClassHeaderDeclaration)   : self._register(lambda tr: tr.classes      , class_)
+    def r_class_end       (self)                                                : self._register(lambda tr: tr.class_ends   , None)
+    def r_initializer     (self, initializer    :decl.InitializerDeclaration)   : self._register(lambda tr: tr.initializers , initializer)
+    def r_constructor     (self, constr         :decl.ConstructorDeclaration)   : self._register(lambda tr: tr.constructors , constr)
+    def r_attribute       (self, attr           :decl.AttributeDeclaration)     : self._register(lambda tr: tr.attributes   , attr)
+    def r_method          (self, method         :decl.MethodDeclaration)        : self._register(lambda tr: tr.methods      , method)
+    def r_enum_value      (self, enum_value     :decl.EnumValueDeclaration)     : self._register(lambda tr: tr.enum_values  , enum_value)
+    def r_comment         (self, comment        :model.Comment)                 : self._register(lambda tr: tr.comments     , comment)
 
     def clear_registry(self): 
         
@@ -91,7 +91,7 @@ class TestRegistrator:
 
         return _TestHandler(tr=self._tr, tc=tc)
 
-class _TestHandler(entity.Handler): 
+class _TestHandler(EntityHandler): 
 
     def __init__(self, tr:_TestsRegistry, tc:unittest.TestCase):
 
@@ -150,25 +150,25 @@ class _TestHandler(entity.Handler):
         self._tc.assertEqual(self._i, len(self._tr.a), msg=f'Expected no more entities to be process but there are {len(self._tr.a) - self._i} remaining')
 
     @typing.override
-    def handle_package          (self, package         :entity.PackageDeclaration)      : self._test(lambda tr: tr.packages     , package)
+    def handle_package          (self, package         :decl.PackageDeclaration)    : self._test(lambda tr: tr.packages     , package)
     @typing.override
-    def handle_import           (self, import_         :entity.ImportDeclaration)       : self._test(lambda tr: tr.imports      , import_)
+    def handle_import           (self, import_         :decl.ImportDeclaration)     : self._test(lambda tr: tr.imports      , import_)
     @typing.override
-    def handle_class            (self, class_          :entity.ClassHeaderDeclaration)  : self._test(lambda tr: tr.classes      , class_)
+    def handle_class            (self, class_          :decl.ClassHeaderDeclaration): self._test(lambda tr: tr.classes      , class_)
     @typing.override
-    def handle_class_end        (self)                                                  : self._test(lambda tr: tr.class_ends   , None)
+    def handle_class_end        (self)                                              : self._test(lambda tr: tr.class_ends   , None)
     @typing.override
-    def handle_initializer      (self, initializer     :entity.InitializerDeclaration)  : self._test(lambda tr: tr.initializers , initializer)
+    def handle_initializer      (self, initializer     :decl.InitializerDeclaration): self._test(lambda tr: tr.initializers , initializer)
     @typing.override
-    def handle_constructor      (self, constructor     :entity.ConstructorDeclaration)  : self._test(lambda tr: tr.constructors , constructor)
+    def handle_constructor      (self, constructor     :decl.ConstructorDeclaration): self._test(lambda tr: tr.constructors , constructor)
     @typing.override
-    def handle_attribute        (self, attribute       :entity.AttributeDeclaration)    : self._test(lambda tr: tr.attributes   , attribute)
+    def handle_attribute        (self, attribute       :decl.AttributeDeclaration)  : self._test(lambda tr: tr.attributes   , attribute)
     @typing.override
-    def handle_method           (self, method          :entity.MethodDeclaration)       : self._test(lambda tr: tr.methods      , method)
+    def handle_method           (self, method          :decl.MethodDeclaration)     : self._test(lambda tr: tr.methods      , method)
     @typing.override
-    def handle_enum_value       (self, enumvalue       :entity.EnumValueDeclaration)    : self._test(lambda tr: tr.enum_values  , enumvalue)
+    def handle_enum_value       (self, enumvalue       :decl.EnumValueDeclaration)  : self._test(lambda tr: tr.enum_values  , enumvalue)
     @typing.override
-    def handle_comment          (self, comment         :model.Comment)                  : self._test(lambda tr: tr.comments     , comment)
+    def handle_comment          (self, comment         :model.Comment)              : self._test(lambda tr: tr.comments     , comment)
 
 def testfile_path(fn:str): return os.path.join(os.path.split(__file__)[0], _JAVA_FILES_PATH, fn)
 

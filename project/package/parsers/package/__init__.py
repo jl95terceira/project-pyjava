@@ -62,4 +62,4 @@ class Parser(parsers.entity.StackingSemiParser):
         
         assert self._name is not None
         self._state = state.States.END
-        self._after(handlers.entity.PackageDeclaration(name=self._name))
+        self._after(handlers.decl.PackageDeclaration(name=self._name))

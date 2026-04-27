@@ -87,5 +87,5 @@ class Parser(parsers.entity.StackingSemiParser):
     def _stop(self): 
         
         self._state = state.States.END
-        self._after(handlers.entity.ImportDeclaration(name  =self._name,
+        self._after(handlers.decl.ImportDeclaration(name  =self._name,
                                                       static=self._static))

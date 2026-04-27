@@ -1,8 +1,10 @@
 from . import handlers, parsers
 
+class Builder(handlers.entity.Builder): pass
+
 class StreamParser:
 
-    def __init__(self, handler:handlers.entity.Handler):
+    def __init__(self, handler:handlers.EntityHandler):
 
         self._p = parsers.part.Parser(stream_handler=handler)
 
@@ -22,7 +24,7 @@ class Loader(StreamParser):
 
     def __init__(self):
 
-        self._builder = handlers.entity.Builder()
+        self._builder = Builder()
         super().__init__(handler=self._builder)
 
     def get(self): return self._builder.get()

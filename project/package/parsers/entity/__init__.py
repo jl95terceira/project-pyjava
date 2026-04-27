@@ -30,15 +30,15 @@ _CLASS_TYPE_MAP_BY_KEYWORD   = {words.CLASS     :model.ClassTypes.CLASS,
 _CLASS_TYPE_KEYWORDS         = set(_CLASS_TYPE_MAP_BY_KEYWORD)
 _WORD_PATTERN                = re.compile('^\\w+$')
 
-class StackingSemiParser(handlers.part.Handler, abc.ABC):
+class StackingSemiParser(handlers.TokenHandler, abc.ABC):
 
     def __init__(self):
 
-        self._subhandler:handlers.part.Handler|None = None
+        self._subhandler:handlers.TokenHandler|None = None
         self._line      :str                  |None = None
         self._part      :str                  |None = None
 
-    def _stack_handler              (self, handler:handlers.part.Handler):
+    def _stack_handler              (self, handler:handlers.TokenHandler):
 
         self._subhandler = handler
         assert self._line is not None
@@ -141,13 +141,13 @@ class ParserResettableVariables:
 @dataclass
 class _ParserClassStackElement:
 
-    class_ :handlers.entity.ClassHeaderDeclaration|None = field()
+    class_ :handlers.decl.ClassHeaderDeclaration|None = field()
     vars   :ParserResettableVariables                   = field()
     in_enum:bool                                        = field(default=False)
 
 class Parser(StackingSemiParser):
 
-    def __init__                    (self, stream_handler:handlers.entity.Handler):
+    def __init__                    (self, stream_handler:handlers.EntityHandler):
 
         super().__init__()
         self._NEXT                                      = stream_handler
@@ -171,7 +171,7 @@ class Parser(StackingSemiParser):
 
     def _flush_class                (self):
 
-        class_ = handlers.entity.ClassHeaderDeclaration(
+        class_ = handlers.decl.ClassHeaderDeclaration(
             name  =self._vars.class_name, 
             static=self._vars.static,
             header=model.InterfaceHeader(
@@ -224,13 +224,13 @@ class Parser(StackingSemiParser):
 
     def _flush_initializer          (self, body:str): 
         
-        self._NEXT.handle_initializer(handlers.entity.InitializerDeclaration(static     =self._vars.static, 
+        self._NEXT.handle_initializer(handlers.decl.InitializerDeclaration(static     =self._vars.static, 
                                                                              initializer=model.Initializer(body=body)))
         self._reset_vars()
 
     def _flush_constructor          (self, body:str): 
         
-        self._NEXT.handle_constructor(handlers.entity.ConstructorDeclaration(model.Constructor(access=self._coerce_access(self._vars.access),
+        self._NEXT.handle_constructor(handlers.decl.ConstructorDeclaration(model.Constructor(access=self._coerce_access(self._vars.access),
                                                                                                args  =self._vars.method_signature, 
                                                                                                body  =body,
                                                                                                throws=self._vars.throws if self._vars.throws is not None else list())))
@@ -239,7 +239,7 @@ class Parser(StackingSemiParser):
     def _flush_attribute            (self, decl_only=False,
                                            continued=False):
 
-        self._NEXT.handle_attribute(handlers.entity.AttributeDeclaration(name     =self._vars.attr_name, 
+        self._NEXT.handle_attribute(handlers.decl.AttributeDeclaration(name     =self._vars.attr_name, 
                                                                          static   =self._vars.static,
                                                                          attribute=model.Attribute(type     =self._vars.attr_type,
                                                                                                    volatile =self._vars.volatile,
@@ -255,7 +255,7 @@ class Parser(StackingSemiParser):
         parent_class_decl = (lambda e: e.class_)(self._class_stack[-1])
         assert self._vars.attr_name        is not None
         assert self._vars.method_signature is not None
-        self._NEXT.handle_method(handlers.entity.MethodDeclaration(
+        self._NEXT.handle_method(handlers.decl.MethodDeclaration(
             name  =self._vars.attr_name,
             static=self._vars.static,
             method=model.AInterfaceMethod(
@@ -298,7 +298,7 @@ class Parser(StackingSemiParser):
 
     def _flush_enum_value           (self):
 
-        self._NEXT.handle_enum_value(handlers.entity.EnumValueDeclaration(name     =self._vars.enumv_name, 
+        self._NEXT.handle_enum_value(handlers.decl.EnumValueDeclaration(name     =self._vars.enumv_name, 
                                                                           enumvalue=model.EnumValue(args       =self._vars.enumv_args,
                                                                                                     annotations=self._vars.annotations)))
         self._reset_vars()

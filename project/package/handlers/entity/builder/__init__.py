@@ -2,7 +2,8 @@ from   dataclasses import dataclass, field
 import typing
 
 from .    import exc
-from ..   import Handler, PackageDeclaration, ImportDeclaration, ClassHeaderDeclaration, InitializerDeclaration, ConstructorDeclaration, AttributeDeclaration, MethodDeclaration, EnumValueDeclaration
+from ....handlers import EntityHandler as Handler 
+from ...decl import PackageDeclaration, ImportDeclaration, ClassHeaderDeclaration, InitializerDeclaration, ConstructorDeclaration, AttributeDeclaration, MethodDeclaration, EnumValueDeclaration
 from .... import model, util
 
 DEBUG = 0

@@ -12,13 +12,13 @@ class CountingHandler(java.parsers.SilentHandler):
         self._nr_methods    = 0
 
     @typing.override
-    def handle_class      (self, class_     :java.handlers.entity.ClassHeaderDeclaration):
+    def handle_class      (self, class_     :java.handlers.decl.ClassHeaderDeclaration):
         self._nr_classes += 1
     @typing.override
-    def handle_attribute  (self, attribute  :java.handlers.entity.AttributeDeclaration):
+    def handle_attribute  (self, attribute  :java.handlers.decl.AttributeDeclaration):
         self._nr_attributes += 1
     @typing.override
-    def handle_method     (self, method     :java.handlers.entity.MethodDeclaration):
+    def handle_method     (self, method     :java.handlers.decl.MethodDeclaration):
         self._nr_methods += 1
 
 if __name__ == '__main__':
