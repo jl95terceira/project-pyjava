@@ -22,7 +22,7 @@ class Loader(StreamParser):
 
     def __init__(self):
 
-        self._builder = handlers.entity.builder.Builder()
+        self._builder = handlers.entity.Builder()
         super().__init__(handler=self._builder)
 
     def get(self): return self._builder.get()
