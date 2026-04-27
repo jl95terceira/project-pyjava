@@ -28,7 +28,7 @@ class _EntityTypes:
 
 class _Handler(typing.Protocol):
 
-    def __call__(_, self:'Builder', *aa, **kaa): ...
+    def __call__(_self, self:'Builder', *aa, **kaa): ...
 
 def _handled(et:_EntityType):
 
