@@ -44,4 +44,4 @@ class EntityHandler(_abc.ABC):
     @_abc.abstractmethod
     def handle_comment      (self, comment      :_model.Comment): ...
 
-from . import entity
+from . import decl

@@ -1,6 +1,5 @@
 from . import handlers, parsers
-
-class Builder(handlers.entity.Builder): pass
+from .handlers.entity import Builder
 
 class StreamParser:
 
