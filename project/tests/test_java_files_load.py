@@ -8,7 +8,7 @@ from . import *
 
 class _TestMethod(typing.Protocol):
 
-    def __call__(self, tests:'Tests', unit:model.Unit) -> None: ...
+    def __call__(_prot, self:'Tests', unit:model.Unit) -> None: ...
 
 def _file(file_name:str):
 
@@ -49,7 +49,7 @@ class Tests(unittest.TestCase):
         self.assertIn   ('Test1'        , unit.classes)
         clas = unit.classes['Test1']
         self.assertIsInstance(clas, model.ConcreteClass)
-        clas:model.ConcreteClass
+        assert isinstance(clas, model.ConcreteClass)
         self.assertIs   (clas.header.access             , model.AccessModifiers.PUBLIC)
         self.assertEqual(len(clas.header.annotations)   , 0)
         self.assertIs   (clas.header.finality           , model.FinalityTypes.DEFAULT)
@@ -72,8 +72,14 @@ class Tests(unittest.TestCase):
         self.assertEqual(attr_a3, model.Attribute(type=model.Type('String', array_dim=1) , access=model.AccessModifiers.PROTECTED))
         self.assertEqual(attr_a4, model.Attribute(type=model.Type('Object')              , access=model.AccessModifiers.PUBLIC))
         self.assertEqual(attr_c5, model.Attribute(type=model.Type('Object', array_dim=4) , access=model.AccessModifiers.PUBLIC, value='null', final =True))
-        self.assertEqual(clas.members.initializer.body       , '\n'+8*' '+'System.out.println("Hello");\n'        +4*' ')
-        self.assertEqual(clas.static_members.initializer.body, '\n'+8*' '+'System.out.println("Hello, static");\n'+4*' ')
+        initializer        = clas.members.initializer
+        static_initializer = clas.static_members.initializer
+        self.assertIsNotNone(initializer)
+        self.assertIsNotNone(static_initializer)
+        assert initializer        is not None
+        assert static_initializer is not None
+        self.assertEqual(initializer.body       , '\n'+8*' '+'System.out.println("Hello");\n'        +4*' ')
+        self.assertEqual(static_initializer.body, '\n'+8*' '+'System.out.println("Hello, static");\n'+4*' ')
         self.assertEqual(len(clas.members.constructors), 3)
         constructors_by_access = functools.reduce(lambda l, constructor: (l[constructor.access].append(constructor), l,)[-1], clas.members.constructors, defaultdict(list))
         self.assertEqual(len(constructors_by_access[model.AccessModifiers.PUBLIC   ]), 1)
