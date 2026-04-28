@@ -5,9 +5,8 @@ import os.path
 import typing
 import unittest
 
-from ..package.handlers import EntityHandler, decl
-
-from ..package import model, StreamParser, load
+from ..package import model, handlers, StreamParser, load
+from ..package.handlers import decl
 
 _DEBUG = 0
 _JAVA_FILES_PATH = 'java_files'
@@ -91,7 +90,7 @@ class TestRegistrator:
 
         return _TestHandler(tr=self._tr, tc=tc)
 
-class _TestHandler(EntityHandler): 
+class _TestHandler(handlers.entity.Handler): 
 
     def __init__(self, tr:_TestsRegistry, tc:unittest.TestCase):
 

@@ -30,15 +30,15 @@ _CLASS_TYPE_MAP_BY_KEYWORD   = {words.CLASS     :model.ClassTypes.CLASS,
 _CLASS_TYPE_KEYWORDS         = set(_CLASS_TYPE_MAP_BY_KEYWORD)
 _WORD_PATTERN                = re.compile('^\\w+$')
 
-class StackingSemiParser(handlers.TokenHandler, abc.ABC):
+class StackingSemiParser(handlers.token.Handler, abc.ABC):
 
     def __init__(self):
 
-        self._subhandler:handlers.TokenHandler|None = None
-        self._line      :str                  |None = None
-        self._part      :str                  |None = None
+        self._subhandler:handlers.token.Handler|None = None
+        self._line      :str                   |None = None
+        self._part      :str                   |None = None
 
-    def _stack_handler              (self, handler:handlers.TokenHandler):
+    def _stack_handler              (self, handler:handlers.token.Handler):
 
         self._subhandler = handler
         assert self._line is not None
@@ -147,7 +147,7 @@ class _ParserClassStackElement:
 
 class Parser(StackingSemiParser):
 
-    def __init__                    (self, stream_handler:handlers.EntityHandler):
+    def __init__                    (self, stream_handler:handlers.entity.Handler):
 
         super().__init__()
         self._NEXT                                      = stream_handler

@@ -17,9 +17,9 @@ PATTERN  = re.compile(f'({'|'.join((
     f'.',
 ))})')
 
-class Parser(handlers.LineHandler):
+class Parser(handlers.line.Handler):
 
-    def __init__(self, stream_handler:handlers.EntityHandler):
+    def __init__(self, stream_handler:handlers.entity.Handler):
 
         self._next_handler                 = parsers.entity.Parser(stream_handler=stream_handler)
         self._state                        = state.States.DEFAULT

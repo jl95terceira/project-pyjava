@@ -3,7 +3,7 @@ import typing
 from .   import part, entity, expr, name, package, import_, body, args, generics, signature, type, annotation
 from ..  import model, handlers
 
-class StreamPrinter(handlers.EntityHandler):
+class StreamPrinter(handlers.entity.Handler):
 
     def __init__(self, printer:typing.Callable[[str],None]=lambda a: print(a, end='')):
 
@@ -59,7 +59,7 @@ class StreamPrinter(handlers.EntityHandler):
 
         self._print(f'Handling comment:               {comment}\n')
 
-class SilentHandler(handlers.EntityHandler):
+class SilentHandler(handlers.entity.Handler):
 
     @typing.override
     def handle_package    (self, package    :handlers.decl.PackageDeclaration): pass

@@ -1,0 +1,13 @@
+import abc as _abc
+    
+class Handler(_abc.ABC):
+
+    @_abc.abstractmethod
+    def handle_part                 (self, token:str): ...
+    @_abc.abstractmethod
+    def handle_comment              (self, text:str, block:bool): ...
+    @_abc.abstractmethod
+    def handle_spacing              (self, spacing:str): ...
+    @_abc.abstractmethod
+    def handle_newline              (self): ...
+
