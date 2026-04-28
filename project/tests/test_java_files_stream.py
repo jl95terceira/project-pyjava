@@ -5,7 +5,7 @@ from . import *
 
 def _file(file_name:str):
 
-    def a(f:typing.Callable[['Tests'],None]):
+    def a(f:typing.Consumer['Tests']):
 
         def test_(self:'Tests'):
 

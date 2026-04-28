@@ -1,5 +1,5 @@
 import re
-import typing
+from jl95.batteries import typing
 
 from .            import exc, state
 from ...          import handlers, parsers, words
@@ -10,7 +10,7 @@ _ACREMENTERS  = {words.PARENTH_OPEN: words.PARENTH_CLOSE,
 
 class Parser(parsers.entity.StackingSemiParser):
 
-    def __init__(self, after:typing.Callable[[list[str]],None]):
+    def __init__(self, after:typing.Consumer[list[str]]):
 
         super().__init__()
         self._args                 :list[str] = list()

@@ -2,7 +2,7 @@ import builtins
 import dataclasses
 import functools
 import os.path
-import typing
+from jl95.batteries import typing
 import unittest
 
 from ..package import model, handlers, StreamParser, load

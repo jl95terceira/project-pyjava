@@ -1,11 +1,11 @@
-import typing
+from jl95.batteries import typing
 
 from .   import part, entity, expr, name, package, import_, body, args, generics, signature, type, annotation
 from ..  import model, handlers
 
 class StreamPrinter(handlers.entity.Handler):
 
-    def __init__(self, printer:typing.Callable[[str],None]=lambda a: print(a, end='')):
+    def __init__(self, printer:typing.Consumer[str]=lambda a: print(a, end='')):
 
         self._print = printer
 

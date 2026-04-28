@@ -1,5 +1,5 @@
 import re
-import typing
+from jl95.batteries import typing
 
 from .            import exc, state
 from ...          import handlers, parsers, model, util, words
@@ -8,10 +8,10 @@ _WORD_PATTERN = re.compile('^(?:\\w|\\$)+$')
 
 class Parser(parsers.entity.StackingSemiParser):
 
-    def __init__(self, after         :typing.Callable[[str],None],
-                       part_rehandler:typing.Callable[[str],None],
+    def __init__(self, after         :typing.Consumer[str],
+                       part_rehandler:typing.Consumer[str],
                        allow_wildcard=False,
-                       if_array      :typing.Callable[[int],None]|None=None):
+                       if_array      :typing.Consumer[int]|None=None):
 
         super().__init__()
         self._after                = after

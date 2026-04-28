@@ -1,12 +1,12 @@
 import re
-import typing
+from jl95.batteries import typing
 
 from .            import exc, state
 from ...          import handlers, parsers, model, util, words
 
 class Parser(parsers.entity.StackingSemiParser):
 
-    def __init__(self, after     :typing.Callable[[handlers.entity.PackageDeclaration],None],
+    def __init__(self, after     :typing.Consumer[handlers.decl.PackageDeclaration],
                        skip_begin=False):
 
         super().__init__()

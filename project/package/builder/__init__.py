@@ -1,5 +1,7 @@
-from   dataclasses import dataclass, field
-import typing
+from dataclasses import dataclass, field
+
+from jl95.batteries import *
+from jl95.batteries import typing
 
 from . import exc
 from ..handlers.decl import *
@@ -83,7 +85,7 @@ class Impl(Handler):
                                     model.AInterface   (header=header) if isinstance(header, model.AInterfaceHeader)    else \
                                     None
         if class_ is None: raise AssertionError(header)
-        class_reg:typing.Callable[[str, model.Class],None]|None \
+        class_reg:typing.Consumer[str, model.Class]|None \
                                   = None
         if not self._class_stack:
 
