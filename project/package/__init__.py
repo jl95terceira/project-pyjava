@@ -1,5 +1,5 @@
-from . import handlers, parsers
-from .handlers.entity import Builder
+from . import parsers, handlers
+from .builder import Impl as Builder
 
 class StreamParser:
 
