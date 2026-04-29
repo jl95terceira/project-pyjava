@@ -1,1 +1,1 @@
-jl95terceira_batteries>=1.10.0
+jl95terceira_batteries>=1.10.1
