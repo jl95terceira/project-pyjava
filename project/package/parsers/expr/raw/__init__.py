@@ -1,27 +1,28 @@
 import re
 from jl95.batteries import typing
 
-from .            import exc, state
-from ....          import handlers, model, parsers, words
+from .        import exc, state
+from ...util import *
+from ....     import words
 
-class Parser(parsers.entity.StackingSemiParser):
+class Parser(StackingSemiParser):
 
-    def __init__(self, after         :typing.Consumer[str],
-                       part_rehandler:typing.Consumer[str]):
+    def __init__(self, expr_handler   :typing.Consumer[str],
+                       token_rehandler:typing.Consumer[str]):
 
         super().__init__()
-        self._after          = after
-        self._part_rehandler = part_rehandler
-        self._state          = state.States.DEFAULT
-        self._value_parts    = list()
-        self._nest_depth     = 0
-        self._scope_depth    = 0
+        self._handler         = expr_handler
+        self._token_rehandler = token_rehandler
+        self._state           = state.States.DEFAULT
+        self._value_parts     = list()
+        self._nest_depth      = 0
+        self._scope_depth     = 0
 
     @typing.override
     def _default_handle_line(self, line: str): pass
 
     @typing.override
-    def _default_handle_part(self, part: str):
+    def _default_handle_token(self, token: str):
         
         line = self._line
         if   self._state is state.States.END: raise exc.StopException(line)
@@ -29,20 +30,20 @@ class Parser(parsers.entity.StackingSemiParser):
 
             if self._nest_depth  == 0 and \
                self._scope_depth == 0 and \
-               (part == words.SEMICOLON     or \
-                part == words.COMMA         or \
-                part == words.PARENTH_CLOSE): 
+               (token == words.SEMICOLON     or \
+                token == words.COMMA         or \
+                token == words.PARENTH_CLOSE): 
                 
-                self._stop(part)
+                self._stop(token)
                 return
 
             else:
 
-                self._value_parts.append(part)
-                if   part == words.CURLY_OPEN   : self._scope_depth += 1
-                elif part == words.CURLY_CLOSE  : self._scope_depth -= 1
-                elif part == words.PARENTH_OPEN : self._nest_depth  += 1
-                elif part == words.PARENTH_CLOSE: self._nest_depth  -= 1
+                self._value_parts.append(token)
+                if   token == words.CURLY_OPEN   : self._scope_depth += 1
+                elif token == words.CURLY_CLOSE  : self._scope_depth -= 1
+                elif token == words.PARENTH_OPEN : self._nest_depth  += 1
+                elif token == words.PARENTH_CLOSE: self._nest_depth  -= 1
                 return
         
         else: raise AssertionError(self._state)
@@ -62,7 +63,7 @@ class Parser(parsers.entity.StackingSemiParser):
     def _stop(self, part_to_rehandle:str|None): 
         
         self._state = state.States.END
-        self._after(''.join(self._value_parts))
+        self._handler(''.join(self._value_parts))
         if part_to_rehandle is not None:
 
-            self._part_rehandler(part_to_rehandle)
+            self._token_rehandler(part_to_rehandle)

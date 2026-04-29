@@ -1,16 +1,17 @@
 import re
 from jl95.batteries import typing
 
-from .            import exc, state
-from ...          import handlers, parsers, model, util, words
+from .       import exc, state
+from ..util import *
+from ...     import handlers, parsers, words
 
-class Parser(parsers.entity.StackingSemiParser):
+class Parser(StackingSemiParser):
 
-    def __init__(self, after     :typing.Consumer[handlers.decl.PackageDeclaration],
+    def __init__(self, package_handler:typing.Consumer[handlers.decl.PackageDeclaration],
                        skip_begin=False):
 
         super().__init__()
-        self._after          = after
+        self._handler        = package_handler
         self._state          = state.States.BEGIN         if not skip_begin else \
                                state.States.AFTER_PACKAGE
         self._name :str|None = None
@@ -24,24 +25,24 @@ class Parser(parsers.entity.StackingSemiParser):
     def _default_handle_line     (self, line: str): pass
 
     @typing.override
-    def _default_handle_part     (self, part:str): 
+    def _default_handle_token     (self, token:str): 
         
         line = self._line
         if   self._state is state.States.END: raise exc.StopException()
 
         elif self._state is state.States.BEGIN:
 
-            if part != words.PACKAGE: raise exc.Exception(line)
+            if token != words.PACKAGE: raise exc.Exception(line)
             self._state = state.States.AFTER_PACKAGE
 
         elif self._state is state.States.AFTER_PACKAGE:
 
-            self._stack_handler(parsers.name.Parser(after=self._unstacking(self._store_name), part_rehandler=self.handle_part))
-            self.handle_part(part)
+            self._stack_handler(parsers.name.Parser(name_handler=self._unstacking(self._store_name), token_rehandler=self.handle_token))
+            self.handle_token(token)
 
         elif self._state is state.States.AFTER_NAME:
 
-            if part != words.SEMICOLON: raise exc.Exception(line)
+            if token != words.SEMICOLON: raise exc.Exception(line)
             self._stop()
 
         else: raise AssertionError(f'{self._state=}')
@@ -62,4 +63,4 @@ class Parser(parsers.entity.StackingSemiParser):
         
         assert self._name is not None
         self._state = state.States.END
-        self._after(handlers.decl.PackageDeclaration(name=self._name))
+        self._handler(handlers.decl.PackageDeclaration(name=self._name))

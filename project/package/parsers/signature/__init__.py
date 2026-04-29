@@ -1,19 +1,20 @@
 import re
 from jl95.batteries import typing
 
-from .            import exc, state
-from ...          import parsers, model, words
+from .       import exc, state
+from ..util import *
+from ...     import parsers, model, words
 
-class Parser(parsers.entity.StackingSemiParser):
+class Parser(StackingSemiParser):
 
-    def __init__(self, after     :typing.Consumer[dict[str,model.Argument]],
+    def __init__(self, signature_handler:typing.Consumer[dict[str,model.Argument]],
                        skip_begin=False):
 
         super().__init__()
         self._sign                                   = dict()
-        self._sign_state                             = state.States.BEGIN   if not skip_begin else \
+        self._state                                  = state.States.BEGIN   if not skip_begin else \
                                                        state.States.DEFAULT
-        self._sign_after                             = after
+        self._handler                                = signature_handler
         self._arg_name       :str             |None  = None
         self._arg_type       :model.Type      |None  = None
         self._arg_annotations:list[model.Annotation] = list()
@@ -36,12 +37,12 @@ class Parser(parsers.entity.StackingSemiParser):
     def _store_arg_type             (self, type:model.Type):
 
         self._arg_type   = type
-        self._sign_state = state.States.ARG_TYPED
+        self._state = state.States.ARG_TYPED
 
     def _store_arg_name             (self, name:str):
 
         self._arg_name   = name
-        self._sign_state = state.States.ARG_NAMED
+        self._state = state.States.ARG_NAMED
 
     def _if_array_after_name        (self, dim:int):
 
@@ -52,74 +53,74 @@ class Parser(parsers.entity.StackingSemiParser):
     def _default_handle_line(self, line: str): pass
 
     @typing.override
-    def _default_handle_part(self, part:str): 
+    def _default_handle_token(self, token:str): 
         
         line = self._line
-        if   self._sign_state is state.States.BEGIN:
+        if   self._state is state.States.BEGIN:
 
-            if  part != words.PARENTH_OPEN: raise exc.Exception(line)
-            self._sign_state = state.States.DEFAULT
+            if  token != words.PARENTH_OPEN: raise exc.Exception(line)
+            self._state = state.States.DEFAULT
 
-        elif self._sign_state is state.States.DEFAULT:
+        elif self._state is state.States.DEFAULT:
 
-            if   part == words.PARENTH_CLOSE:
+            if   token == words.PARENTH_CLOSE:
 
                 if self._finality is not model.FinalityTypes.DEFAULT or \
                    self._arg_annotations                            : raise exc.Exception(line)
                 
                 self._stop()
 
-            elif part == words.FINAL:
+            elif token == words.FINAL:
 
                 self._finality = model.FinalityTypes.FINAL
 
-            elif part == words.ATSIGN:
+            elif token == words.ATSIGN:
 
-                self._stack_handler(parsers.annotation.Parser(after=self._unstacking(self._arg_annotations.append), part_rehandler=self.handle_part))
-                self.handle_part(part)
+                self._stack_handler(parsers.annotation.Parser(annotation_handler=self._unstacking(self._arg_annotations.append), token_rehandler=self.handle_token))
+                self.handle_token(token)
 
             else:
 
-                self._stack_handler(parsers.type.Parser(after=self._unstacking(self._store_arg_type), part_rehandler=self.handle_part))
-                self.handle_part(part)
+                self._stack_handler(parsers.type.Parser(type_handler=self._unstacking(self._store_arg_type), token_rehandler=self.handle_token))
+                self.handle_token(token)
 
-        elif self._sign_state is state.States.ARG_TYPED:
+        elif self._state is state.States.ARG_TYPED:
 
-            if part == words.ELLIPSIS:
+            if token == words.ELLIPSIS:
 
                 if self._arg_varargs: raise exc.Exception(line)
                 self._arg_varargs = True
 
             else:
 
-                self._stack_handler(parsers.name.Parser(after=self._unstacking(self._store_arg_name), part_rehandler=self.handle_part, if_array=self._if_array_after_name))
-                self.handle_part(part)
+                self._stack_handler(parsers.name.Parser(name_handler=self._unstacking(self._store_arg_name), token_rehandler=self.handle_token, if_array=self._if_array_after_name))
+                self.handle_token(token)
         
-        elif self._sign_state is state.States.ARG_NAMED:
+        elif self._state is state.States.ARG_NAMED:
 
-            if   part == words.COMMA:
+            if   token == words.COMMA:
 
                 self._store_arg()
-                self._sign_state = state.States.ARG_SEPARATE
+                self._state = state.States.ARG_SEPARATE
             
-            elif part == words.PARENTH_CLOSE:
+            elif token == words.PARENTH_CLOSE:
 
                 self._store_arg()
                 self._stop()
 
             else: raise exc.Exception(line)
 
-        elif self._sign_state is state.States.ARG_SEPARATE:
+        elif self._state is state.States.ARG_SEPARATE:
 
-            self._sign_state = state.States.DEFAULT
-            self.handle_part(part)
+            self._state = state.States.DEFAULT
+            self.handle_token(token)
 
-        else: raise AssertionError(f'{self._sign_state=}')
+        else: raise AssertionError(f'{self._state=}')
 
     def _stop(self):
 
         self._state = state.States.END
-        self._sign_after(self._sign)
+        self._handler(self._sign)
 
     @typing.override
     def _default_handle_comment(self, text: str, block:bool): pass #TO-DO

@@ -1,17 +1,18 @@
 import re
 from jl95.batteries import typing
 
-from .            import exc, state
-from ...          import handlers, model, parsers, words
+from .       import exc, state
+from ..util import *
+from ...     import model, parsers, words
 
 _CONSTRAINT_TYPE_MAP_BY_KEYWORD = {words.EXTENDS: model.TypeConstraints.EXTENDS,
                                    words.SUPER  : model.TypeConstraints.SUPER}
 _CONSTRAINT_TYPE_KEYWORDS       = set(_CONSTRAINT_TYPE_MAP_BY_KEYWORD)
-_WORD_PATTERN = re.compile('^\\w+$')
+_WORD_PATTERN                   = re.compile('^\\w+$')
 
-class Parser(parsers.entity.StackingSemiParser):
+class Parser(StackingSemiParser):
 
-    def __init__(self, after     :typing.Consumer[list[model.GenericType]],
+    def __init__(self, gentype_handler:typing.Consumer[list[model.GenericType]],
                        skip_begin=False):
 
         super().__init__()
@@ -24,9 +25,9 @@ class Parser(parsers.entity.StackingSemiParser):
         self._targets      :list[model.Type]                = list()
         self._types        :list[model.GenericType]         = list()
         self._constraint   :model.TypeConstraint      |None = None
-        self._after                                         = after
+        self._handler                                       = gentype_handler
 
-    def _store_type                 (self, type:model.Type): 
+    def _store_type                 (self, type:model.GenericType): 
 
         self._types.append(type)
         self._state = state.States.AFTER
@@ -47,32 +48,32 @@ class Parser(parsers.entity.StackingSemiParser):
     def _default_handle_line(self, line: str): pass
 
     @typing.override
-    def _default_handle_part(self, part:str):
+    def _default_handle_token(self, token:str):
 
         line = self._line
         if   self._state is state.States.END: raise exc.StopException()
 
         elif self._state is state.States.BEGIN:
 
-            if part != words.ANGLE_OPEN: raise exc.BadOpeningException(line)
+            if token != words.ANGLE_OPEN: raise exc.BadOpeningException(line)
             self._state = state.States.DEFAULT
 
         elif self._state is state.States.DEFAULT:
 
             self._parts_backlog.clear()
-            if   part == words.ANGLE_CLOSE:
+            if   token == words.ANGLE_CLOSE:
 
                 self._stop()
 
             else:
 
-                self._parts_backlog.append(part)
+                self._parts_backlog.append(token)
                 self._state = state.States.DEFAULT_2
             
         elif self._state is state.States.DEFAULT_2:
 
-            self._parts_backlog.append(part)
-            if part not in _CONSTRAINT_TYPE_KEYWORDS:
+            self._parts_backlog.append(token)
+            if token not in _CONSTRAINT_TYPE_KEYWORDS:
 
                 part0 = self._parts_backlog[0]
                 if part0 == words.QUESTIONMARK:
@@ -81,40 +82,40 @@ class Parser(parsers.entity.StackingSemiParser):
 
                 else:
 
-                    self._stack_handler(parsers.type.Parser(after=self._unstacking(self._store_type), part_rehandler=self.handle_part, allow_array=True, allow_annotations=True))
-                    self.handle_part(part0)
+                    self._stack_handler(parsers.type.Parser(type_handler=self._unstacking(self._store_type), token_rehandler=self.handle_token, allow_array=True, allow_annotations=True))
+                    self.handle_token(part0)
 
-                self.handle_part(part)
+                self.handle_token(token)
 
             else:
 
                 self._constrained_type_name = self._parts_backlog[0]
                 self._state = state.States.CONSTRAINT
-                self.handle_part(part)
+                self.handle_token(token)
             
         elif self._state is state.States.CONSTRAINT:
 
-            self._constraint = _CONSTRAINT_TYPE_MAP_BY_KEYWORD[part]
-            self._stack_handler(parsers.type.Parser(after=self._unstacking(self._store_target_type), part_rehandler=self.handle_part, allow_array=False))
+            self._constraint = _CONSTRAINT_TYPE_MAP_BY_KEYWORD[token]
+            self._stack_handler(parsers.type.Parser(type_handler=self._unstacking(self._store_target_type), token_rehandler=self.handle_token, allow_array=False))
 
         elif self._state is state.States.CONSTRAINT_LOOKAHEAD:
 
-            if part != words.AMPERSAND:
+            if token != words.AMPERSAND:
 
                 self._store_constrained_type()
-                self.handle_part(part)
+                self.handle_token(token)
 
             else:
 
-                self._stack_handler(parsers.type.Parser(after=self._unstacking(self._store_target_type), part_rehandler=self.handle_part, allow_array=False))
+                self._stack_handler(parsers.type.Parser(type_handler=self._unstacking(self._store_target_type), token_rehandler=self.handle_token, allow_array=False))
 
         elif self._state is state.States.AFTER:
 
-            if part == words.ANGLE_CLOSE: 
+            if token == words.ANGLE_CLOSE: 
                 
                 self._stop()
 
-            elif part == words.COMMA: 
+            elif token == words.COMMA: 
                 
                 self._state = state.States.SEP
 
@@ -123,9 +124,9 @@ class Parser(parsers.entity.StackingSemiParser):
         elif self._state is state.States.SEP:
 
             self._state = state.States.DEFAULT
-            self.handle_part(part)
+            self.handle_token(token)
 
-        else: raise NotImplementedError(f'{self._state.name}, {repr(part)},')
+        else: raise NotImplementedError(f'{self._state.name}, {repr(token)},')
 
     @typing.override
     def _default_handle_comment(self, text: str, block:bool): pass #TO-DO save comment somewhere
@@ -144,4 +145,4 @@ class Parser(parsers.entity.StackingSemiParser):
     def _stop(self): 
         
         self._state = state.States.END
-        self._after(self._types)
+        self._handler(self._types)

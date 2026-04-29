@@ -1,16 +1,16 @@
-import re
 from jl95.batteries import typing
 
-from .            import exc, state
-from ...          import handlers, parsers, model, util, words
+from .       import exc, state
+from ..util import *
+from ...     import handlers, words
 
-class Parser(parsers.entity.StackingSemiParser):
+class Parser(StackingSemiParser):
 
-    def __init__(self, after     :typing.Consumer[handlers.decl.ImportDeclaration],
+    def __init__(self, import_handler:typing.Consumer[handlers.decl.ImportDeclaration],
                        skip_begin=False):
 
         super().__init__()
-        self._after           = after
+        self._handler         = import_handler
         self._state           = state.States.BEGIN        if not skip_begin else \
                                 state.States.AFTER_IMPORT
         self._static          = False
@@ -20,53 +20,53 @@ class Parser(parsers.entity.StackingSemiParser):
     def _default_handle_line     (self, line: str): pass
 
     @typing.override
-    def _default_handle_part     (self, part:str): 
+    def _default_handle_token     (self, token:str): 
         
         line = self._line
         if   self._state is state.States.END: raise exc.StopException()
 
         elif self._state is state.States.BEGIN:
 
-            if part != words.IMPORT: raise exc.Exception(line)
+            if token != words.IMPORT: raise exc.Exception(line)
             self._state = state.States.AFTER_IMPORT
 
         elif self._state is state.States.AFTER_IMPORT:
 
-            if part == words.STATIC: 
+            if token == words.STATIC: 
                 
                 self._static = True
 
             else:
                             
-                self._name = part
+                self._name = token
                 self._state    = state.States.AFTER_NAME 
 
         elif self._state is state.States.AFTER_NAME:
 
-            if part == words.SEMICOLON:
+            if token == words.SEMICOLON:
 
                 self._stop()
                 return
 
-            elif part == words.DOT          or \
-                 part == words.ASTERISK     or \
-                 not words.is_reserved(part):
+            elif token == words.DOT          or \
+                 token == words.ASTERISK     or \
+                 not words.is_reserved(token):
 
-                self._name += part
+                self._name += token
 
             else: raise exc.Exception(line)
 
         elif self._state is state.States.AFTER_NAME:
 
-            if part == words.SEMICOLON:
+            if token == words.SEMICOLON:
 
                 self._stop()
 
-            elif part == words.DOT          or \
-                 part == words.ASTERISK     or \
-                 not words.is_reserved(part):
+            elif token == words.DOT          or \
+                 token == words.ASTERISK     or \
+                 not words.is_reserved(token):
 
-                self._import += part
+                self._import += token
 
             else: raise exc.Exception(line)
 
@@ -87,5 +87,5 @@ class Parser(parsers.entity.StackingSemiParser):
     def _stop(self): 
         
         self._state = state.States.END
-        self._after(handlers.decl.ImportDeclaration(name  =self._name,
+        self._handler(handlers.decl.ImportDeclaration(name  =self._name,
                                                       static=self._static))

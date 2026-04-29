@@ -1,26 +1,27 @@
 from jl95.batteries import typing
 
 from .   import exc, state
-from ... import handlers, parsers, words
+from ..util import *
+from ... import words
 
-class Parser(parsers.entity.StackingSemiParser):
+class Parser(StackingSemiParser):
 
-    def __init__(self, after     :typing.Consumer[str],
+    def __init__(self, body_handler:typing.Consumer[str],
                        skip_begin=False):
 
         super().__init__()
         self._state         = state.States.BEGIN   if not skip_begin else \
                               state.States.DEFAULT
-        self._depth         = 0                    if not skip_begin else \
+        self._depth         = 0 if not skip_begin else \
                               1
         self._parts         = list()
-        self._after         = after
+        self._handler       = body_handler
 
     @typing.override
     def _default_handle_line(self, line: str): pass
 
     @typing.override
-    def _default_handle_part   (self, part:str):
+    def _default_handle_token(self, token:str):
 
         line = self._line
         if   self._state is state.States.END:
@@ -33,7 +34,7 @@ class Parser(parsers.entity.StackingSemiParser):
 
                 raise AssertionError(f'{self._depth=}')
 
-            if part != words.CURLY_OPEN:
+            if token != words.CURLY_OPEN:
 
                 raise exc.InvalidOpenException(line)
            
@@ -44,12 +45,12 @@ class Parser(parsers.entity.StackingSemiParser):
 
         elif self._state is state.States.DEFAULT:
 
-            if part == words.CURLY_OPEN:
+            if token == words.CURLY_OPEN:
 
                 self._depth += 1
-                self._parts.append(part)
+                self._parts.append(token)
 
-            elif part == words.CURLY_CLOSE:
+            elif token == words.CURLY_CLOSE:
 
                 self._depth -= 1
                 if self._depth == 0:
@@ -58,11 +59,11 @@ class Parser(parsers.entity.StackingSemiParser):
                 
                 else:
                     
-                    self._parts.append(part)
+                    self._parts.append(token)
 
             else:
 
-                self._parts.append(part)
+                self._parts.append(token)
 
         else: raise AssertionError(f'{self._state=}')
 
@@ -89,4 +90,4 @@ class Parser(parsers.entity.StackingSemiParser):
     def _stop(self):
 
         self._state = state.States.END
-        self._after(''.join(self._parts))
+        self._handler(''.join(self._parts))

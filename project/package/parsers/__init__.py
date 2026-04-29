@@ -1,3 +1,10 @@
+class DebugType:
+    def __init__(self):
+        self.value = 0
+    def __bool__(self): 
+        return bool(self.value)
+DEBUG = DebugType()
+
 from jl95.batteries import typing
 
 from .   import part, entity, expr, name, package, import_, body, args, generics, signature, type, annotation

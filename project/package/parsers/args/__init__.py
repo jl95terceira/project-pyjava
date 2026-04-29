@@ -1,24 +1,25 @@
-import re
-from jl95.batteries import typing
+from .       import exc, state
+from ..util import *
+from ...     import words
 
-from .            import exc, state
-from ...          import handlers, parsers, words
+from jl95.batteries import typing
 
 _ACREMENTERS  = {words.PARENTH_OPEN: words.PARENTH_CLOSE,
                  words.CURLY_OPEN  : words.CURLY_CLOSE,
                  words.ANGLE_OPEN  : words.ANGLE_CLOSE}
 
-class Parser(parsers.entity.StackingSemiParser):
+Args = list[str]
+class Parser(StackingSemiParser):
 
-    def __init__(self, after:typing.Consumer[list[str]]):
+    def __init__(self, args_handler:typing.Consumer[Args]):
 
         super().__init__()
-        self._args                 :list[str] = list()
+        self._args                 :Args      = list()
         self._args_state                      = state.CallArgsStates.BEGIN
         self._arg_value                       = ''
         self._arg_depth                       = 0
         self._arg_depth_incrementer:str|None  = None
-        self._args_after                      = after
+        self._handler                         = args_handler
 
     def _store_arg(self):
 
@@ -30,12 +31,12 @@ class Parser(parsers.entity.StackingSemiParser):
     def _default_handle_line   (self, line: str): pass
 
     @typing.override
-    def _default_handle_part   (self, part:str):
+    def _default_handle_token  (self, token:str):
         
         line = self._line
         if   self._args_state is state.CallArgsStates.BEGIN:
 
-            if part != words.PARENTH_OPEN:
+            if token != words.PARENTH_OPEN:
 
                 raise exc.InvalidOpenException(line)
             
@@ -48,45 +49,45 @@ class Parser(parsers.entity.StackingSemiParser):
 
             if self._arg_depth_incrementer is not None:
 
-                if   part == self._arg_depth_incrementer:
+                if   token == self._arg_depth_incrementer:
 
                     self._arg_depth += 1
 
-                elif part == _ACREMENTERS[self._arg_depth_incrementer]:
+                elif token == _ACREMENTERS[self._arg_depth_incrementer]:
 
                     self._arg_depth -= 1
                     if self._arg_depth == 0:
 
                         self._arg_depth_incrementer = None
 
-                self._arg_value += part
+                self._arg_value += token
 
-            elif part == words.PARENTH_CLOSE:
+            elif token == words.PARENTH_CLOSE:
 
                 self._stop()
 
-            elif part in _ACREMENTERS:
+            elif token in _ACREMENTERS:
 
-                self._arg_depth_incrementer = part
-                self.handle_part(part)
+                self._arg_depth_incrementer = token
+                self.handle_token(token)
 
-            elif part == words.COMMA:
+            elif token == words.COMMA:
 
                 self._store_arg()
                 self._args_state = state.CallArgsStates.SEPARATE
 
             else:
 
-                self._arg_value += part
+                self._arg_value += token
 
         elif self._args_state is state.CallArgsStates.SEPARATE: 
             
-            if part == words.PARENTH_CLOSE: 
+            if token == words.PARENTH_CLOSE: 
                 
                 raise exc.AfterSeparatorException(line)
             
             self._args_state = state.CallArgsStates.DEFAULT
-            self.handle_part(part) # re-handle part, since it was used only for look-ahead
+            self.handle_token(token) # re-handle part, since it was used only for look-ahead
 
         else: raise AssertionError(f'{self._args_state=}')
 
@@ -112,4 +113,4 @@ class Parser(parsers.entity.StackingSemiParser):
             self._store_arg()
 
         self._state = state.CallArgsStates.END
-        self._args_after(self._args)
+        self._handler(self._args)

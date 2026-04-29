@@ -66,7 +66,7 @@ class Parser(handlers.line.Handler):
 
                 else:
 
-                    self._next_handler.handle_part(part=f'{self._string_delim}{''.join(self._string_parts)}{self._string_delim}')
+                    self._next_handler.handle_token(token=f'{self._string_delim}{''.join(self._string_parts)}{self._string_delim}')
                     self._string_parts = None
                     self._string_delim = None
                     self._state = state.States.DEFAULT
@@ -114,7 +114,7 @@ class Parser(handlers.line.Handler):
 
                 else:
 
-                    self._next_handler.handle_part(part=part)
+                    self._next_handler.handle_token(token=part)
 
     @typing.override
     def handle_eof(self):

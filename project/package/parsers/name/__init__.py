@@ -1,21 +1,22 @@
 import re
 from jl95.batteries import typing
 
-from .            import exc, state
-from ...          import handlers, parsers, model, util, words
+from .       import exc, state
+from ..util import *
+from ...     import words
 
 _WORD_PATTERN = re.compile('^(?:\\w|\\$)+$')
 
-class Parser(parsers.entity.StackingSemiParser):
+class Parser(StackingSemiParser):
 
-    def __init__(self, after         :typing.Consumer[str],
-                       part_rehandler:typing.Consumer[str],
-                       allow_wildcard=False,
-                       if_array      :typing.Consumer[int]|None=None):
+    def __init__(self, name_handler   :typing.Consumer[str],
+                       token_rehandler:typing.Consumer[str],
+                       allow_wildcard                           =False,
+                       if_array       :typing.Consumer[int]|None=None):
 
         super().__init__()
-        self._after                = after
-        self._part_rehandler       = part_rehandler
+        self._handler              = name_handler
+        self._token_rehandler      = token_rehandler
         self._allow_wildcard       = allow_wildcard
         self._if_array             = if_array
         self._state                = state.States.BEGIN
@@ -26,35 +27,35 @@ class Parser(parsers.entity.StackingSemiParser):
     def _default_handle_line     (self, line:str): pass
 
     @typing.override
-    def _default_handle_part     (self, part:str): 
+    def _default_handle_token     (self, token:str): 
         
         line = self._line
         if   self._state is state.States.END: raise exc.StopException()
 
         elif self._state is state.States.BEGIN:
 
-            if not _WORD_PATTERN.match(part): raise exc.Exception(line)
-            self._parts = [part,]
+            if not _WORD_PATTERN.match(token): raise exc.Exception(line)
+            self._parts = [token,]
             self._state = state.States.DEFAULT
 
         elif self._state is state.States.DEFAULT:
 
-            if   part == words.DOT:
+            if   token == words.DOT:
 
                 self._state = state.States.AFTER_DOT
 
-            elif part == words.SQUARE_OPEN and self._if_array is not None:
+            elif token == words.SQUARE_OPEN and self._if_array is not None:
 
                 self._state = state.States.ARRAY_OPEN
 
             else:
 
                 self._stop()
-                self._part_rehandler(part)
+                self._token_rehandler(token)
 
         elif self._state is state.States.AFTER_DOT:
 
-            if part == words.ASTERISK:
+            if token == words.ASTERISK:
 
                 if not self._allow_wildcard: raise exc.WildcardNotAllowedException(line)
                 self._parts.append('*')
@@ -62,13 +63,13 @@ class Parser(parsers.entity.StackingSemiParser):
 
             else:
 
-                if not _WORD_PATTERN.match(part): raise exc.Exception(line)
-                self._parts.append(part)
+                if not _WORD_PATTERN.match(token): raise exc.Exception(line)
+                self._parts.append(token)
                 self._state = state.States.DEFAULT
 
         elif self._state is state.States.ARRAY_OPEN:
 
-            if part != words.SQUARE_CLOSED: raise exc.Exception(line)
+            if token != words.SQUARE_CLOSED: raise exc.Exception(line)
             self._state = state.States.ARRAY_CLOSE
             self._array_dim += 1
 
@@ -77,12 +78,12 @@ class Parser(parsers.entity.StackingSemiParser):
             if self._part == words.SQUARE_OPEN:
 
                 self._state = state.States.DEFAULT
-                self.handle_part(part)
+                self.handle_token(token)
 
             else: 
                 
                 self._stop()
-                self._part_rehandler(part)
+                self._token_rehandler(token)
 
         else: raise AssertionError(f'{self._state=}')
 
@@ -104,7 +105,7 @@ class Parser(parsers.entity.StackingSemiParser):
     def _stop(self): 
         
         self._state = state.States.END
-        self._after('.'.join(self._parts)) # if parts has only 1 element, no dot appears - so, no problem
+        self._handler('.'.join(self._parts)) # if parts has only 1 element, no dot appears - so, no problem
         if self._if_array is not None:
 
             self._if_array(self._array_dim)
